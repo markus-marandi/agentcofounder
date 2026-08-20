@@ -1,0 +1,119 @@
+/*
+ * Palettes derived from the theme-factory skill in github.com/anthropics/skills
+ * (Apache 2.0) — see THIRD_PARTY_NOTICES.md. Selected by parameters.theme.preset,
+ * which sets data-theme on the document element.
+ *
+ * Each preset defines only colour. Spacing, type scale, and layout live in
+ * styles.css so themes stay interchangeable.
+ */
+
+:root,
+[data-theme="modern-minimalist"] {
+  --ink: #1c2226;
+  --ink-soft: #566068;
+  --surface: #ffffff;
+  --surface-sunk: #f4f6f7;
+  --line: #d8dee2;
+  --accent: #36454f;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6eaec;
+}
+
+[data-theme="arctic-frost"] {
+  --ink: #16232f;
+  --ink-soft: #4d5f70;
+  --surface: #fafafa;
+  --surface-sunk: #eef4fb;
+  --line: #cfdcea;
+  --accent: #4a6fa5;
+  --accent-ink: #ffffff;
+  --accent-soft: #d4e4f7;
+}
+
+[data-theme="tech-innovation"] {
+  --ink: #10141a;
+  --ink-soft: #4a5462;
+  --surface: #ffffff;
+  --surface-sunk: #f1f4f9;
+  --line: #ccd6e5;
+  --accent: #0057db;
+  --accent-ink: #ffffff;
+  --accent-soft: #dbe7ff;
+}
+
+[data-theme="ocean-depths"] {
+  --ink: #1a2332;
+  --ink-soft: #4f6272;
+  --surface: #f1faee;
+  --surface-sunk: #e2f1ef;
+  --line: #bcd9d8;
+  --accent: #21706f;
+  --accent-ink: #ffffff;
+  --accent-soft: #a8dadc;
+}
+
+[data-theme="forest-canopy"] {
+  --ink: #23331f;
+  --ink-soft: #5c6851;
+  --surface: #faf9f6;
+  --surface-sunk: #f0f1e8;
+  --line: #d3d7c4;
+  --accent: #2d4a2b;
+  --accent-ink: #ffffff;
+  --accent-soft: #dfe4d2;
+}
+
+[data-theme="botanical-garden"] {
+  --ink: #24301f;
+  --ink-soft: #5b6a52;
+  --surface: #f5f3ed;
+  --surface-sunk: #ece8dd;
+  --line: #d6cfbe;
+  --accent: #3d6a4a;
+  --accent-ink: #ffffff;
+  --accent-soft: #dceadf;
+}
+
+[data-theme="golden-hour"] {
+  --ink: #352d28;
+  --ink-soft: #6d5f55;
+  --surface: #fdfaf5;
+  --surface-sunk: #f4ece0;
+  --line: #ddcdb6;
+  --accent: #9a5f22;
+  --accent-ink: #ffffff;
+  --accent-soft: #f7e4c4;
+}
+
+[data-theme="sunset-boulevard"] {
+  --ink: #26363b;
+  --ink-soft: #5c6c70;
+  --surface: #fffaf6;
+  --surface-sunk: #fdeee2;
+  --line: #f0cfb7;
+  --accent: #c1502e;
+  --accent-ink: #ffffff;
+  --accent-soft: #fadfcb;
+}
+
+[data-theme="desert-rose"] {
+  --ink: #3a2230;
+  --ink-soft: #74596a;
+  --surface: #fdf8f5;
+  --surface-sunk: #f5e7de;
+  --line: #e2c8ba;
+  --accent: #5d2e46;
+  --accent-ink: #ffffff;
+  --accent-soft: #f0d9d9;
+}
+
+[data-theme="midnight-galaxy"] {
+  --ink: #1e1730;
+  --ink-soft: #5a5177;
+  --surface: #fbfaff;
+  --surface-sunk: #efecf7;
+  --line: #d3cbe4;
+  --accent: #40447f;
+  --accent-ink: #ffffff;
+  --accent-soft: #ded7ee;
+}

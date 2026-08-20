@@ -1,0 +1,50 @@
+{
+  "note": "Offline reference material for the landing-page route. The generating agent has no network access, so comparison and social-proof sections draw on these neutral archetypes rather than naming real companies. Replace a row's text with something specific to the product idea; never present these as researched facts about named competitors.",
+  "archetypes": [
+    {
+      "id": "spreadsheet",
+      "name": "A spreadsheet",
+      "strength": "Free, flexible, and already open on most desks.",
+      "weakness": "Breaks quietly once more than one person edits it, and nothing validates what gets typed in.",
+      "appliesTo": ["tracking", "inventory", "planning", "budgeting", "scheduling"]
+    },
+    {
+      "id": "paper",
+      "name": "Pen and paper",
+      "strength": "Nothing to learn and never offline.",
+      "weakness": "Cannot be searched, counted, or recovered once mislaid.",
+      "appliesTo": ["tracking", "logging", "collecting"]
+    },
+    {
+      "id": "chat-thread",
+      "name": "A group chat",
+      "strength": "Everyone is already in it.",
+      "weakness": "Decisions scroll away, and there is no list of the current state of anything.",
+      "appliesTo": ["coordination", "requests", "scheduling"]
+    },
+    {
+      "id": "enterprise-suite",
+      "name": "A full enterprise suite",
+      "strength": "Handles every case an organisation could have.",
+      "weakness": "Priced and configured for teams far larger than one, with a setup cost measured in weeks.",
+      "appliesTo": ["tracking", "inventory", "reporting", "workflow"]
+    },
+    {
+      "id": "generic-notes",
+      "name": "A notes app",
+      "strength": "Quick to capture anything at all.",
+      "weakness": "Every entry is free text, so nothing can be filtered, totalled, or checked for gaps.",
+      "appliesTo": ["logging", "collecting", "planning"]
+    }
+  ],
+  "proofPatterns": [
+    "Set up in a couple of minutes, with nothing to install.",
+    "Works entirely on this device — no account, no sign-up.",
+    "Every entry stays where you put it, including after a refresh."
+  ],
+  "faq": [
+    { "question": "Where is my data kept?", "answer": "In this browser, on this device. Nothing is uploaded." },
+    { "question": "Do I need an account?", "answer": "No. There is no sign-up and no password." },
+    { "question": "Can I use it on my phone?", "answer": "Yes. The layout adapts to narrow screens." }
+  ]
+}

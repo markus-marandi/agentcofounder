@@ -1,0 +1,246 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated application parameters",
+  "description": "Assembly contract for the prebuilt kernel. The analyzer skill writes this file; the kernel reads it to lay out navigation, theming, entities, and route-specific sections.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["route", "product", "theme", "navigation", "entities", "features", "persistence"],
+  "properties": {
+    "route": {
+      "description": "Build route chosen by the analyzer skill.",
+      "enum": ["landing-page", "web-app", "prototype", "mock-dashboard", "open-build"]
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "tagline"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "tagline": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "description": { "type": "string", "maxLength": 600 }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preset"],
+      "properties": {
+        "preset": {
+          "enum": [
+            "modern-minimalist",
+            "arctic-frost",
+            "tech-innovation",
+            "ocean-depths",
+            "forest-canopy",
+            "botanical-garden",
+            "golden-hour",
+            "sunset-boulevard",
+            "desert-rose",
+            "midnight-galaxy"
+          ]
+        },
+        "accent": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "density": { "enum": ["comfortable", "compact"] }
+      }
+    },
+    "navigation": {
+      "description": "Menu entries. The kernel picks its layout from how many there are: 1 is a single view with no chrome, 2-4 a horizontal bar, 5+ a sidebar that collapses to a drawer on mobile.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "kind"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 32 },
+          "kind": { "enum": ["collection", "dashboard", "landing", "screen", "content"] },
+          "entity": { "type": "string" },
+          "screen": { "type": "string" }
+        }
+      }
+    },
+    "entities": {
+      "description": "Persisted record types. At least one is required on every route, including landing pages and prototypes.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "label", "labelPlural", "fields"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$" },
+          "label": { "type": "string", "minLength": 1 },
+          "labelPlural": { "type": "string", "minLength": 1 },
+          "titleField": { "type": "string" },
+          "fields": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "label", "type"],
+              "properties": {
+                "name": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$" },
+                "label": { "type": "string", "minLength": 1 },
+                "type": { "enum": ["text", "longtext", "number", "date", "select", "boolean"] },
+                "required": { "type": "boolean" },
+                "unique": { "type": "boolean" },
+                "options": { "type": "array", "items": { "type": "string" } },
+                "min": { "type": "number" },
+                "max": { "type": "number" },
+                "help": { "type": "string" }
+              }
+            }
+          },
+          "filters": {
+            "description": "Fields the collection can be narrowed by. At least one is required by the delivery floor.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["field", "label"],
+              "properties": {
+                "field": { "type": "string" },
+                "label": { "type": "string" },
+                "mode": { "enum": ["equals", "truthy", "falsy", "contains"] }
+              }
+            }
+          },
+          "derived": {
+            "description": "Computed values shown above the collection. At least one is required by the delivery floor.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "label", "kind"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+                "label": { "type": "string" },
+                "kind": { "enum": ["count", "countWhere", "sum", "average", "min", "max", "distinct"] },
+                "field": { "type": "string" },
+                "where": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["field", "mode"],
+                  "properties": {
+                    "field": { "type": "string" },
+                    "mode": { "enum": ["equals", "truthy", "falsy", "contains"] },
+                    "value": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "search": { "type": "boolean" },
+        "auth": { "type": "boolean" },
+        "limitations": {
+          "description": "Boundaries a user can actually reach, surfaced in the interface rather than hidden in a report.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "dashboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["main", "sub"],
+      "properties": {
+        "main": { "$ref": "#/definitions/plot" },
+        "sub": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "$ref": "#/definitions/plot" }
+        }
+      }
+    },
+    "landing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sections", "captureEntity"],
+      "properties": {
+        "sections": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["hero", "subhero", "features", "comparison", "social-proof", "faq", "cta"] }
+        },
+        "captureEntity": { "type": "string" },
+        "callToAction": { "type": "string" },
+        "comparisonSet": { "type": "string" }
+      }
+    },
+    "prototype": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["screens"],
+      "properties": {
+        "screens": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "title": { "type": "string" },
+              "body": { "type": "string" },
+              "collects": { "type": "array", "items": { "type": "string" } },
+              "next": { "type": "string" },
+              "back": { "type": "string" }
+            }
+          }
+        },
+        "entity": { "type": "string" }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "namespace"],
+      "properties": {
+        "adapter": { "enum": ["localStorage", "memory"] },
+        "namespace": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+      }
+    }
+  },
+  "definitions": {
+    "plot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "kind", "source"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "title": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["line", "area", "bar", "donut", "sparkline", "stat"] },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["timeseries", "categorical", "entityCount", "entityGroup", "entitySum"] },
+            "entity": { "type": "string" },
+            "field": { "type": "string" },
+            "points": { "type": "integer", "minimum": 2, "maximum": 366 },
+            "categories": { "type": "array", "items": { "type": "string" } },
+            "seed": { "type": "integer" },
+            "trend": { "enum": ["up", "down", "flat", "volatile"] }
+          }
+        },
+        "unit": { "type": "string" }
+      }
+    }
+  }
+}

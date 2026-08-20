@@ -1,0 +1,43 @@
+{
+  "route": "web-app",
+  "product": {
+    "name": "Records",
+    "tagline": "Keep track of the things that matter to you.",
+    "description": "A neutral starting point. The analyzer skill rewrites this file from the product idea before any component is written."
+  },
+  "theme": { "preset": "modern-minimalist", "density": "comfortable" },
+  "navigation": [
+    { "id": "collection", "label": "All records", "kind": "collection", "entity": "record" }
+  ],
+  "entities": [
+    {
+      "name": "record",
+      "label": "Record",
+      "labelPlural": "Records",
+      "titleField": "title",
+      "fields": [
+        { "name": "title", "label": "Title", "type": "text", "required": true },
+        { "name": "category", "label": "Category", "type": "select", "options": ["General", "Personal", "Work"] },
+        { "name": "amount", "label": "Amount", "type": "number", "min": 0 },
+        { "name": "done", "label": "Done", "type": "boolean" }
+      ],
+      "filters": [
+        { "field": "category", "label": "Category", "mode": "equals" },
+        { "field": "done", "label": "Done only", "mode": "truthy" }
+      ],
+      "derived": [
+        { "id": "total", "label": "Records", "kind": "count" },
+        { "id": "outstanding", "label": "Not done", "kind": "countWhere", "where": { "field": "done", "mode": "falsy" } }
+      ]
+    }
+  ],
+  "features": {
+    "search": true,
+    "auth": false,
+    "limitations": [
+      "Data is stored in this browser only. It does not sync between devices or people.",
+      "Clearing browser storage for this site permanently removes every record."
+    ]
+  },
+  "persistence": { "adapter": "localStorage", "namespace": "records" }
+}
