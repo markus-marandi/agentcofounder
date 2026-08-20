@@ -9,3 +9,10 @@ validate:
     - npm ci --ignore-scripts
     - npm --prefix app-template ci --ignore-scripts
     - npm run check
+    - npm run score -- --static --app-dir app-template
+    - npm run challenge -- --prepare-only
+  artifacts:
+    when: always
+    paths:
+      - artifacts/score.json
+    expire_in: 1 week

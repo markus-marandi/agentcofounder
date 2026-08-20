@@ -3,14 +3,18 @@ name: CI
 on:
   pull_request:
   push:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
 
 permissions:
   contents: read
 
 jobs:
   validate:
+    name: Static checks
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -32,3 +36,70 @@ jobs:
 
       - name: Run all checks
         run: npm run check
+
+      - name: Score the seed against the delivery floor
+        run: npm run score -- --static --app-dir app-template
+
+      - name: Reset and install a generated workspace
+        run: npm run challenge -- --prepare-only
+
+      - name: Upload the scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-seed
+          path: artifacts/score.json
+          if-no-files-found: ignore
+
+  challenge:
+    name: Full run (${{ matrix.fixture }})
+    # Needs provider credentials and a real model call, so it cannot run on
+    # every pull request. Triggered manually or nightly.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture: [web-app, dashboard, landing, prototype, vague]
+    env:
+      CHALLENGE_PROVIDER: ${{ secrets.CHALLENGE_PROVIDER }}
+      CHALLENGE_MODEL: ${{ secrets.CHALLENGE_MODEL }}
+      CHALLENGE_THINKING: off
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            app-template/package-lock.json
+
+      - name: Install harness dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install application seed dependencies
+        run: npm --prefix app-template ci --ignore-scripts
+
+      - name: Run the challenge
+        run: npm run challenge -- --idea-file docs/fixtures/${{ matrix.fixture }}.txt
+
+      - name: Validate the result
+        run: npm run validate:result -- output/app/result.json
+
+      - name: Score the run
+        run: npm run score
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-${{ matrix.fixture }}
+          path: |
+            artifacts/
+            result.json
+          if-no-files-found: ignore
