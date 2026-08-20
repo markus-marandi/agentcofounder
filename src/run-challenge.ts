@@ -34,6 +34,23 @@ const SOURCE_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = path.resolve(SOURCE_DIRECTORY, "..");
 const APP_PORT = 3000;
 
+const EXTENSIONS = ["protected-paths.ts", "verify-loop.ts"];
+
+/**
+ * Only names and descriptions enter the system prompt; a body is read on
+ * demand. The analyzer is listed first because it runs first and selects the
+ * route skill that follows it.
+ */
+const SKILLS = [
+  "product-analyzer",
+  "web-app",
+  "mock-dashboard",
+  "landing-page",
+  "prototype",
+  "open-build",
+  path.join("vendor", "frontend-design"),
+];
+
 export function runRequiresFailureExit(
   piExitCode: number,
   resultStatus: RunResult["status"],
@@ -213,11 +230,13 @@ export function buildPiArguments(
     `${systemPrompt.trim()}\n\n${publicJourneys.trim()}\n\n${appContext.trim()}`,
     "--session-dir",
     path.join(artifactDirectory, "sessions"),
-    "--extension",
-    path.join(REPOSITORY_ROOT, "solution", "extensions", "protected-paths.ts"),
-    "--skill",
-    path.join(REPOSITORY_ROOT, "solution", "skills", "mvp-builder"),
   ];
+  for (const extension of EXTENSIONS) {
+    args.push("--extension", path.join(REPOSITORY_ROOT, "solution", "extensions", extension));
+  }
+  for (const skill of SKILLS) {
+    args.push("--skill", path.join(REPOSITORY_ROOT, "solution", "skills", skill));
+  }
   if (process.env.CHALLENGE_PROVIDER) args.push("--provider", process.env.CHALLENGE_PROVIDER);
   if (process.env.CHALLENGE_MODEL) args.push("--model", process.env.CHALLENGE_MODEL);
   args.push("--thinking", process.env.CHALLENGE_THINKING ?? "off");
