@@ -116,6 +116,33 @@ Pi and participant extensions execute with the permissions of the current proces
 
 See `docs/organizer-checklist.md` before publishing the template or running a judged submission.
 
+## Configuring the end-to-end CI job
+
+The nightly and manually triggered `Full run` job needs four values, none of
+which are committed:
+
+| Name | Kind | Example |
+|---|---|---|
+| `CHALLENGE_PROVIDER` | repository variable | `anthropic` |
+| `CHALLENGE_MODEL` | repository variable | the organizer's pinned model id |
+| `CHALLENGE_API_KEY_ENV` | repository variable | `ANTHROPIC_API_KEY` |
+| `CHALLENGE_API_KEY` | repository **secret** | the provider credential |
+
+Pi reads a provider-specific credential variable, so the workflow exports the
+secret under the name `CHALLENGE_API_KEY_ENV` gives. The provider-to-variable
+table is in Pi's `docs/providers.md`.
+
+```bash
+gh variable set CHALLENGE_PROVIDER
+gh variable set CHALLENGE_MODEL
+gh variable set CHALLENGE_API_KEY_ENV
+gh secret set CHALLENGE_API_KEY
+gh workflow run CI
+```
+
+The job fails fast with a list of what is missing rather than starting a run
+that cannot reach a model.
+
 ## Pre-freeze cleanup
 
 Development-only material must be removed before a submission is frozen:

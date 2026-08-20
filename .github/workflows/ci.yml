@@ -63,10 +63,27 @@ jobs:
       matrix:
         fixture: [web-app, dashboard, landing, prototype, vague]
     env:
-      CHALLENGE_PROVIDER: ${{ secrets.CHALLENGE_PROVIDER }}
-      CHALLENGE_MODEL: ${{ secrets.CHALLENGE_MODEL }}
+      CHALLENGE_PROVIDER: ${{ vars.CHALLENGE_PROVIDER }}
+      CHALLENGE_MODEL: ${{ vars.CHALLENGE_MODEL }}
       CHALLENGE_THINKING: off
     steps:
+      - name: Check the run is configured
+        env:
+          CHALLENGE_API_KEY: ${{ secrets.CHALLENGE_API_KEY }}
+          CHALLENGE_API_KEY_ENV: ${{ vars.CHALLENGE_API_KEY_ENV }}
+        run: |
+          missing=""
+          [ -n "$CHALLENGE_PROVIDER" ]    || missing="$missing\n  variable CHALLENGE_PROVIDER (for example: anthropic)"
+          [ -n "$CHALLENGE_MODEL" ]       || missing="$missing\n  variable CHALLENGE_MODEL (the organizer's pinned model id)"
+          [ -n "$CHALLENGE_API_KEY_ENV" ] || missing="$missing\n  variable CHALLENGE_API_KEY_ENV (for example: ANTHROPIC_API_KEY)"
+          [ -n "$CHALLENGE_API_KEY" ]     || missing="$missing\n  secret CHALLENGE_API_KEY (the provider credential)"
+          if [ -n "$missing" ]; then
+            printf '::error::This job needs configuration that is not set:%b\n' "$missing"
+            echo 'Set variables with: gh variable set NAME'
+            echo 'Set the credential with: gh secret set CHALLENGE_API_KEY'
+            exit 1
+          fi
+
       - name: Check out repository
         uses: actions/checkout@v7
 
@@ -84,6 +101,17 @@ jobs:
 
       - name: Install application seed dependencies
         run: npm --prefix app-template ci --ignore-scripts
+
+      - name: Supply the provider credential
+        env:
+          CHALLENGE_API_KEY: ${{ secrets.CHALLENGE_API_KEY }}
+          CHALLENGE_API_KEY_ENV: ${{ vars.CHALLENGE_API_KEY_ENV }}
+        run: |
+          # Pi reads a provider-specific variable (ANTHROPIC_API_KEY, OPENAI_API_KEY,
+          # and so on), so the credential is exported under whichever name the
+          # configured provider expects rather than hard-coding one provider here.
+          echo "::add-mask::$CHALLENGE_API_KEY"
+          echo "$CHALLENGE_API_KEY_ENV=$CHALLENGE_API_KEY" >> "$GITHUB_ENV"
 
       - name: Run the challenge
         run: npm run challenge -- --idea-file docs/fixtures/${{ matrix.fixture }}.txt
