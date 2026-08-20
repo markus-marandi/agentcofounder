@@ -129,19 +129,48 @@ describe("app verification", () => {
     expect(result.checks.every((entry) => entry.result !== "passed")).toBe(true);
   });
 
-  it("rejects the untouched zero-test seed while confirming that it builds and serves", async () => {
+  it("accepts the seed, whose kernel primitives ship with passing tests", async () => {
     const artifactDirectory = await mkdtemp(path.join(os.tmpdir(), "agent-cofounder-seed-check-"));
     temporaryDirectories.push(artifactDirectory);
 
     const result = await verifyGeneratedApp(path.resolve("app-template"), artifactDirectory, {
-      commandTimeoutMs: 30_000,
+      commandTimeoutMs: 60_000,
       serverTimeoutMs: 10_000,
+      port: await getFreePort(),
+    });
+
+    expect(result.checks.map((entry) => entry.result)).toEqual(["passed", "passed", "passed"]);
+    expect(result.passed).toBe(true);
+  }, 90_000);
+
+  it("rejects an application that builds and serves but has no tests", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "agent-cofounder-untested-app-"));
+    temporaryDirectories.push(root);
+    const appDirectory = path.join(root, "app");
+    const seed = path.resolve("app-template");
+
+    // A copy of the seed with every test removed, sharing the seed's installed
+    // dependencies so the check runs against a real build rather than a stub.
+    await cp(seed, appDirectory, {
+      recursive: true,
+      filter: (source) => {
+        const relative = path.relative(seed, source);
+        const segments = relative.split(path.sep);
+        return !segments.includes("node_modules") && !segments.includes("dist") && !/\.test\.tsx?$/u.test(source);
+      },
+    });
+    await symlink(path.join(seed, "node_modules"), path.join(appDirectory, "node_modules"), "dir");
+
+    const result = await verifyGeneratedApp(appDirectory, path.join(root, "artifacts"), {
+      commandTimeoutMs: 60_000,
+      serverTimeoutMs: 10_000,
+      vitestCommand: path.join(seed, "node_modules", ".bin", "vitest"),
       port: await getFreePort(),
     });
 
     expect(result.passed).toBe(false);
     expect(result.checks.map((entry) => entry.result)).toEqual(["failed", "passed", "passed"]);
-  }, 45_000);
+  }, 90_000);
 
   it("never accepts HTTP from a server that already owned the configured port", async () => {
     let requests = 0;
