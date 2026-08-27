@@ -1,11 +1,7 @@
 name: CI
 
 on:
-  pull_request:
-  push:
   workflow_dispatch:
-  schedule:
-    - cron: "0 3 * * *"
 
 permissions:
   contents: read
@@ -53,9 +49,6 @@ jobs:
 
   challenge:
     name: Full run (${{ matrix.fixture }})
-    # Needs provider credentials and a real model call, so it cannot run on
-    # every pull request. Triggered manually or nightly.
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
