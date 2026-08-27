@@ -5,6 +5,32 @@
 Newest first. Each entry records what was decided and why, so a fresh agent
 session does not relitigate it. Read alongside `AGENTS.md`.
 
+## 2026-08-27 — Narrowed to the web-app route only (Markus)
+
+**Supersedes** the "all five routes ship" decision below (2026-08-20). The
+organizers confirmed on Slack the graded prompt will be "very similar in
+structure and difficulty, with the same kind of app at the same scale" as
+the public prompt — and that shape is now known precisely: 1 entity, 4
+attributes, filter by category, 1 derived value, page-refresh persistence,
+single user with no auth, and one deliberate ambiguity (the public "Book
+Lending Tracker" idea's category field could be read as a fixed dropdown
+or free text). That shape is squarely and only a `web-app`-route idea.
+
+**So:** the harness now builds only the `web-app` route. `product-analyzer`
+still extracts `idea_spec.json`/`parameters.json`, but its 5-way
+classification and tie-break rules are gone — it always hands off to
+`web-app`. `mock-dashboard`, `landing-page`, `prototype`, and `open-build`
+are deleted (skills, CI matrix, fixtures), along with
+`vendor/frontend-design` (its only consumers were the deleted routes). The
+kernel and `parameters.schema.json` are untouched — they already support
+this exact shape with zero new capability required.
+
+**Accepted risk:** if the hidden grading prompt ever surprises us with a
+genuinely different shape, there is no `open-build` fallback left to catch
+it. This is a deliberate trade for lower token cost and a simpler, more
+reliable single path, made against the organizer's own confirmation of
+prompt similarity — not free of risk if that confirmation turns out wrong.
+
 ## 2026-08-20 — Architecture agreed (Markus + Elias)
 
 **Prebuild the engineering, let the model do product.** The agent classifies the

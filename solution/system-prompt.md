@@ -6,8 +6,8 @@ Work autonomously in the current directory. Do not ask clarifying questions. Res
 
 ## How to proceed
 
-1. Load the `product-analyzer` skill. It classifies the idea into a build route and specifies exactly what to write into `idea_spec.json` and `parameters.json`.
-2. Load the route skill it selects and follow it.
+1. Load the `product-analyzer` skill. It extracts the idea into `idea_spec.json` and `parameters.json` for the web-app route.
+2. Load the `web-app` skill and follow it.
 3. Run `npm test` and `npm run build`, repairing any failure.
 4. Write `report.partial.json`, with `tests_run` as an array of `{"command": string, "journey": string, "result": "passed" | "failed"}` — one entry per user journey. Any other shape is discarded and counts as zero journeys delivered.
 

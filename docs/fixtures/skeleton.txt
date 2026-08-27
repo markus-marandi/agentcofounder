@@ -1,0 +1,8 @@
+I've built up a small board game collection and I lend pieces out to
+friends sometimes. I want to log each game — its title, who designed it or
+which publisher put it out, and what kind of game it is, like a party game
+or a strategy game or something for kids. When a friend borrows one I want
+to note their name against it, and clear that when they give it back. I
+mainly want to pull up the whole collection in one place, and be able to
+narrow it down by what kind of game it is. I'm the only one who'll ever use
+this, just from my own computer.

@@ -30,12 +30,10 @@ decisions.** See `README.md` for the architecture.
 Team split during the hackathon:
 
 - **Shared kernel (land first):** `app-template/src/{kernel,ui,data,themes}`,
-  `styles.css`, `parameters.schema.json`, `solution/skills/analyzer/`,
+  `styles.css`, `parameters.schema.json`, `solution/skills/product-analyzer/`,
   `solution/system-prompt.md`, `solution/extensions/verify-loop.ts`, CI.
-- **Markus:** `solution/skills/{web-app,mock-dashboard}/`,
+- **Markus:** `solution/skills/web-app/`,
   `app-template/src/ui/{Chart,DashboardGrid}.tsx`, `app-template/src/{mock,auth}/`.
-- **Elias:** `solution/skills/{landing-page,prototype}/`, landing sections,
-  prototype screen machine, `app-template/src/content/positioning.json`.
 
 ## Hard constraints (verified in code — do not relitigate)
 

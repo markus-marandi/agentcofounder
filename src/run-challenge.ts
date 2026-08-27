@@ -38,18 +38,10 @@ const EXTENSIONS = ["protected-paths.ts", "verify-loop.ts"];
 
 /**
  * Only names and descriptions enter the system prompt; a body is read on
- * demand. The analyzer is listed first because it runs first and selects the
- * route skill that follows it.
+ * demand. The analyzer is listed first because it runs first and hands off
+ * to web-app, the only route.
  */
-const SKILLS = [
-  "product-analyzer",
-  "web-app",
-  "mock-dashboard",
-  "landing-page",
-  "prototype",
-  "open-build",
-  path.join("vendor", "frontend-design"),
-];
+const SKILLS = ["product-analyzer", "web-app"];
 
 export function runRequiresFailureExit(
   piExitCode: number,

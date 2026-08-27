@@ -8,7 +8,6 @@ Licence: Apache License 2.0 (per-skill `LICENSE.txt` retained verbatim)
 
 | Path | Upstream skill | Loaded by Pi at run time |
 |---|---|---|
-| `solution/skills/vendor/frontend-design/` | `skills/frontend-design` | Yes |
 | `tools/dev-skills/skill-creator/` | `skills/skill-creator` | No — development only |
 | `tools/dev-skills/webapp-testing/` | `skills/webapp-testing` | No — development only |
 

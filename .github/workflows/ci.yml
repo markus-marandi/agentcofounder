@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fixture: [web-app, dashboard, landing, prototype, vague]
+        fixture: [web-app, skeleton]
     env:
       CHALLENGE_PROVIDER: ${{ vars.CHALLENGE_PROVIDER }}
       CHALLENGE_MODEL: ${{ vars.CHALLENGE_MODEL }}

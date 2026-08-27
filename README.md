@@ -22,9 +22,9 @@ flowchart TD
     subgraph pi["Pi — one run, offline, cwd = output/app"]
         direction TB
         prompt["system-prompt.md<br/>+ journeys.md<br/>+ app AGENTS.md<br/>+ skill descriptions"]
-        analyzer["product-analyzer skill<br/>classify the idea"]
+        analyzer["product-analyzer skill<br/>extract the idea"]
         spec["idea_spec.json<br/>parameters.json"]
-        route["one route skill<br/>landing · web-app · prototype<br/>dashboard · open-build"]
+        route["web-app skill"]
         build["wire the kernel<br/>write journey tests"]
         loop{"verify-loop<br/>tests + build pass?"}
 
@@ -37,20 +37,14 @@ flowchart TD
     runner --> result["result.json<br/>audited telemetry"]
 ```
 
-Five routes, one floor. The routes change what the product *looks like*; none of
-them changes whether its data survives.
-
-| Route | For an idea that asks for | Always also ships |
-|---|---|---|
-| `web-app` | Doing the work: tracking, managing, keeping records | The full collection screen |
-| `mock-dashboard` | Numbers at a glance | A way to enter the records behind the charts |
-| `landing-page` | Explaining something not yet built | A signup capture that really stores signups |
-| `prototype` | Seeing and clicking a flow first | A record written on completion |
-| `open-build` | Anything else, or too vague to classify | Whatever the idea needs, meeting the floor |
+One route, one floor. The harness builds a `web-app`: a full collection
+screen with create, edit, and delete, at least one filter, at least one
+derived value, and data that survives a refresh — whatever surface framing
+the idea uses to describe it.
 
 ### The delivery floor
 
-Every route, no exceptions:
+No exceptions:
 
 1. At least one persisted entity, reached only through the repository boundary
 2. Create, edit, delete
@@ -63,9 +57,9 @@ Every route, no exceptions:
 9. Runs at `http://localhost:3000`, leaves no process behind
 
 The floor exists because the scoring rubric — data and state persistence,
-robustness, integration readiness — is written for applications that hold data. A
-landing page with a form that discards what it collects is a picture of a
-product, and scores like one.
+robustness, integration readiness — is written for applications that hold data.
+An interface that doesn't persist what it collects is a picture of a product,
+and scores like one.
 
 ## parameters.json
 
@@ -75,15 +69,12 @@ and the kernel refuses to start on an invalid file.
 
 ```jsonc
 {
-  "route": "web-app",
+  "route": "web-app",                       // always this value now
   "product": { "name": "...", "tagline": "..." },
   "theme": { "preset": "ocean-depths" },     // 10 presets, colour only
   "navigation": [ /* menu count picks the layout */ ],
   "entities": [ /* fields, filters, derived values */ ],
   "features": { "search": true, "auth": false, "limitations": ["..."] },
-  "dashboard": { "main": {}, "sub": [] },    // mock-dashboard route
-  "landing":   { "sections": [], "captureEntity": "" },
-  "prototype": { "screens": [] },
   "persistence": { "adapter": "localStorage", "namespace": "..." }
 }
 ```
@@ -147,8 +138,7 @@ recorded.
   cost, and tokens spent per delivered journey.
 
 Efficiency cannot be measured on a pull request — it needs a real model call.
-The full run is a manual or nightly job across the five
-[route fixtures](docs/fixtures/).
+The full run is a manual job across the [fixtures](docs/fixtures/).
 
 ## Commands
 
@@ -168,10 +158,10 @@ npm run challenge
 npm run score
 ```
 
-Run one fixture through a specific route:
+Run a fixture instead of the default idea:
 
 ```bash
-npm run challenge -- --idea-file docs/fixtures/dashboard.txt
+npm run challenge -- --idea-file docs/fixtures/skeleton.txt
 ```
 
 ## Repository map
@@ -179,7 +169,7 @@ npm run challenge -- --idea-file docs/fixtures/dashboard.txt
 | Path | Owner | Purpose |
 |---|---|---|
 | `solution/system-prompt.md` | Us | What the agent is told |
-| `solution/skills/` | Us | Analyzer, five routes, and one vendored design skill |
+| `solution/skills/` | Us | product-analyzer and the web-app route |
 | `solution/extensions/` | Us | Write guard and the verify-repair loop |
 | `app-template/` | Us | The prebuilt kernel, copied into a fresh workspace each run |
 | `src/` | Organizer | Runner, verification, telemetry, scoring |
