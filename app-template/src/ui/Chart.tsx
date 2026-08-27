@@ -47,7 +47,7 @@ export interface ChartProps {
 export function Chart({ kind, points, title, unit }: ChartProps) {
   if (points.length === 0) {
     return (
-      <p className="muted" role="img" aria-label={`${title}: no data yet`}>
+      <p className="text-ink-soft" role="img" aria-label={`${title}: no data yet`}>
         No data yet.
       </p>
     );
@@ -56,9 +56,12 @@ export function Chart({ kind, points, title, unit }: ChartProps) {
   if (kind === "stat") {
     const total = points.reduce((sum, point) => sum + point.value, 0);
     return (
-      <p className="stat-value" aria-label={`${title}: ${total}${unit ? ` ${unit}` : ""}`}>
+      <p
+        className="text-2xl font-semibold tracking-tight text-ink tabular-nums"
+        aria-label={`${title}: ${total}${unit ? ` ${unit}` : ""}`}
+      >
         {Number.isInteger(total) ? total : total.toFixed(1)}
-        {unit ? <span className="muted" style={{ fontSize: "0.9rem" }}> {unit}</span> : null}
+        {unit ? <span className="text-sm font-normal text-ink-soft"> {unit}</span> : null}
       </p>
     );
   }
@@ -72,7 +75,7 @@ export function Chart({ kind, points, title, unit }: ChartProps) {
     let offset = 0;
     return (
       <>
-        <svg className="chart" viewBox="0 0 160 140" role="img" aria-label={label}>
+        <svg className="w-full h-auto block overflow-visible" viewBox="0 0 160 140" role="img" aria-label={label}>
           <g transform="translate(80 70) rotate(-90)">
             {points.map((point, index) => {
               const length = (point.value / total) * circumference;
@@ -93,11 +96,11 @@ export function Chart({ kind, points, title, unit }: ChartProps) {
             })}
           </g>
         </svg>
-        <ul className="chart-legend" style={{ listStyle: "none", padding: 0, margin: "0.5rem 0 0" }}>
+        <ul className="list-none p-0 m-0 mt-2 flex flex-wrap gap-4 text-sm text-ink-soft">
           {points.map((point, index) => (
             <li key={point.label}>
               <span
-                className="chart-swatch"
+                className="inline-block w-2.5 h-2.5 rounded-sm mr-1.5"
                 style={{ background: "var(--accent)", opacity: 1 - index * (0.7 / Math.max(points.length, 1)) }}
               />
               {point.label} ({point.value})
@@ -112,7 +115,7 @@ export function Chart({ kind, points, title, unit }: ChartProps) {
     const { max } = scale(points);
     const slot = (WIDTH - PAD * 2) / points.length;
     return (
-      <svg className="chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={label}>
+      <svg className="w-full h-auto block overflow-visible" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={label}>
         {points.map((point, index) => {
           const height = (point.value / max) * (HEIGHT - PAD * 2);
           return (
@@ -135,7 +138,7 @@ export function Chart({ kind, points, title, unit }: ChartProps) {
   const strokeWidth = kind === "sparkline" ? 1.6 : 2.4;
 
   return (
-    <svg className="chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={label}>
+    <svg className="w-full h-auto block overflow-visible" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={label}>
       {isArea ? <path d={pathFor(points, true)} fill="var(--accent-soft)" /> : null}
       <path d={pathFor(points, false)} fill="none" stroke="var(--accent)" strokeWidth={strokeWidth} strokeLinejoin="round" />
     </svg>

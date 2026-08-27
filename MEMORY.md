@@ -5,6 +5,41 @@
 Newest first. Each entry records what was decided and why, so a fresh agent
 session does not relitigate it. Read alongside `AGENTS.md`.
 
+## 2026-08-27 — Adopted Tailwind CSS (Markus)
+
+**Supersedes** the "Tailwind" row of the replacements table in the
+2026-08-20 entry below ("New dep, build cost, and long class strings are
+output tokens paid per element" → zero-dependency semantic CSS). That
+argument doesn't actually apply to this codebase: it assumes the *model*
+writes Tailwind-styled JSX per run. It doesn't — `CollectionView.tsx`,
+`Field.tsx`, `AppShell.tsx`, and the rest of `app-template/src/ui/` are
+prebuilt, committed, tested kernel code. The model only ever configures
+`parameters.json`. Restyling the kernel once, in committed code, costs the
+model's output tokens nothing — the same "prebuild the engineering" logic
+the rest of the kernel already runs on.
+
+**So:** `tailwindcss` and `@tailwindcss/vite` (Tailwind v4) are now real
+`app-template` devDependencies, installed from a committed lockfile before
+Pi's offline run starts — never touches the no-network-at-run-time
+constraint. Every component reachable from the `web-app` route (`AppShell`,
+`CollectionView`, `Field`, `RecordForm`, `EmptyState`, `StatRow`, `Chart`,
+`DashboardGrid`, plus `AuthBar`/`Limitations`/`ErrorBoundary`) is restyled
+on Tailwind Plus's Application UI patterns (tables/lists, form layouts,
+stats, empty states, alerts). The 10-preset theme system in
+`themes/presets.css` and `AppShell.tsx`'s runtime `data-theme` switching
+are **untouched** — a `@theme inline` block in `styles.css` bridges
+Tailwind's color tokens straight onto the existing runtime-swappable CSS
+custom properties, so every preset keeps working with zero code changes.
+`LandingPage.tsx`/`PrototypeFlow.tsx` (unreachable since the prior
+route-narrowing) keep their old semantic classes, left untouched.
+
+Also fixed a real false-negative this caused in our own scoring:
+`src/score.ts`'s `"responsive"` structural check looked for literal
+`@media...min-width` text, which Tailwind's compiled `sm:`/`md:`/`lg:`
+prefixes don't produce in source. Extended the check to also recognize
+those prefixes as evidence of responsiveness — an organizer-owned file
+(`src/`), touched with that reason stated plainly.
+
 ## 2026-08-27 — Narrowed to the web-app route only (Markus)
 
 **Supersedes** the "all five routes ship" decision below (2026-08-20). The

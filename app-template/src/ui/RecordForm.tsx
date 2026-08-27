@@ -41,7 +41,7 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
 
   return (
     <form
-      className="stack"
+      className="flex flex-col gap-6"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -53,12 +53,12 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
       }}
     >
       {errorCount > 0 ? (
-        <p className="field-error" role="alert">
+        <p className="rounded-md border border-danger bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
           {errorCount === 1 ? "One field needs attention." : `${errorCount} fields need attention.`}
         </p>
       ) : null}
 
-      <div className="form-grid">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {entity.fields.map((field) => (
           <Field
             key={field.name}
@@ -70,12 +70,19 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
         ))}
       </div>
 
-      <div className="row">
-        <button type="submit" className="button button-primary">
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          className="rounded-md bg-accent px-4 py-2 font-semibold text-accent-ink hover:brightness-110"
+        >
           {editing ? `Save ${entity.label.toLowerCase()}` : `Add ${entity.label.toLowerCase()}`}
         </button>
         {onCancel ? (
-          <button type="button" className="button button-quiet" onClick={onCancel}>
+          <button
+            type="button"
+            className="rounded-md border border-transparent px-4 py-2 font-semibold text-ink-soft hover:bg-surface-sunk"
+            onClick={onCancel}
+          >
             Cancel
           </button>
         ) : null}

@@ -29,7 +29,7 @@ function View({ entry }: { entry: NavigationSpec }) {
       const dashboard = parameters.dashboard;
       if (!dashboard) {
         return (
-          <p className="notice notice-error" role="alert">
+          <p className="rounded-md border border-danger bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
             No dashboard is configured in parameters.json.
           </p>
         );
@@ -38,9 +38,9 @@ function View({ entry }: { entry: NavigationSpec }) {
     }
     case "content":
       return (
-        <section className="panel stack">
-          <h2>{entry.label}</h2>
-          <p className="muted">{parameters.product.description ?? parameters.product.tagline}</p>
+        <section className="rounded-lg border border-line bg-surface p-6 flex flex-col gap-4">
+          <h2 className="text-base font-semibold text-ink m-0">{entry.label}</h2>
+          <p className="text-ink-soft m-0">{parameters.product.description ?? parameters.product.tagline}</p>
         </section>
       );
     case "collection":

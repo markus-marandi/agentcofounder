@@ -63,11 +63,15 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   };
 
   return (
-    <div className="stack">
+    <div className="flex flex-col gap-6">
       {storageError ? (
-        <div className="notice notice-error" role="alert">
-          <p style={{ margin: 0 }}>{storageError}</p>
-          <button type="button" className="button button-quiet" onClick={dismissStorageError}>
+        <div className="rounded-md border border-danger bg-danger-soft px-4 py-3" role="alert">
+          <p className="m-0 text-sm text-danger">{storageError}</p>
+          <button
+            type="button"
+            className="mt-2 rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
+            onClick={dismissStorageError}
+          >
             Dismiss
           </button>
         </div>
@@ -76,8 +80,8 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
       <StatRow specs={entity.derived ?? []} records={visible} />
 
       {canEdit ? (
-        <section className="panel" aria-labelledby="form-title">
-          <h2 id="form-title">
+        <section className="rounded-lg border border-line bg-surface p-6" aria-labelledby="form-title">
+          <h2 id="form-title" className="text-base font-semibold text-ink m-0 mb-4">
             {editing ? `Edit ${entity.label.toLowerCase()}` : `Add a ${entity.label.toLowerCase()}`}
           </h2>
           <RecordForm
@@ -91,16 +95,22 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
       ) : null}
 
       {(searchEnabled || filterSpecs.length > 0) && records.length > 0 ? (
-        <section className="panel row" aria-label={`Narrow ${entity.labelPlural.toLowerCase()}`}>
+        <section
+          className="rounded-lg border border-line bg-surface p-4 flex flex-wrap items-end gap-4"
+          aria-label={`Narrow ${entity.labelPlural.toLowerCase()}`}
+        >
           {searchEnabled ? (
-            <div className="field" style={{ flex: "1 1 220px" }}>
-              <label htmlFor="collection-search">Search</label>
+            <div className="flex-1 min-w-[220px]">
+              <label htmlFor="collection-search" className="block text-sm font-medium text-ink">
+                Search
+              </label>
               <input
                 id="collection-search"
                 type="search"
                 value={query}
                 placeholder={`Search ${entity.labelPlural.toLowerCase()}`}
                 onChange={(event) => setQuery(event.target.value)}
+                className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-soft focus:outline-none sm:text-sm"
               />
             </div>
           ) : null}
@@ -110,7 +120,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
             const id = `filter-${spec.field}`;
             if (mode === "truthy" || mode === "falsy") {
               return (
-                <div className="field field-checkbox" key={spec.field}>
+                <div className="flex items-center gap-3" key={spec.field}>
                   <input
                     id={id}
                     type="checkbox"
@@ -118,18 +128,24 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
                     onChange={(event) =>
                       setChoices((current) => ({ ...current, [spec.field]: event.target.checked ? "on" : "" }))
                     }
+                    className="h-4 w-4 rounded border-line text-accent"
                   />
-                  <label htmlFor={id}>{spec.label}</label>
+                  <label htmlFor={id} className="text-sm font-medium text-ink">
+                    {spec.label}
+                  </label>
                 </div>
               );
             }
             return (
-              <div className="field" key={spec.field} style={{ flex: "0 1 200px" }}>
-                <label htmlFor={id}>{spec.label}</label>
+              <div className="w-[200px]" key={spec.field}>
+                <label htmlFor={id} className="block text-sm font-medium text-ink">
+                  {spec.label}
+                </label>
                 <select
                   id={id}
                   value={choices[spec.field] ?? ""}
                   onChange={(event) => setChoices((current) => ({ ...current, [spec.field]: event.target.value }))}
+                  className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 text-ink focus:outline-none sm:text-sm"
                 >
                   <option value="">All</option>
                   {optionsFor(spec.field).map((option) => (
@@ -144,10 +160,10 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
         </section>
       ) : null}
 
-      <section aria-labelledby="collection-title" className="stack">
-        <h2 id="collection-title">
+      <section aria-labelledby="collection-title" className="flex flex-col gap-4">
+        <h2 id="collection-title" className="text-base font-semibold text-ink m-0">
           {entity.labelPlural}{" "}
-          <span className="muted" style={{ fontWeight: 400, fontSize: "1rem" }}>
+          <span className="font-normal text-base text-ink-soft">
             ({visible.length}
             {visible.length === records.length ? "" : ` of ${records.length}`})
           </span>
@@ -165,7 +181,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
             action={
               <button
                 type="button"
-                className="button"
+                className="rounded-md border border-line bg-surface px-4 py-2 font-semibold text-ink hover:bg-surface-sunk"
                 onClick={() => {
                   setQuery("");
                   setChoices({});
@@ -176,26 +192,28 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
             }
           />
         ) : (
-          <ul className="record-list">
+          <ul className="divide-y divide-line rounded-lg border border-line bg-surface overflow-hidden">
             {visible.map((record: StoredRecord) => (
-              <li className="record" key={record.id}>
-                <span className="record-title">{titleOf(entity, record)}</span>
-                <dl className="record-fields">
-                  {entity.fields
-                    .filter((field) => field.name !== (entity.titleField ?? entity.fields[0]?.name))
-                    .map((field) => (
-                      <div key={field.name}>
-                        <dt>{field.label}</dt>
-                        <dd>{displayValue(record[field.name])}</dd>
-                      </div>
-                    ))}
-                </dl>
+              <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between" key={record.id}>
+                <div className="flex flex-col gap-2">
+                  <span className="font-semibold text-ink">{titleOf(entity, record)}</span>
+                  <dl className="flex flex-col gap-1">
+                    {entity.fields
+                      .filter((field) => field.name !== (entity.titleField ?? entity.fields[0]?.name))
+                      .map((field) => (
+                        <div key={field.name} className="flex flex-wrap gap-2">
+                          <dt className="text-sm text-ink-soft m-0">{field.label}</dt>
+                          <dd className="text-sm text-ink m-0">{displayValue(record[field.name])}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                </div>
 
                 {canEdit ? (
-                  <div className="row">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
-                      className="button"
+                      className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk"
                       onClick={() => setEditingId(record.id)}
                       aria-label={`Edit ${titleOf(entity, record)}`}
                     >
@@ -204,10 +222,10 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
 
                     {confirmingId === record.id ? (
                       <>
-                        <span className="muted">Remove this permanently?</span>
+                        <span className="text-sm text-ink-soft">Remove this permanently?</span>
                         <button
                           type="button"
-                          className="button button-danger"
+                          className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
                           onClick={() => {
                             run(() => repository.remove(record.id));
                             setConfirmingId(null);
@@ -217,14 +235,18 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
                         >
                           Yes, remove
                         </button>
-                        <button type="button" className="button button-quiet" onClick={() => setConfirmingId(null)}>
+                        <button
+                          type="button"
+                          className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
+                          onClick={() => setConfirmingId(null)}
+                        >
                           Keep
                         </button>
                       </>
                     ) : (
                       <button
                         type="button"
-                        className="button button-danger"
+                        className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
                         onClick={() => setConfirmingId(record.id)}
                         aria-label={`Remove ${titleOf(entity, record)}`}
                       >

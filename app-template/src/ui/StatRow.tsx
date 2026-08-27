@@ -5,17 +5,20 @@ import { computeDerived, formatDerived } from "../data/operations.js";
 export function StatRow({ specs, records }: { specs: DerivedSpec[]; records: StoredRecord[] }) {
   if (specs.length === 0) return null;
   return (
-    <div className="stat-row">
+    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {specs.map((spec) => (
-        <div className="stat" key={spec.id}>
-          <span className="stat-label" id={`stat-${spec.id}`}>
+        <div key={spec.id} className="rounded-lg border border-line bg-surface px-4 py-5 sm:px-6">
+          <dt className="text-sm font-medium text-ink-soft" id={`stat-${spec.id}`}>
             {spec.label}
-          </span>
-          <span className="stat-value" aria-labelledby={`stat-${spec.id}`}>
+          </dt>
+          <dd
+            className="mt-1 text-2xl font-semibold tracking-tight text-ink tabular-nums"
+            aria-labelledby={`stat-${spec.id}`}
+          >
             {formatDerived(computeDerived(spec, records))}
-          </span>
+          </dd>
         </div>
       ))}
-    </div>
+    </dl>
   );
 }

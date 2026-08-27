@@ -28,55 +28,91 @@ export function Field({ field, value, error, onChange }: Props) {
     required: field.required,
   } as const;
 
+  const inputClasses =
+    "block w-full rounded-md border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-soft " +
+    "focus:outline-none aria-invalid:border-danger sm:text-sm";
+
   if (field.type === "boolean") {
     return (
-      <div className="field field-checkbox">
+      <div className="flex items-center gap-3">
         <input
           {...shared}
           type="checkbox"
           checked={Boolean(value)}
           onChange={(event) => onChange(event.target.checked)}
+          className="h-4 w-4 rounded border-line text-accent"
         />
-        <label htmlFor={id}>{field.label}</label>
-        {field.help ? <span id={helpId} className="field-help">{field.help}</span> : null}
-        {error ? <span id={errorId} className="field-error">{error}</span> : null}
+        <label htmlFor={id} className="text-sm font-medium text-ink">
+          {field.label}
+        </label>
+        {field.help ? (
+          <span id={helpId} className="text-sm text-ink-soft">
+            {field.help}
+          </span>
+        ) : null}
+        {error ? (
+          <span id={errorId} className="text-sm text-danger">
+            {error}
+          </span>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className={`field${field.type === "longtext" ? " field-wide" : ""}`}>
-      <label htmlFor={id}>
+    <div className={field.type === "longtext" ? "sm:col-span-2" : undefined}>
+      <label htmlFor={id} className="block text-sm font-medium text-ink">
         {field.label}
         {field.required ? <span aria-hidden="true"> *</span> : null}
       </label>
 
-      {field.type === "longtext" ? (
-        <textarea {...shared} value={String(value ?? "")} onChange={(event) => onChange(event.target.value)} />
-      ) : field.type === "select" ? (
-        <select {...shared} value={String(value ?? "")} onChange={(event) => onChange(event.target.value)}>
-          <option value="">Choose {field.label.toLowerCase()}</option>
-          {(field.options ?? []).map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          {...shared}
-          type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-          value={value === null ? "" : String(value)}
-          min={field.min}
-          max={field.max}
-          onChange={(event) =>
-            onChange(field.type === "number" ? (event.target.value === "" ? null : Number(event.target.value)) : event.target.value)
-          }
-        />
-      )}
+      <div className="mt-1">
+        {field.type === "longtext" ? (
+          <textarea
+            {...shared}
+            value={String(value ?? "")}
+            onChange={(event) => onChange(event.target.value)}
+            className={`${inputClasses} min-h-24`}
+          />
+        ) : field.type === "select" ? (
+          <select
+            {...shared}
+            value={String(value ?? "")}
+            onChange={(event) => onChange(event.target.value)}
+            className={inputClasses}
+          >
+            <option value="">Choose {field.label.toLowerCase()}</option>
+            {(field.options ?? []).map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            {...shared}
+            type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+            value={value === null ? "" : String(value)}
+            min={field.min}
+            max={field.max}
+            onChange={(event) =>
+              onChange(field.type === "number" ? (event.target.value === "" ? null : Number(event.target.value)) : event.target.value)
+            }
+            className={inputClasses}
+          />
+        )}
+      </div>
 
-      {field.help ? <span id={helpId} className="field-help">{field.help}</span> : null}
-      {error ? <span id={errorId} className="field-error">{error}</span> : null}
+      {field.help ? (
+        <span id={helpId} className="mt-1 block text-sm text-ink-soft">
+          {field.help}
+        </span>
+      ) : null}
+      {error ? (
+        <span id={errorId} className="mt-1 block text-sm text-danger">
+          {error}
+        </span>
+      ) : null}
     </div>
   );
 }

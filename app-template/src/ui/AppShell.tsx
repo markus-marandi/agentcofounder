@@ -28,35 +28,63 @@ export function AppShell({
     document.title = product.name;
   }, [theme.preset, theme.density, theme.accent, product.name]);
 
+  const isSidebar = layout === "sidebar";
+
   return (
-    <div className={layout === "sidebar" ? "shell shell-sidebar" : "shell"}>
-      <header className="masthead">
-        <div className="row">
+    <div
+      className={
+        isSidebar
+          ? "min-h-screen lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start"
+          : "min-h-screen flex flex-col"
+      }
+    >
+      <header
+        className={
+          isSidebar
+            ? "bg-surface border-b border-line px-4 py-3 sm:px-6 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:flex lg:flex-col"
+            : "bg-surface border-b border-line px-4 py-3 sm:px-6"
+        }
+      >
+        <div className="flex flex-wrap items-center gap-4">
           <div>
-            <p className="masthead-title">{product.name}</p>
-            <p className="masthead-tagline">{product.tagline}</p>
+            <p className="text-base font-bold text-ink m-0">{product.name}</p>
+            <p className="text-sm text-ink-soft m-0">{product.tagline}</p>
           </div>
-          {aside ? <div className="row-end">{aside}</div> : null}
+          {aside ? <div className="ml-auto">{aside}</div> : null}
         </div>
 
         {layout === "single" ? null : (
-          <nav className="nav" aria-label="Sections" style={{ marginTop: "0.75rem" }}>
-            {navigation.map((entry: NavigationSpec) => (
-              <button
-                key={entry.id}
-                type="button"
-                className="nav-link"
-                aria-current={entry.id === current ? "page" : undefined}
-                onClick={() => onNavigate(entry.id)}
-              >
-                {entry.label}
-              </button>
-            ))}
+          <nav
+            className={
+              isSidebar
+                ? "flex flex-wrap gap-2 mt-3 lg:flex-col lg:items-stretch lg:mt-6"
+                : "flex flex-wrap gap-2 mt-3"
+            }
+            aria-label="Sections"
+          >
+            {navigation.map((entry: NavigationSpec) => {
+              const active = entry.id === current;
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={
+                    active
+                      ? "appearance-none border border-line bg-accent-soft text-ink font-semibold px-4 py-2 rounded-md cursor-pointer text-left"
+                      : "appearance-none border border-transparent bg-transparent text-ink-soft font-semibold px-4 py-2 rounded-md cursor-pointer text-left hover:bg-surface-sunk hover:text-ink"
+                  }
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => onNavigate(entry.id)}
+                >
+                  {entry.label}
+                </button>
+              );
+            })}
           </nav>
         )}
       </header>
 
-      <main className="page stack" id="main">
+      <main className="flex-1 flex flex-col gap-6 p-4 sm:p-6 max-w-6xl mx-auto w-full" id="main">
         {children}
       </main>
     </div>

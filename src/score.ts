@@ -195,7 +195,7 @@ export async function staticChecks(appDirectory: string): Promise<Check[]> {
     check(
       "responsive",
       "reach",
-      /@media[^{]*min-width/u.test(everything),
+      /@media[^{]*min-width/u.test(everything) || /\b(?:sm|md|lg|xl|2xl):[a-z-]/u.test(everything),
       "Layout adapts between narrow and wide screens.",
     ),
     check(

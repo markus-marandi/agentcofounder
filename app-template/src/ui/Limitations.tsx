@@ -7,11 +7,14 @@ export function Limitations() {
   const limitations = parameters.features.limitations ?? [];
   if (limitations.length === 0) return null;
   return (
-    <section className="notice" aria-labelledby="limitations-title">
-      <h2 id="limitations-title" style={{ fontSize: "0.95rem" }}>
+    <section
+      className="rounded-md border border-line border-l-4 border-l-accent bg-surface px-6 py-4"
+      aria-labelledby="limitations-title"
+    >
+      <h2 id="limitations-title" className="text-sm font-semibold text-ink m-0">
         What this version does not do
       </h2>
-      <ul className="muted" style={{ margin: 0, paddingLeft: "1.1rem" }}>
+      <ul className="text-ink-soft text-sm m-0 mt-2 pl-5 list-disc">
         {limitations.map((limitation) => (
           <li key={limitation}>{limitation}</li>
         ))}

@@ -5,17 +5,18 @@ import { ErrorBoundary } from "./ErrorBoundary.js";
 
 function Plot({ plot, records, main }: { plot: PlotSpec; records: StoredRecord[]; main?: boolean }) {
   return (
-    <section className={`chart-frame${main ? " dashboard-main" : ""}`} aria-labelledby={`plot-${plot.id}`}>
-      <h3 className="chart-title" id={`plot-${plot.id}`}>
+    <section
+      className={`rounded-lg border border-line bg-surface p-6${main ? " sm:col-span-2 lg:col-span-4" : ""}`}
+      aria-labelledby={`plot-${plot.id}`}
+    >
+      <h3 className="text-sm font-semibold text-ink m-0 mb-2" id={`plot-${plot.id}`}>
         {plot.title}
       </h3>
       <ErrorBoundary label={plot.title}>
         <Chart kind={plot.kind} points={pointsForPlot(plot, records)} title={plot.title} unit={plot.unit} />
       </ErrorBoundary>
       {isIllustrative(plot) ? (
-        <p className="muted" style={{ fontSize: "0.78rem", margin: "0.5rem 0 0" }}>
-          Sample figures, shown to illustrate the layout.
-        </p>
+        <p className="text-xs text-ink-soft mt-2 mb-0">Sample figures, shown to illustrate the layout.</p>
       ) : null}
     </section>
   );
@@ -32,7 +33,7 @@ export function DashboardGrid({
   records: StoredRecord[];
 }) {
   return (
-    <div className="dashboard-grid">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Plot plot={main} records={records} main />
       {sub.map((plot) => (
         <Plot key={plot.id} plot={plot} records={records} />

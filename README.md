@@ -99,11 +99,14 @@ In `app-template/src`, shipped tested and building green with zero model edits.
 | `ui/PrototypeFlow.tsx` | Multi-screen walkthrough that carries state and stores a record |
 | `auth/mockAuth.ts` | Demonstration roles behind the interface a real provider would satisfy |
 | `mock/generators.ts` | Seeded sample data — identical on every run, so it can be asserted |
-| `styles.css`, `themes/` | Semantic classes and ten colour presets, no CSS framework |
+| `styles.css`, `themes/` | Tailwind CSS, styled on Tailwind Plus's Application UI patterns; ten colour presets bridged into Tailwind's theme tokens |
 
-No Tailwind, no charting library, no backend SDK. Every dependency added is an
-install cost on every run and, for a utility-class framework, an output-token
-cost on every element the model writes.
+No charting library, no backend SDK — those would be a real install and
+output-token cost, paid on every run. Tailwind is different: the kernel
+components that use it are prebuilt and committed, never written by the
+model. The model only ever configures `parameters.json`; restyling the
+kernel is a one-time cost paid once, in committed code, exactly like the
+rest of this strategy.
 
 ### Why offline shapes everything
 
