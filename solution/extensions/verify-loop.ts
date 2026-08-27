@@ -2,6 +2,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { spawn } from "node:child_process";
 import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
+import { reclaimAppOwnedPort } from "../../src/port-owner.js";
+import { portHasListener } from "../../src/verify-app.js";
 
 /**
  * Closes the loop on "the model said it was done".
@@ -12,9 +14,13 @@ import path from "node:path";
  * failure back so the agent can repair it inside the same run.
  *
  * It deliberately does not start a development server: the runner owns port
- * 3000, and a listener left behind degrades the result.
+ * 3000, and a listener left behind degrades the result. It does, however,
+ * reclaim a listener the agent leaves running here, so a stray `npm run dev`
+ * process is killed and reported to the agent instead of surviving to the
+ * outer runner's own (audit-flagged) cleanup.
  */
 
+const APP_PORT = 3000;
 const MAX_ATTEMPTS = Number(process.env.LOOP_MAX_ATTEMPTS ?? "3");
 const COMMAND_TIMEOUT_MS = Number(process.env.LOOP_COMMAND_TIMEOUT_MS ?? "120000");
 
@@ -127,36 +133,58 @@ export default function verifyLoop(pi: ExtensionAPI) {
       const problems: string[] = [];
       if (!test.ok) problems.push(`\`npm test\` failed:\n\n${condense(test.output)}`);
       if (!build.ok) problems.push(`\`npm run build\` failed:\n\n${condense(build.output)}`);
+
+      if (await portHasListener(APP_PORT)) {
+        const reclamation = await reclaimAppOwnedPort(APP_PORT, appRoot);
+        problems.push(
+          `A process was still listening on port ${APP_PORT} (${reclamation.diagnostic}). Do not leave \`npm run dev\` or any other server running when you finish — the runner owns that port.`,
+        );
+      }
+
       if (test.ok && build.ok && !claimed) {
         problems.push(
           "Tests and build pass, but `report.partial.json` is missing or does not report `success`. Write it with the shape described in AGENTS.md, listing every user journey you tested in `tests_run`.",
         );
       }
 
-      if (problems.length === 0) {
-        context.ui?.setStatus?.("verify-loop", "tests and build pass");
-        attempts = MAX_ATTEMPTS;
-        return;
-      }
+      try {
+        if (problems.length === 0) {
+          context.ui?.setStatus?.("verify-loop", "tests and build pass");
+          attempts = MAX_ATTEMPTS;
+          return;
+        }
 
-      attempts += 1;
-      const remaining = MAX_ATTEMPTS - attempts;
-      pi.sendMessage(
-        {
-          customType: "verify-loop",
-          content: [
-            `The run is not finished. Verification found ${problems.length === 1 ? "a problem" : `${problems.length} problems`}:`,
-            "",
-            problems.join("\n\n"),
-            "",
-            remaining > 0
-              ? "Fix the cause rather than the symptom, then say you are done again. Do not delete or skip a failing test to make it pass."
-              : "This is the final repair attempt. Fix what you can, then make sure `report.partial.json` reports the outcome honestly — record any journey that still fails as `failed`.",
-          ].join("\n"),
-          display: true,
-        },
-        { deliverAs: "followUp", triggerTurn: true },
-      );
+        attempts += 1;
+        const remaining = MAX_ATTEMPTS - attempts;
+        pi.sendMessage(
+          {
+            customType: "verify-loop",
+            content: [
+              `The run is not finished. Verification found ${problems.length === 1 ? "a problem" : `${problems.length} problems`}:`,
+              "",
+              problems.join("\n\n"),
+              "",
+              remaining > 0
+                ? "Fix the cause rather than the symptom, then say you are done again. Do not delete or skip a failing test to make it pass."
+                : "This is the final repair attempt. Fix what you can, then make sure `report.partial.json` reports the outcome honestly — record any journey that still fails as `failed`.",
+            ].join("\n"),
+            display: true,
+          },
+          { deliverAs: "followUp", triggerTurn: true },
+        );
+      } catch (error) {
+        // The turn that just settled can itself trigger session replacement
+        // (Pi discarding a malformed response and starting over) between our
+        // check running and this call landing. The captured `context`/`pi`
+        // are stale by then and every session-bound call throws; there is no
+        // event-handler-safe way to await settlement first (`ctx.waitForIdle`
+        // is command-only and would deadlock here). Losing this one repair
+        // nudge is safe: the outer runner verifies the app again after Pi
+        // exits regardless.
+        console.warn(
+          `[verify-loop] Could not deliver repair guidance: the session was replaced before this check finished (${String(error)}).`,
+        );
+      }
     } finally {
       checking = false;
     }

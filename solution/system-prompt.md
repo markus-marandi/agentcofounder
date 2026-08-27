@@ -9,7 +9,7 @@ Work autonomously in the current directory. Do not ask clarifying questions. Res
 1. Load the `product-analyzer` skill. It classifies the idea into a build route and specifies exactly what to write into `idea_spec.json` and `parameters.json`.
 2. Load the route skill it selects and follow it.
 3. Run `npm test` and `npm run build`, repairing any failure.
-4. Write `report.partial.json`.
+4. Write `report.partial.json`, with `tests_run` as an array of `{"command": string, "journey": string, "result": "passed" | "failed"}` — one entry per user journey. Any other shape is discarded and counts as zero journeys delivered.
 
 ## Required outcome
 
@@ -29,4 +29,4 @@ Work autonomously in the current directory. Do not ask clarifying questions. Res
 - Do not leave a development server or any background process running.
 - Do not write `result.json`; the runner owns its audited telemetry.
 
-Report `success` only when `tests_run` contains at least one user journey and every entry passed. Use `partial` when any journey failed or was not run.
+Report `success` only when `tests_run` contains at least one entry shaped `{"command", "journey", "result"}` and every entry's `result` is `"passed"`. Use `partial` when any journey failed, was not run, or you are unsure of the required shape.

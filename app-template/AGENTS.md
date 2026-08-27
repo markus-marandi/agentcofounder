@@ -65,9 +65,12 @@ new, and use the theme custom properties rather than literal colours.
 `report.partial.json` contains only `status`, `app_url`, `start_command`,
 `summary`, `implemented_features`, `assumptions`, and `tests_run`.
 
-A `success` report needs at least one `tests_run` entry and every entry must be
-`passed`. If a journey failed or was not run, record it as `failed`, say why in
-`journey`, and use `partial` — or `failed` when the app cannot run.
+Each `tests_run` entry is `{"command": string, "journey": string, "result": "passed" | "failed"}` — no other field names. An entry with any other shape is discarded and does not count.
+
+A `success` report needs at least one `tests_run` entry and every entry's
+`result` must be `"passed"`. If a journey failed or was not run, record it as
+`"failed"`, say why in `journey`, and use `partial` — or `failed` when the app
+cannot run.
 
 The runner owns the final `app_url`, the location-aware `start_command`,
 `harness_checks`, and all telemetry.
