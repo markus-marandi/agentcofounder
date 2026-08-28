@@ -3,14 +3,18 @@ import {
   Dialog,
   DialogBackdrop,
   DialogPanel,
+  DialogTitle,
   Menu,
   MenuButton,
   MenuItem,
   MenuItems,
+  Transition,
   TransitionChild,
 } from "@headlessui/react";
 import {
   ChartBarSquareIcon,
+  CheckIcon,
+  CheckCircleIcon,
   Cog6ToothIcon,
   FolderIcon,
   GlobeAltIcon,
@@ -43,7 +47,12 @@ import { ButtonGroup } from "../ButtonGroup.js";
  * Built out per docs/tailwind-plus-catalog/: the KPI row is data-display/
  * stats "With trending", and the activity feed is lists/feeds "Simple with
  * icons" (re-themed onto push events instead of job-application events).
- * Both were dependency-free and asset-free in the catalog, so no new
+ * "Projects" in the sidebar switches to a real second section — lists/
+ * tables "Simple", re-themed onto the same project names as the deployments
+ * list. Clicking "New deployment" chains overlays/modal-dialogs "Centered
+ * with single action" (adapted from a generic success notice to a
+ * deployment-started one) into overlays/notifications "Simple" on dismiss.
+ * All four were dependency-free and asset-free in the catalog, so no new
  * adaptation concerns beyond the usual token remap.
  *
  * The deployments/stats/activity content is illustrative sample data, same
@@ -221,6 +230,65 @@ const activityItems = [
   { user: "Whitney Francis", projectName: "ios-app", commit: "5c1fd07f", branch: "main", date: "2w", dateTime: "2023-01-09T08:45" },
 ];
 
+/** Vendored from Tailwind Plus lists/tables, "Simple" — re-themed onto the same projects as `deployments` above. */
+const projects = [
+  { name: "ios-app", team: "Planetaria", owner: "Michael Foster", environment: "Preview" },
+  { name: "mobile-api", team: "Planetaria", owner: "Lindsay Walton", environment: "Production" },
+  { name: "tailwindcss.com", team: "Tailwind Labs", owner: "Courtney Henry", environment: "Preview" },
+  { name: "company-website", team: "Tailwind Labs", owner: "Courtney Henry", environment: "Preview" },
+  { name: "relay-service", team: "Protocol", owner: "Michael Foster", environment: "Production" },
+  { name: "android-app", team: "Planetaria", owner: "Michael Foster", environment: "Preview" },
+  { name: "api.protocol.chat", team: "Protocol", owner: "Courtney Henry", environment: "Preview" },
+  { name: "planetaria.tech", team: "Planetaria", owner: "Whitney Francis", environment: "Preview" },
+];
+
+function ProjectsTable() {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-line">
+        <thead>
+          <tr>
+            <th scope="col" className="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-ink sm:pl-6 lg:pl-8">
+              Project
+            </th>
+            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-ink">
+              Team
+            </th>
+            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-ink">
+              Owner
+            </th>
+            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-ink">
+              Environment
+            </th>
+            <th scope="col" className="py-3.5 pr-4 pl-3 sm:pr-6 lg:pr-8">
+              <span className="sr-only">Edit</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {projects.map((project) => (
+            <tr key={project.name}>
+              <td className="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-ink sm:pl-6 lg:pl-8">
+                {project.name}
+              </td>
+              <td className="px-3 py-4 text-sm whitespace-nowrap text-ink-soft">{project.team}</td>
+              <td className="px-3 py-4 text-sm whitespace-nowrap text-ink-soft">{project.owner}</td>
+              <td className="px-3 py-4 text-sm whitespace-nowrap">
+                <Badge tone={project.environment === "Production" ? "accent" : "neutral"}>{project.environment}</Badge>
+              </td>
+              <td className="py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6 lg:pr-8">
+                <a href="#" className="text-accent hover:brightness-110">
+                  Edit<span className="sr-only">, {project.name}</span>
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Logo() {
   return (
     <div className="flex h-16 shrink-0 items-center gap-2">
@@ -232,32 +300,51 @@ function Logo() {
   );
 }
 
-function SidebarNav({ otherViews, onNavigate }: ShowcaseBlockProps) {
+type Section = "deployments" | "projects";
+
+const SECTION_BY_NAV_NAME: Partial<Record<string, Section>> = {
+  Deployments: "deployments",
+  Projects: "projects",
+};
+
+function SidebarNav({
+  otherViews,
+  onNavigate,
+  section,
+  onSelectSection,
+}: ShowcaseBlockProps & { section: Section; onSelectSection: (section: Section) => void }) {
   return (
     <nav className="relative flex flex-1 flex-col">
       <ul role="list" className="flex flex-1 flex-col gap-y-7">
         <li>
           <ul role="list" className="-mx-2 space-y-1">
-            {navigation.map((item) => (
-              <li key={item.name}>
-                <a
-                  href={item.href}
-                  className={classNames(
-                    item.current ? "bg-surface text-accent" : "text-ink-soft hover:bg-surface hover:text-accent",
-                    "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold",
+            {navigation.map((item) => {
+              const linkedSection = SECTION_BY_NAV_NAME[item.name];
+              const active = linkedSection ? section === linkedSection : item.current;
+              const itemClassName = classNames(
+                active ? "bg-surface text-accent" : "text-ink-soft hover:bg-surface hover:text-accent",
+                "group flex w-full gap-x-3 rounded-md p-2 text-left text-sm/6 font-semibold",
+              );
+              const iconClassName = classNames(
+                active ? "text-accent" : "text-ink-soft group-hover:text-accent",
+                "size-6 shrink-0",
+              );
+              return (
+                <li key={item.name}>
+                  {linkedSection ? (
+                    <button type="button" onClick={() => onSelectSection(linkedSection)} className={itemClassName}>
+                      <item.icon aria-hidden="true" className={iconClassName} />
+                      {item.name}
+                    </button>
+                  ) : (
+                    <a href={item.href} className={itemClassName}>
+                      <item.icon aria-hidden="true" className={iconClassName} />
+                      {item.name}
+                    </a>
                   )}
-                >
-                  <item.icon
-                    aria-hidden="true"
-                    className={classNames(
-                      item.current ? "text-accent" : "text-ink-soft group-hover:text-accent",
-                      "size-6 shrink-0",
-                    )}
-                  />
-                  {item.name}
-                </a>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </li>
         <li>
@@ -321,6 +408,14 @@ const FEED_RANGES = ["24h", "7d", "30d"];
 export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [feedRange, setFeedRange] = useState(FEED_RANGES[0]);
+  const [section, setSection] = useState<Section>("deployments");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
+
+  const finishAction = (): void => {
+    setModalOpen(false);
+    setToastOpen(true);
+  };
 
   return (
     <div>
@@ -346,7 +441,7 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
 
             <div className="relative flex grow flex-col gap-y-5 overflow-y-auto bg-surface-sunk px-6">
               <Logo />
-              <SidebarNav otherViews={otherViews} onNavigate={onNavigate} />
+              <SidebarNav otherViews={otherViews} onNavigate={onNavigate} section={section} onSelectSection={setSection} />
             </div>
           </DialogPanel>
         </div>
@@ -355,7 +450,7 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
       <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-72 xl:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-surface-sunk px-6 ring-1 ring-line">
           <Logo />
-          <SidebarNav otherViews={otherViews} onNavigate={onNavigate} />
+          <SidebarNav otherViews={otherViews} onNavigate={onNavigate} section={section} onSelectSection={setSection} />
         </div>
       </div>
 
@@ -392,7 +487,9 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
 
         <main className="lg:pr-96">
           <header className="flex items-center justify-between border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-            <h1 className="text-base/7 font-semibold text-ink">Deployments</h1>
+            <h1 className="text-base/7 font-semibold text-ink">
+              {section === "deployments" ? "Deployments" : "Projects"}
+            </h1>
 
             <div className="flex items-center gap-x-4">
               <Menu as="div" className="relative">
@@ -421,42 +518,48 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                 </MenuItem>
               </MenuItems>
               </Menu>
-              <Button size="sm">New deployment</Button>
+              <Button size="sm" onClick={() => setModalOpen(true)}>
+                {section === "deployments" ? "New deployment" : "New project"}
+              </Button>
             </div>
           </header>
 
-          <ul role="list" className="divide-y divide-line">
-            {deployments.map((deployment) => (
-              <li key={deployment.id} className="relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8">
-                <div className="min-w-0 flex-auto">
-                  <div className="flex items-center gap-x-3">
-                    <div className={classNames(statuses[deployment.status], "flex-none rounded-full p-1")}>
-                      <div className="size-2 rounded-full bg-current" />
+          {section === "deployments" ? (
+            <ul role="list" className="divide-y divide-line">
+              {deployments.map((deployment) => (
+                <li key={deployment.id} className="relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8">
+                  <div className="min-w-0 flex-auto">
+                    <div className="flex items-center gap-x-3">
+                      <div className={classNames(statuses[deployment.status], "flex-none rounded-full p-1")}>
+                        <div className="size-2 rounded-full bg-current" />
+                      </div>
+                      <h2 className="min-w-0 text-sm/6 font-semibold text-ink">
+                        <a href={deployment.href} className="flex gap-x-2">
+                          <span className="truncate">{deployment.teamName}</span>
+                          <span className="text-ink-soft">/</span>
+                          <span className="whitespace-nowrap">{deployment.projectName}</span>
+                          <span className="absolute inset-0" />
+                        </a>
+                      </h2>
                     </div>
-                    <h2 className="min-w-0 text-sm/6 font-semibold text-ink">
-                      <a href={deployment.href} className="flex gap-x-2">
-                        <span className="truncate">{deployment.teamName}</span>
-                        <span className="text-ink-soft">/</span>
-                        <span className="whitespace-nowrap">{deployment.projectName}</span>
-                        <span className="absolute inset-0" />
-                      </a>
-                    </h2>
+                    <div className="mt-3 flex items-center gap-x-2.5 text-xs/5 text-ink-soft">
+                      <p className="truncate">{deployment.description}</p>
+                      <svg viewBox="0 0 2 2" className="size-0.5 flex-none fill-line">
+                        <circle r={1} cx={1} cy={1} />
+                      </svg>
+                      <p className="whitespace-nowrap">{deployment.statusText}</p>
+                    </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-x-2.5 text-xs/5 text-ink-soft">
-                    <p className="truncate">{deployment.description}</p>
-                    <svg viewBox="0 0 2 2" className="size-0.5 flex-none fill-line">
-                      <circle r={1} cx={1} cy={1} />
-                    </svg>
-                    <p className="whitespace-nowrap">{deployment.statusText}</p>
-                  </div>
-                </div>
-                <Badge tone={deployment.environment === "Production" ? "accent" : "neutral"}>
-                  {deployment.environment}
-                </Badge>
-                <ChevronRightIcon aria-hidden="true" className="size-5 flex-none text-ink-soft" />
-              </li>
-            ))}
-          </ul>
+                  <Badge tone={deployment.environment === "Production" ? "accent" : "neutral"}>
+                    {deployment.environment}
+                  </Badge>
+                  <ChevronRightIcon aria-hidden="true" className="size-5 flex-none text-ink-soft" />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ProjectsTable />
+          )}
         </main>
 
         <aside className="bg-surface-sunk lg:fixed lg:top-16 lg:right-0 lg:bottom-0 lg:w-96 lg:overflow-y-auto lg:border-l lg:border-line">
@@ -498,6 +601,78 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
           </ul>
           <p className="px-4 py-4 text-xs text-ink-soft sm:px-6 lg:px-8">Sample figures, shown to illustrate the layout.</p>
         </aside>
+      </div>
+
+      <Dialog open={modalOpen} onClose={setModalOpen} className="relative z-50">
+        <DialogBackdrop
+          transition
+          className="fixed inset-0 bg-ink/50 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
+        />
+        <div className="fixed inset-0 z-50 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <DialogPanel
+              transition
+              className="relative transform overflow-hidden rounded-lg bg-surface px-4 pt-5 pb-4 text-left shadow-xl transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-sm sm:p-6"
+            >
+              <div>
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-ok/10">
+                  <CheckIcon aria-hidden="true" className="size-6 text-ok" />
+                </div>
+                <div className="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" className="text-base font-semibold text-ink">
+                    {section === "deployments" ? "Deployment started" : "Project created"}
+                  </DialogTitle>
+                  <div className="mt-2">
+                    <p className="text-sm text-ink-soft">
+                      {section === "deployments"
+                        ? "Illustrative only — no build actually runs here. In a real app this would kick off the deploy pipeline."
+                        : "Illustrative only — no project is actually created here."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-5 sm:mt-6">
+                <Button size="md" onClick={finishAction} className="inline-flex w-full justify-center">
+                  Done
+                </Button>
+              </div>
+            </DialogPanel>
+          </div>
+        </div>
+      </Dialog>
+
+      <div aria-live="assertive" className="pointer-events-none fixed inset-0 z-50 flex items-end px-4 py-6 sm:items-start sm:p-6">
+        <div className="flex w-full flex-col items-center space-y-4 sm:items-end">
+          <Transition show={toastOpen}>
+            <div className="pointer-events-auto w-full max-w-sm rounded-lg bg-surface shadow-lg outline outline-line transition data-closed:opacity-0 data-enter:transform data-enter:duration-300 data-enter:ease-out data-closed:data-enter:translate-y-2 data-leave:duration-100 data-leave:ease-in data-closed:data-enter:sm:translate-x-2 data-closed:data-enter:sm:translate-y-0">
+              <div className="p-4">
+                <div className="flex items-start">
+                  <div className="shrink-0">
+                    <CheckCircleIcon aria-hidden="true" className="size-6 text-ok" />
+                  </div>
+                  <div className="ml-3 w-0 flex-1 pt-0.5">
+                    <p className="text-sm font-medium text-ink">
+                      {section === "deployments" ? "Deployment triggered" : "Project created"}
+                    </p>
+                    <p className="mt-1 text-sm text-ink-soft">
+                      {section === "deployments" ? "You'll see it appear in the list above shortly." : "It now shows up in the table above."}
+                    </p>
+                  </div>
+                  <div className="ml-4 flex shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setToastOpen(false)}
+                      className="inline-flex rounded-md text-ink-soft hover:text-ink focus:outline-2 focus:outline-offset-2 focus:outline-accent"
+                    >
+                      <span className="sr-only">Close</span>
+                      <XMarkIcon aria-hidden="true" className="size-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Transition>
+        </div>
       </div>
     </div>
   );
