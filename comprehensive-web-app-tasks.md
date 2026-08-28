@@ -67,16 +67,33 @@ restyled once, in committed code, not per run. The rules that still apply:
 
 Source: https://tailwindcss.com/plus/ui-blocks/application-ui/page-examples/home-screens
 
-- [ ] Pull markup from the Application UI "Home screens" page examples (logged
-  in to Tailwind Plus) as the basis for `DashboardGrid`/`AppShell` layouts.
-- [ ] Vendor the block markup into the kernel's committed components — the
+- [x] Pull markup from the Application UI "Home screens" page examples (logged
+  in to Tailwind Plus) as the basis for a showcase page — done for the
+  "Sidebar" example (`app-template/src/ui/blocks/HomeScreenSidebar.tsx`).
+- [x] Vendor the block markup into the kernel's committed components — the
   model still only ever edits `parameters.json`; it never fetches or pastes
-  Tailwind Plus markup itself.
-- [ ] Gate each dashboard block behind a `parameters.json`-driven flag so a
-  product idea activates/disables sections (stats row, activity feed, chart
-  panel, table) without any component code changing.
-- [ ] Re-run the audit of `app-template/src/ui/*` first to see which existing
-  components a given block replaces vs. extends, before adding new ones.
+  Tailwind Plus markup itself. Implemented as a new `navigation[].kind:
+  "showcase"` plus `parameters.showcase.blocks[]` (an id array), resolved
+  through `app-template/src/ui/blocks/registry.ts` — this is the activation
+  surface, documented in `app-template/src/ui/blocks/README.md`.
+- [ ] Gate finer-grained *sections within* a block (stats row, activity feed,
+  table) individually, not just whole blocks on/off. Not done — the first
+  block is one unit; revisit once a second, more modular block exists.
+- [x] Audited `app-template/src/ui/*` before adding new ones — see
+  `app-template/COMPONENTS.md`. The showcase block is a full page (its own
+  nav/header), so it replaces `AppShell` for that route rather than reusing
+  `DashboardGrid`; it doesn't touch the existing 10 audited components.
+- [ ] The block's deployments/activity content is illustrative sample data,
+  same convention as `DashboardGrid`'s mock plots — not wired to
+  `useRepository`/`entities` yet. Next real step before this is more than a
+  visual spike.
+- [ ] Catalog of the other ~45 Application UI subcategories (one canonical
+  example each, not all 400+ style variants — confirmed that scope with
+  Markus after finding the real count) is running as background research
+  agents into `docs/tailwind-plus-catalog/*.md`. That catalog is the backlog
+  for the next blocks to vendor, with the same adaptation pass every time
+  (theme tokens instead of literal `indigo`/`gray`, no `dark:`, offline-safe
+  assets, cross-navigation wired) — not a bulk unreviewed dump.
 
 ### Adopt Tailwind's official color palette
 
