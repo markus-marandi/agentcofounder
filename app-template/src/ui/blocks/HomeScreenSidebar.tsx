@@ -18,7 +18,13 @@ import {
   SignalIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { Bars3Icon, ChevronRightIcon, ChevronUpDownIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
+import {
+  ArrowUpTrayIcon,
+  Bars3Icon,
+  ChevronRightIcon,
+  ChevronUpDownIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/20/solid";
 import { parameters } from "../../kernel/config.js";
 import type { ShowcaseBlockProps } from "../../kernel/types.js";
 
@@ -29,9 +35,17 @@ import type { ShowcaseBlockProps } from "../../kernel/types.js";
  * (no Unsplash/tailwindcss.com asset URLs — initials instead of photos, an
  * inline monogram instead of the fetched logo), theme-token colours instead
  * of literal `indigo`/`gray`, and no `dark:` variants (this app has no dark
- * mode toggle). The deployments/activity content is illustrative sample
- * data, same convention as DashboardGrid's mock plots — it is not wired to
- * the repository yet.
+ * mode toggle).
+ *
+ * Built out per docs/tailwind-plus-catalog/: the KPI row is data-display/
+ * stats "With trending", and the activity feed is lists/feeds "Simple with
+ * icons" (re-themed onto push events instead of job-application events).
+ * Both were dependency-free and asset-free in the catalog, so no new
+ * adaptation concerns beyond the usual token remap.
+ *
+ * The deployments/stats/activity content is illustrative sample data, same
+ * convention as DashboardGrid's mock plots — it is not wired to the
+ * repository yet.
  */
 
 function classNames(...classes: Array<string | false | undefined>): string {
@@ -54,6 +68,38 @@ function Avatar({ name, size = "size-6" }: { name: string; size?: string }) {
     >
       {initials(name)}
     </span>
+  );
+}
+
+/** Vendored from Tailwind Plus data-display/stats, "With trending". */
+const stats = [
+  { name: "Deployments today", value: "12", change: "+8.3%", changeType: "positive" },
+  { name: "Failed builds", value: "1", change: "-50.0%", changeType: "positive" },
+  { name: "Avg build time", value: "2m 14s", change: "+4.1%", changeType: "negative" },
+  { name: "Active projects", value: "8", change: "+12.5%", changeType: "positive" },
+];
+
+function StatsRow() {
+  return (
+    <dl className="grid grid-cols-1 gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => (
+        <div
+          key={stat.name}
+          className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-surface px-4 py-6 sm:px-6"
+        >
+          <dt className="text-sm/6 font-medium text-ink-soft">{stat.name}</dt>
+          <dd
+            className={classNames(
+              stat.changeType === "negative" ? "text-danger" : "text-ink-soft",
+              "text-xs font-medium",
+            )}
+          >
+            {stat.change}
+          </dd>
+          <dd className="w-full flex-none text-2xl/9 font-semibold tracking-tight text-ink">{stat.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -339,6 +385,10 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
           </div>
         </div>
 
+        <div className="lg:pr-96">
+          <StatsRow />
+        </div>
+
         <main className="lg:pr-96">
           <header className="flex items-center justify-between border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             <h1 className="text-base/7 font-semibold text-ink">Deployments</h1>
@@ -412,20 +462,30 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
               View all
             </a>
           </header>
-          <ul role="list" className="divide-y divide-line">
-            {activityItems.map((item) => (
-              <li key={item.commit} className="px-4 py-4 sm:px-6 lg:px-8">
-                <div className="flex items-center gap-x-3">
-                  <Avatar name={item.user} />
-                  <h3 className="flex-auto truncate text-sm/6 font-semibold text-ink">{item.user}</h3>
-                  <time dateTime={item.dateTime} className="flex-none text-xs text-ink-soft">
-                    {item.date}
-                  </time>
+          <ul role="list" className="-mb-8 px-4 py-4 sm:px-6 lg:px-8">
+            {activityItems.map((item, index) => (
+              <li key={item.commit}>
+                <div className="relative pb-8">
+                  {index !== activityItems.length - 1 ? (
+                    <span aria-hidden="true" className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-line" />
+                  ) : null}
+                  <div className="relative flex space-x-3">
+                    <span className="flex size-8 flex-none items-center justify-center rounded-full bg-accent ring-8 ring-surface-sunk">
+                      <ArrowUpTrayIcon aria-hidden="true" className="size-4 text-accent-ink" />
+                    </span>
+                    <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                      <p className="text-sm text-ink-soft">
+                        <span className="font-medium text-ink">{item.user}</span> pushed to{" "}
+                        <span className="text-ink">{item.projectName}</span> (
+                        <span className="font-mono text-ink">{item.commit}</span> on{" "}
+                        <span className="text-ink">{item.branch}</span>)
+                      </p>
+                      <time dateTime={item.dateTime} className="flex-none text-xs whitespace-nowrap text-ink-soft">
+                        {item.date}
+                      </time>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-3 truncate text-sm text-ink-soft">
-                  Pushed to <span className="text-ink">{item.projectName}</span> (
-                  <span className="font-mono text-ink">{item.commit}</span> on <span className="text-ink">{item.branch}</span>)
-                </p>
               </li>
             ))}
           </ul>
