@@ -33,4 +33,8 @@ of `AppShell`, not inside it (see the `kind === "showcase"` branch in
 
 | id | Source | Notes |
 |---|---|---|
-| `home-screen-sidebar` | [Application UI → Page Examples → Home Screens, "Sidebar"](https://tailwindcss.com/plus/ui-blocks/application-ui/page-examples/home-screens) | Deployments list + activity feed content is illustrative sample data, not wired to the repository yet |
+| `home-screen-sidebar` | [Home Screens, "Sidebar"](https://tailwindcss.com/plus/ui-blocks/application-ui/page-examples/home-screens) plus Stats, Feeds, Tables, Modal Dialogs, Notifications, Alerts, Tabs, Breadcrumbs, Progress Bars, Dropdowns, and Avatars — see `docs/tailwind-plus-catalog/` for each one's exact variant | All illustrative sample data, not wired to the repository yet |
+
+Alert/Badge/Breadcrumbs/Button/ButtonGroup/Card/Dropdown/Tabs are generic
+enough that they live as shared primitives in `../` (one level up) rather
+than in this directory — this block imports them like anything else in `ui/`.

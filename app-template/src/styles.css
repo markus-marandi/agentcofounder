@@ -19,6 +19,8 @@
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-ok: var(--ok);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
   --radius-DEFAULT: var(--radius);
   --font-sans: var(--font);
 }
@@ -44,10 +46,12 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: var(--font);
-  /* red-600 / red-50 / emerald-700 — tailwindcss.com/docs/colors */
+  /* red-600 / red-50 / emerald-700 / amber-800 / amber-50 — tailwindcss.com/docs/colors */
   --danger: #e7000b;
   --danger-soft: #fef2f2;
   --ok: #007a55;
+  --warning: #973c00;
+  --warning-soft: #fffbeb;
 }
 
 [data-density="compact"] {

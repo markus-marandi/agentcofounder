@@ -31,9 +31,13 @@ import {
 } from "@heroicons/react/20/solid";
 import { parameters } from "../../kernel/config.js";
 import type { ShowcaseBlockProps } from "../../kernel/types.js";
+import { Alert } from "../Alert.js";
 import { Badge } from "../Badge.js";
+import { Breadcrumbs } from "../Breadcrumbs.js";
 import { Button } from "../Button.js";
 import { ButtonGroup } from "../ButtonGroup.js";
+import { Dropdown } from "../Dropdown.js";
+import { Tabs } from "../Tabs.js";
 
 /**
  * Vendored from Tailwind Plus (tailwindcss.com/plus/ui-blocks/application-ui/
@@ -52,8 +56,20 @@ import { ButtonGroup } from "../ButtonGroup.js";
  * list. Clicking "New deployment" chains overlays/modal-dialogs "Centered
  * with single action" (adapted from a generic success notice to a
  * deployment-started one) into overlays/notifications "Simple" on dismiss.
- * All four were dependency-free and asset-free in the catalog, so no new
- * adaptation concerns beyond the usual token remap.
+ * Also: feedback/alerts "With description" (warning banner, shown when a
+ * deployment has failed — new `--warning`/`--warning-soft` tokens added to
+ * styles.css since none of the existing four fit), navigation/tabs "Tabs
+ * with underline" (environment filter on the deployments list),
+ * navigation/breadcrumbs "Contained", navigation/progress-bars "Simple"
+ * (repurposed from a form-wizard stepper into a deploy-pipeline tracker for
+ * the one in-progress deployment), elements/dropdowns "Simple" (per-row
+ * "more actions" menu — trigger swapped for an icon-only ellipsis button),
+ * and elements/avatars "Avatar group stacked bottom to top" (photo `<img>`s
+ * swapped for the initials `Avatar` already used elsewhere in this file).
+ * All were dependency-free and asset-free in the catalog (avatars aside,
+ * which was always going to need the initials swap), so no new adaptation
+ * concerns beyond the usual token remap. Alert/Tabs/Breadcrumbs/Dropdown
+ * are generic enough to live as shared primitives in ../ rather than here.
  *
  * The deployments/stats/activity content is illustrative sample data, same
  * convention as DashboardGrid's mock plots — it is not wired to the
@@ -80,6 +96,24 @@ function Avatar({ name, size = "size-6" }: { name: string; size?: string }) {
     >
       {initials(name)}
     </span>
+  );
+}
+
+/** Vendored from Tailwind Plus elements/avatars, "Avatar group stacked bottom to top" — photo `<img>`s swapped for initials. */
+function AvatarStack({ names }: { names: string[] }) {
+  return (
+    <div className="flex -space-x-1 overflow-hidden" title={names.join(", ")}>
+      {names.map((name) => (
+        <span
+          key={name}
+          className="inline-flex size-6 flex-none items-center justify-center rounded-full bg-accent-soft text-[0.625rem] font-medium text-accent ring-2 ring-surface"
+          aria-hidden="true"
+        >
+          {initials(name)}
+        </span>
+      ))}
+      <span className="sr-only">{names.join(", ")}</span>
+    </div>
   );
 }
 
@@ -232,15 +266,53 @@ const activityItems = [
 
 /** Vendored from Tailwind Plus lists/tables, "Simple" — re-themed onto the same projects as `deployments` above. */
 const projects = [
-  { name: "ios-app", team: "Planetaria", owner: "Michael Foster", environment: "Preview" },
-  { name: "mobile-api", team: "Planetaria", owner: "Lindsay Walton", environment: "Production" },
-  { name: "tailwindcss.com", team: "Tailwind Labs", owner: "Courtney Henry", environment: "Preview" },
-  { name: "company-website", team: "Tailwind Labs", owner: "Courtney Henry", environment: "Preview" },
-  { name: "relay-service", team: "Protocol", owner: "Michael Foster", environment: "Production" },
-  { name: "android-app", team: "Planetaria", owner: "Michael Foster", environment: "Preview" },
-  { name: "api.protocol.chat", team: "Protocol", owner: "Courtney Henry", environment: "Preview" },
-  { name: "planetaria.tech", team: "Planetaria", owner: "Whitney Francis", environment: "Preview" },
+  { name: "ios-app", team: "Planetaria", owner: "Michael Foster", collaborators: ["Michael Foster", "Whitney Francis"], environment: "Preview" },
+  { name: "mobile-api", team: "Planetaria", owner: "Lindsay Walton", collaborators: ["Lindsay Walton", "Michael Foster"], environment: "Production" },
+  { name: "tailwindcss.com", team: "Tailwind Labs", owner: "Courtney Henry", collaborators: ["Courtney Henry"], environment: "Preview" },
+  { name: "company-website", team: "Tailwind Labs", owner: "Courtney Henry", collaborators: ["Courtney Henry", "Whitney Francis"], environment: "Preview" },
+  { name: "relay-service", team: "Protocol", owner: "Michael Foster", collaborators: ["Michael Foster", "Courtney Henry"], environment: "Production" },
+  { name: "android-app", team: "Planetaria", owner: "Michael Foster", collaborators: ["Michael Foster"], environment: "Preview" },
+  { name: "api.protocol.chat", team: "Protocol", owner: "Courtney Henry", collaborators: ["Courtney Henry", "Michael Foster"], environment: "Preview" },
+  { name: "planetaria.tech", team: "Planetaria", owner: "Whitney Francis", collaborators: ["Whitney Francis", "Lindsay Walton"], environment: "Preview" },
 ];
+
+const PROJECT_ROW_ACTIONS = ["View details", "Duplicate", "Archive"];
+const DEPLOYMENT_ROW_ACTIONS = ["View logs", "Redeploy", "Roll back"];
+const ENVIRONMENT_FILTERS = ["All", "Preview", "Production"];
+
+/** Vendored from Tailwind Plus navigation/progress-bars, "Simple" — a form-wizard stepper repurposed as a deploy pipeline. */
+const DEPLOY_PIPELINE = [
+  { id: "Stage 1", name: "Build", status: "complete" },
+  { id: "Stage 2", name: "Test", status: "current" },
+  { id: "Stage 3", name: "Deploy", status: "upcoming" },
+] as const;
+
+function DeployPipeline({ projectName }: { projectName: string }) {
+  return (
+    <div className="border-b border-line px-4 py-4 sm:px-6 lg:px-8">
+      <p className="mb-3 text-xs font-semibold text-ink-soft">In progress: {projectName}</p>
+      <nav aria-label="Deploy pipeline">
+        <ol role="list" className="space-y-3 md:flex md:space-y-0 md:space-x-8">
+          {DEPLOY_PIPELINE.map((step) => (
+            <li key={step.name} className="md:flex-1">
+              <div
+                className={classNames(
+                  step.status === "upcoming" ? "border-line" : "border-accent",
+                  "flex flex-col border-l-4 py-1 pl-4 md:border-t-4 md:border-l-0 md:pt-3 md:pb-0 md:pl-0",
+                )}
+              >
+                <span className={classNames(step.status === "upcoming" ? "text-ink-soft" : "text-accent", "text-xs font-medium")}>
+                  {step.id}
+                </span>
+                <span className="text-sm font-medium text-ink">{step.name}</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </div>
+  );
+}
 
 function ProjectsTable() {
   return (
@@ -258,10 +330,13 @@ function ProjectsTable() {
               Owner
             </th>
             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-ink">
+              Collaborators
+            </th>
+            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-ink">
               Environment
             </th>
             <th scope="col" className="py-3.5 pr-4 pl-3 sm:pr-6 lg:pr-8">
-              <span className="sr-only">Edit</span>
+              <span className="sr-only">Actions</span>
             </th>
           </tr>
         </thead>
@@ -274,12 +349,16 @@ function ProjectsTable() {
               <td className="px-3 py-4 text-sm whitespace-nowrap text-ink-soft">{project.team}</td>
               <td className="px-3 py-4 text-sm whitespace-nowrap text-ink-soft">{project.owner}</td>
               <td className="px-3 py-4 text-sm whitespace-nowrap">
+                <AvatarStack names={project.collaborators} />
+              </td>
+              <td className="px-3 py-4 text-sm whitespace-nowrap">
                 <Badge tone={project.environment === "Production" ? "accent" : "neutral"}>{project.environment}</Badge>
               </td>
               <td className="py-4 pr-4 pl-3 text-right text-sm font-medium whitespace-nowrap sm:pr-6 lg:pr-8">
-                <a href="#" className="text-accent hover:brightness-110">
-                  Edit<span className="sr-only">, {project.name}</span>
-                </a>
+                <Dropdown
+                  label={`Actions for ${project.name}`}
+                  options={PROJECT_ROW_ACTIONS.map((label) => ({ label, onClick: () => {} }))}
+                />
               </td>
             </tr>
           ))}
@@ -411,6 +490,12 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
   const [section, setSection] = useState<Section>("deployments");
   const [modalOpen, setModalOpen] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
+  const [envFilter, setEnvFilter] = useState(ENVIRONMENT_FILTERS[0]);
+
+  const failedDeployments = deployments.filter((deployment) => deployment.status === "error");
+  const inProgressDeployment = deployments.find((deployment) => deployment.status === "offline");
+  const visibleDeployments =
+    envFilter === "All" ? deployments : deployments.filter((deployment) => deployment.environment === envFilter);
 
   const finishAction = (): void => {
     setModalOpen(false);
@@ -485,6 +570,12 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
           <StatsRow />
         </div>
 
+        <div className="pt-4 pr-4 pl-4 sm:pr-6 sm:pl-6 lg:pr-96 lg:pl-8">
+          <Breadcrumbs
+            items={[{ label: parameters.product.name, href: "#" }, { label: section === "deployments" ? "Deployments" : "Projects" }]}
+          />
+        </div>
+
         <main className="lg:pr-96">
           <header className="flex items-center justify-between border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             <h1 className="text-base/7 font-semibold text-ink">
@@ -524,9 +615,30 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
             </div>
           </header>
 
+          {section === "deployments" && failedDeployments.length > 0 ? (
+            <div className="px-4 pt-4 sm:px-6 lg:px-8">
+              <Alert tone="warning" title="Attention needed">
+                <p>
+                  {failedDeployments.length} deployment{failedDeployments.length === 1 ? "" : "s"} failed recently
+                  {failedDeployments.length === 1 ? `: ${failedDeployments[0].teamName} / ${failedDeployments[0].projectName}.` : "."}
+                </p>
+              </Alert>
+            </div>
+          ) : null}
+
+          {section === "deployments" && inProgressDeployment ? (
+            <DeployPipeline projectName={`${inProgressDeployment.teamName} / ${inProgressDeployment.projectName}`} />
+          ) : null}
+
+          {section === "deployments" ? (
+            <div className="px-4 pt-4 sm:px-6 lg:px-8">
+              <Tabs label="Filter by environment" options={ENVIRONMENT_FILTERS} value={envFilter} onChange={setEnvFilter} />
+            </div>
+          ) : null}
+
           {section === "deployments" ? (
             <ul role="list" className="divide-y divide-line">
-              {deployments.map((deployment) => (
+              {visibleDeployments.map((deployment) => (
                 <li key={deployment.id} className="relative flex items-center space-x-4 px-4 py-4 sm:px-6 lg:px-8">
                   <div className="min-w-0 flex-auto">
                     <div className="flex items-center gap-x-3">
@@ -553,6 +665,12 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                   <Badge tone={deployment.environment === "Production" ? "accent" : "neutral"}>
                     {deployment.environment}
                   </Badge>
+                  <div className="relative z-10">
+                    <Dropdown
+                      label={`Actions for ${deployment.projectName}`}
+                      options={DEPLOYMENT_ROW_ACTIONS.map((label) => ({ label, onClick: () => {} }))}
+                    />
+                  </div>
                   <ChevronRightIcon aria-hidden="true" className="size-5 flex-none text-ink-soft" />
                 </li>
               ))}
