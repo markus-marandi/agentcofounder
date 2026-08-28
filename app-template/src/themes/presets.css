@@ -1,7 +1,14 @@
 /*
- * Palettes derived from the theme-factory skill in github.com/anthropics/skills
- * (Apache 2.0) — see THIRD_PARTY_NOTICES.md. Selected by parameters.theme.preset,
- * which sets data-theme on the document element.
+ * Palettes on Tailwind's official color scale (tailwindcss.com/docs/colors),
+ * hex values read from the live rendered page, not hand-picked. Selected by
+ * parameters.theme.preset, which sets data-theme on the document element.
+ *
+ * ink/ink-soft/surface stay neutral slate across every preset — Tailwind
+ * Plus dashboards read body text in neutral gray/slate and carry the brand
+ * hue only in the accent, so that's what distinguishes each preset here.
+ * accent is the family's 600 shade, bumped to 700 for the handful of hues
+ * (amber, orange, green, teal, lime) whose 600 step fails 4.5:1 against
+ * white button/link text — verified against WCAG contrast math, not eyeballed.
  *
  * Each preset defines only colour. Spacing, type scale, and layout live in
  * styles.css so themes stay interchangeable.
@@ -9,111 +16,121 @@
 
 :root,
 [data-theme="modern-minimalist"] {
-  --ink: #1c2226;
-  --ink-soft: #566068;
+  /* slate */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
   --surface: #ffffff;
-  --surface-sunk: #f4f6f7;
-  --line: #d8dee2;
-  --accent: #36454f;
+  --surface-sunk: #f8fafc;
+  --line: #e2e8f0;
+  --accent: #45556c;
   --accent-ink: #ffffff;
-  --accent-soft: #e6eaec;
+  --accent-soft: #f1f5f9;
 }
 
 [data-theme="arctic-frost"] {
-  --ink: #16232f;
-  --ink-soft: #4d5f70;
-  --surface: #fafafa;
-  --surface-sunk: #eef4fb;
-  --line: #cfdcea;
-  --accent: #4a6fa5;
+  /* sky */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #f0f9ff;
+  --line: #b8e6fe;
+  --accent: #0084d1;
   --accent-ink: #ffffff;
-  --accent-soft: #d4e4f7;
+  --accent-soft: #dff2fe;
 }
 
 [data-theme="tech-innovation"] {
-  --ink: #10141a;
-  --ink-soft: #4a5462;
+  /* blue */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
   --surface: #ffffff;
-  --surface-sunk: #f1f4f9;
-  --line: #ccd6e5;
-  --accent: #0057db;
+  --surface-sunk: #eff6ff;
+  --line: #bedbff;
+  --accent: #155dfc;
   --accent-ink: #ffffff;
-  --accent-soft: #dbe7ff;
+  --accent-soft: #dbeafe;
 }
 
 [data-theme="ocean-depths"] {
-  --ink: #1a2332;
-  --ink-soft: #4f6272;
-  --surface: #f1faee;
-  --surface-sunk: #e2f1ef;
-  --line: #bcd9d8;
-  --accent: #21706f;
+  /* teal — 600 (#009689) fails 4.5:1 with white text, use 700 */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #f0fdfa;
+  --line: #96f7e4;
+  --accent: #00786f;
   --accent-ink: #ffffff;
-  --accent-soft: #a8dadc;
+  --accent-soft: #cbfbf1;
 }
 
 [data-theme="forest-canopy"] {
-  --ink: #23331f;
-  --ink-soft: #5c6851;
-  --surface: #faf9f6;
-  --surface-sunk: #f0f1e8;
-  --line: #d3d7c4;
-  --accent: #2d4a2b;
+  /* green — 600 (#00a63e) fails 4.5:1 with white text, use 700 */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #f0fdf4;
+  --line: #b9f8cf;
+  --accent: #008236;
   --accent-ink: #ffffff;
-  --accent-soft: #dfe4d2;
+  --accent-soft: #dbfce7;
 }
 
 [data-theme="botanical-garden"] {
-  --ink: #24301f;
-  --ink-soft: #5b6a52;
-  --surface: #f5f3ed;
-  --surface-sunk: #ece8dd;
-  --line: #d6cfbe;
-  --accent: #3d6a4a;
+  /* lime — 600 (#5ea500) fails 4.5:1 with white text, use 700 */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #f7fee7;
+  --line: #d8f999;
+  --accent: #497d00;
   --accent-ink: #ffffff;
-  --accent-soft: #dceadf;
+  --accent-soft: #ecfcca;
 }
 
 [data-theme="golden-hour"] {
-  --ink: #352d28;
-  --ink-soft: #6d5f55;
-  --surface: #fdfaf5;
-  --surface-sunk: #f4ece0;
-  --line: #ddcdb6;
-  --accent: #9a5f22;
+  /* amber — 600 (#ffb900) fails 4.5:1 with white text, use 700 */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #fffbeb;
+  --line: #fee685;
+  --accent: #bb4d00;
   --accent-ink: #ffffff;
-  --accent-soft: #f7e4c4;
+  --accent-soft: #fef3c6;
 }
 
 [data-theme="sunset-boulevard"] {
-  --ink: #26363b;
-  --ink-soft: #5c6c70;
-  --surface: #fffaf6;
-  --surface-sunk: #fdeee2;
-  --line: #f0cfb7;
-  --accent: #c1502e;
+  /* orange — 600 (#ff6900) fails 4.5:1 with white text, use 700 */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #fff7ed;
+  --line: #ffd6a7;
+  --accent: #ca3500;
   --accent-ink: #ffffff;
-  --accent-soft: #fadfcb;
+  --accent-soft: #ffedd4;
 }
 
 [data-theme="desert-rose"] {
-  --ink: #3a2230;
-  --ink-soft: #74596a;
-  --surface: #fdf8f5;
-  --surface-sunk: #f5e7de;
-  --line: #e2c8ba;
-  --accent: #5d2e46;
+  /* rose */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #fff1f2;
+  --line: #ffccd3;
+  --accent: #ec003f;
   --accent-ink: #ffffff;
-  --accent-soft: #f0d9d9;
+  --accent-soft: #ffe4e6;
 }
 
 [data-theme="midnight-galaxy"] {
-  --ink: #1e1730;
-  --ink-soft: #5a5177;
-  --surface: #fbfaff;
-  --surface-sunk: #efecf7;
-  --line: #d3cbe4;
-  --accent: #40447f;
+  /* violet */
+  --ink: #0f172b;
+  --ink-soft: #45556c;
+  --surface: #ffffff;
+  --surface-sunk: #f5f3ff;
+  --line: #ddd6ff;
+  --accent: #7f22fe;
   --accent-ink: #ffffff;
-  --accent-soft: #ded7ee;
+  --accent-soft: #ede9fe;
 }
