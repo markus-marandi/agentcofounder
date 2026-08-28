@@ -5,6 +5,7 @@ import type { NavigationSpec } from "./kernel/types.js";
 import { AppShell } from "./ui/AppShell.js";
 import { AuthBar } from "./ui/AuthBar.js";
 import { showcaseBlocks } from "./ui/blocks/registry.js";
+import { Card } from "./ui/Card.js";
 import { CollectionView } from "./ui/CollectionView.js";
 import { DashboardGrid } from "./ui/DashboardGrid.js";
 import { ErrorBoundary } from "./ui/ErrorBoundary.js";
@@ -39,10 +40,10 @@ function View({ entry }: { entry: NavigationSpec }) {
     }
     case "content":
       return (
-        <section className="rounded-lg border border-line bg-surface p-6 flex flex-col gap-4">
+        <Card as="section" className="p-6 flex flex-col gap-4">
           <h2 className="text-base font-semibold text-ink m-0">{entry.label}</h2>
           <p className="text-ink-soft m-0">{parameters.product.description ?? parameters.product.tagline}</p>
-        </section>
+        </Card>
       );
     case "collection":
     default:

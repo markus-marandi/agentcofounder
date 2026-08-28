@@ -1,5 +1,6 @@
 import type { DerivedSpec, StoredRecord } from "../kernel/types.js";
 import { computeDerived, formatDerived } from "../data/operations.js";
+import { Card } from "./Card.js";
 
 /** Derived values, computed from the records currently in view. */
 export function StatRow({ specs, records }: { specs: DerivedSpec[]; records: StoredRecord[] }) {
@@ -7,7 +8,7 @@ export function StatRow({ specs, records }: { specs: DerivedSpec[]; records: Sto
   return (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {specs.map((spec) => (
-        <div key={spec.id} className="rounded-lg border border-line bg-surface px-4 py-5 sm:px-6">
+        <Card key={spec.id} className="px-4 py-5 sm:px-6">
           <dt className="text-sm font-medium text-ink-soft" id={`stat-${spec.id}`}>
             {spec.label}
           </dt>
@@ -17,7 +18,7 @@ export function StatRow({ specs, records }: { specs: DerivedSpec[]; records: Sto
           >
             {formatDerived(computeDerived(spec, records))}
           </dd>
-        </div>
+        </Card>
       ))}
     </dl>
   );

@@ -27,6 +27,9 @@ import {
 } from "@heroicons/react/20/solid";
 import { parameters } from "../../kernel/config.js";
 import type { ShowcaseBlockProps } from "../../kernel/types.js";
+import { Badge } from "../Badge.js";
+import { Button } from "../Button.js";
+import { ButtonGroup } from "../ButtonGroup.js";
 
 /**
  * Vendored from Tailwind Plus (tailwindcss.com/plus/ui-blocks/application-ui/
@@ -122,11 +125,6 @@ const statuses: Record<string, string> = {
   offline: "text-ink-soft bg-surface-sunk",
   online: "text-ok bg-ok/10",
   error: "text-danger bg-danger/10",
-};
-
-const environments: Record<string, string> = {
-  Preview: "text-ink-soft bg-surface-sunk ring-line",
-  Production: "text-accent bg-accent-soft ring-accent/30",
 };
 
 const deployments = [
@@ -318,8 +316,11 @@ function SidebarNav({ otherViews, onNavigate }: ShowcaseBlockProps) {
   );
 }
 
+const FEED_RANGES = ["24h", "7d", "30d"];
+
 export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [feedRange, setFeedRange] = useState(FEED_RANGES[0]);
 
   return (
     <div>
@@ -393,7 +394,8 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
           <header className="flex items-center justify-between border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             <h1 className="text-base/7 font-semibold text-ink">Deployments</h1>
 
-            <Menu as="div" className="relative">
+            <div className="flex items-center gap-x-4">
+              <Menu as="div" className="relative">
               <MenuButton className="flex items-center gap-x-1 text-sm/6 font-medium text-ink">
                 Sort by
                 <ChevronUpDownIcon aria-hidden="true" className="size-5 text-ink-soft" />
@@ -418,7 +420,9 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                   </a>
                 </MenuItem>
               </MenuItems>
-            </Menu>
+              </Menu>
+              <Button size="sm">New deployment</Button>
+            </div>
           </header>
 
           <ul role="list" className="divide-y divide-line">
@@ -446,9 +450,9 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                     <p className="whitespace-nowrap">{deployment.statusText}</p>
                   </div>
                 </div>
-                <div className={classNames(environments[deployment.environment], "flex-none rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset")}>
+                <Badge tone={deployment.environment === "Production" ? "accent" : "neutral"}>
                   {deployment.environment}
-                </div>
+                </Badge>
                 <ChevronRightIcon aria-hidden="true" className="size-5 flex-none text-ink-soft" />
               </li>
             ))}
@@ -456,11 +460,14 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
         </main>
 
         <aside className="bg-surface-sunk lg:fixed lg:top-16 lg:right-0 lg:bottom-0 lg:w-96 lg:overflow-y-auto lg:border-l lg:border-line">
-          <header className="flex items-center justify-between border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-            <h2 className="text-base/7 font-semibold text-ink">Activity feed</h2>
-            <a href="#" className="text-sm/6 font-semibold text-accent">
-              View all
-            </a>
+          <header className="flex flex-col gap-3 border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base/7 font-semibold text-ink">Activity feed</h2>
+              <a href="#" className="text-sm/6 font-semibold text-accent">
+                View all
+              </a>
+            </div>
+            <ButtonGroup options={FEED_RANGES} value={feedRange} onChange={setFeedRange} />
           </header>
           <ul role="list" className="-mb-8 px-4 py-4 sm:px-6 lg:px-8">
             {activityItems.map((item, index) => (
