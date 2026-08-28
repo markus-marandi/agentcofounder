@@ -39,5 +39,17 @@
       "Clearing browser storage for this site permanently removes every record."
     ]
   },
-  "persistence": { "adapter": "localStorage", "namespace": "records" }
+  "persistence": { "adapter": "localStorage", "namespace": "records" },
+  "components": {
+    "collectionView": true,
+    "recordForm": true,
+    "field": true,
+    "emptyState": true,
+    "statRow": true,
+    "dashboardGrid": false,
+    "chart": false,
+    "landingPage": false,
+    "prototypeFlow": false,
+    "authBar": false
+  }
 }

@@ -214,6 +214,23 @@
         "adapter": { "enum": ["localStorage", "memory"] },
         "namespace": { "type": "string", "pattern": "^[a-z0-9-]+$" }
       }
+    },
+    "components": {
+      "description": "Audit trail of which src/ui/* components this configuration reaches. Documented in app-template/COMPONENTS.md. Not consumed by the kernel: the real switches are navigation[].kind, the dashboard/landing/prototype blocks, and features.auth. Keep this in sync with those by hand.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "collectionView": { "type": "boolean" },
+        "dashboardGrid": { "type": "boolean" },
+        "landingPage": { "type": "boolean" },
+        "prototypeFlow": { "type": "boolean" },
+        "authBar": { "type": "boolean" },
+        "chart": { "type": "boolean" },
+        "recordForm": { "type": "boolean" },
+        "field": { "type": "boolean" },
+        "emptyState": { "type": "boolean" },
+        "statRow": { "type": "boolean" }
+      }
     }
   },
   "definitions": {

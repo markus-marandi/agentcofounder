@@ -96,6 +96,24 @@ export interface ScreenSpec {
   back?: string;
 }
 
+/**
+ * Audit trail of which src/ui/* components a configuration reaches — see
+ * app-template/COMPONENTS.md. Not read by the kernel; the real switches are
+ * navigation[].kind, the dashboard/landing/prototype blocks, and features.auth.
+ */
+export interface ComponentsRegistry {
+  collectionView?: boolean;
+  dashboardGrid?: boolean;
+  landingPage?: boolean;
+  prototypeFlow?: boolean;
+  authBar?: boolean;
+  chart?: boolean;
+  recordForm?: boolean;
+  field?: boolean;
+  emptyState?: boolean;
+  statRow?: boolean;
+}
+
 export interface Parameters {
   route: Route;
   product: { name: string; tagline: string; description?: string };
@@ -112,6 +130,7 @@ export interface Parameters {
   };
   prototype?: { screens: ScreenSpec[]; entity?: string };
   persistence: { adapter: "localStorage" | "memory"; namespace: string };
+  components?: ComponentsRegistry;
 }
 
 /** A stored record. Domain fields are open; `id` and `createdAt` are the kernel's. */
