@@ -66,9 +66,22 @@ export interface EntitySpec {
 export interface NavigationSpec {
   id: string;
   label: string;
-  kind: "collection" | "dashboard" | "landing" | "screen" | "content";
+  kind: "collection" | "dashboard" | "landing" | "screen" | "content" | "showcase";
   entity?: string;
   screen?: string;
+}
+
+/** A vendored Tailwind Plus block id — see app-template/src/ui/blocks/README.md. */
+export type ShowcaseBlockId = "home-screen-sidebar";
+
+/**
+ * Every showcase block gets the other configured navigation entries and a
+ * way to switch to one — a block's own nav links are illustrative, so this
+ * is the only real way back to the rest of the app.
+ */
+export interface ShowcaseBlockProps {
+  otherViews: Array<{ id: string; label: string }>;
+  onNavigate: (id: string) => void;
 }
 
 export interface PlotSpec {
@@ -131,6 +144,7 @@ export interface Parameters {
   prototype?: { screens: ScreenSpec[]; entity?: string };
   persistence: { adapter: "localStorage" | "memory"; namespace: string };
   components?: ComponentsRegistry;
+  showcase?: { blocks: ShowcaseBlockId[] };
 }
 
 /** A stored record. Domain fields are open; `id` and `createdAt` are the kernel's. */

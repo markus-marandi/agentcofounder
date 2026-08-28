@@ -16,6 +16,24 @@ Colour palettes in `app-template/src/themes/presets.css` are derived from the
 skill itself is not vendored; only its palette values are reused, restated as
 CSS custom properties.
 
+## Tailwind Plus
+
+Source: https://tailwindcss.com/plus/ui-blocks/application-ui/page-examples/home-screens
+Licence: Tailwind Plus (commercial) — used under the project owner's own
+Tailwind Plus account licence, not open source. Markup is adapted, not
+redistributed verbatim: theme tokens replace literal `indigo`/`gray` classes,
+`dark:` variants are removed, and every external asset URL (Unsplash photos,
+`tailwindcss.com` logo assets) is replaced with an offline-safe alternative.
+See `app-template/src/ui/blocks/README.md`.
+
+| Path | Block | Note |
+|---|---|---|
+| `app-template/src/ui/blocks/HomeScreenSidebar.tsx` | Home Screens → "Sidebar" | Illustrative sample data, not wired to the repository |
+
+Two MIT-licensed npm packages were added to `app-template/package.json` to
+support this block's interactive/iconography needs: `@headlessui/react` and
+`@heroicons/react`. Both are normal dependencies, not vendored code.
+
 ## Agent Skills specification
 
 Skills authored in `solution/skills/` follow the open Agent Skills

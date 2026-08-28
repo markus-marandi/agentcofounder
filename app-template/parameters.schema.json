@@ -55,7 +55,7 @@
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "label": { "type": "string", "minLength": 1, "maxLength": 32 },
-          "kind": { "enum": ["collection", "dashboard", "landing", "screen", "content"] },
+          "kind": { "enum": ["collection", "dashboard", "landing", "screen", "content", "showcase"] },
           "entity": { "type": "string" },
           "screen": { "type": "string" }
         }
@@ -230,6 +230,19 @@
         "field": { "type": "boolean" },
         "emptyState": { "type": "boolean" },
         "statRow": { "type": "boolean" }
+      }
+    },
+    "showcase": {
+      "description": "Vendored Tailwind Plus blocks to render for a navigation entry of kind \"showcase\", in order. See app-template/src/ui/blocks/README.md.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blocks"],
+      "properties": {
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["home-screen-sidebar"] }
+        }
       }
     }
   },
