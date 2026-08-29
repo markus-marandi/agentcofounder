@@ -1,0 +1,9 @@
+I teach a few students out of my house and I'm always lending out
+instruments that never seem to come back on time. I want to log each
+instrument, its name, which maker it's by, and roughly what kind of
+instrument it is, like a string one or a brass one or something more
+percussion. When a student borrows one I want to note down their name, and
+when it comes back I want to clear that off. Mostly I want to see
+everything I have in one list, and be able to pick out just the ones that
+are currently out with someone. It's just me handling this, from my own
+computer.

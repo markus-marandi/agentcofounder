@@ -11,5 +11,15 @@ npm run challenge -- --idea-file docs/fixtures/web-app.txt
 npm run score
 ```
 
+### Ambiguity batch
+
+`ambiguity-01-books.txt` through `ambiguity-11-theater-props.txt` are 11
+domain reskins of `skeleton.txt`'s shape — a personal lend/return collection,
+same 4 attributes (title/name, creator/maker, a `roughly what kind, like A
+or B or C` combobox category, and a borrower name set/cleared by an action),
+filtered on the derived "currently out" status, single user. Only the
+noun and the borrow context change per file. Use them to check the skill
+resolves the combobox ambiguity the same way regardless of domain wording.
+
 These are development inputs, not judging material. The official idea will be
 different, so never tune a skill to the specific words below.

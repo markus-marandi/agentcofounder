@@ -1,0 +1,8 @@
+My teammates keep borrowing gear from my bag and I can never remember who
+has what. I want to log each item, its name, which brand it is, and
+roughly what kind of equipment it is, like a bat or a glove or something
+more for training. When someone borrows an item I want to note down their
+name, and when it comes back I want to clear that off. Mostly I want to
+see everything I own in one list, and be able to pick out just the ones
+that are currently out with someone. It's just me keeping track, from my
+own computer.
