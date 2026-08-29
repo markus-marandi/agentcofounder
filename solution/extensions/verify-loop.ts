@@ -73,12 +73,33 @@ function runCommand(command: string, args: string[], cwd: string): Promise<Comma
   });
 }
 
+/** The kernel's own message for a misconfigured `parameters.json`. */
+const PARAMETERS_MARKER = "Invalid parameters.json";
+
 /**
  * Test output is long and mostly scaffolding. Only the lines that name what
  * broke are worth spending context on.
+ *
+ * An invalid `parameters.json` is singled out because its message is the most
+ * actionable one the kernel produces and the least like the rest: the problems
+ * are bullet lines carrying no word the generic filter looks for, so without
+ * this they would be dropped and the agent would be told only that the build
+ * failed.
  */
 export function condense(output: string, limit = 2_400): string {
   const lines = output.split(/\r?\n/u);
+
+  const marker = lines.findIndex((line) => line.includes(PARAMETERS_MARKER));
+  if (marker >= 0) {
+    const problems: string[] = [];
+    for (const line of lines.slice(marker + 1)) {
+      if (!/^\s*-\s/u.test(line)) break;
+      problems.push(line.trim());
+    }
+    const block = [`${PARAMETERS_MARKER}:`, ...problems].join("\n");
+    return block.length > limit ? `${block.slice(0, limit)}\n…` : block;
+  }
+
   const interesting = lines.filter((line) =>
     /error|fail|✕|×|expected|received|cannot find|is not assignable|TS\d{4}/iu.test(line),
   );

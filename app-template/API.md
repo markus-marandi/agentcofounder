@@ -51,6 +51,12 @@ Shipped: `createLocalStorageAdapter(namespace)` and `createMemoryAdapter()`.
 Declared in `parameters.json` under `entities`. Every stored record carries
 `id: string` and `createdAt: string` (ISO 8601) alongside its declared fields.
 
+Row actions (`entities[].actions`) are not a second write path: each one is a
+`repository.update(id, changes)` call whose `changes` come from the action's
+`sets` block, with `@today` and `@now` resolved by
+`resolveActionValues` in `src/data/operations.ts`. A backend swap therefore
+covers them for free.
+
 <!-- The route skill replaces this section with the entities it actually built. -->
 
 ## Authentication

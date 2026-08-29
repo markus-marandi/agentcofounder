@@ -35,6 +35,66 @@ describe("parameters validation", () => {
     expect(problems.join(" ")).toContain("ghost");
   });
 
+  it("rejects a filter, derived value, action, or sort naming a field nobody declared", () => {
+    const entity = {
+      name: "item",
+      label: "Item",
+      labelPlural: "Items",
+      fields: [{ name: "title", label: "Title", type: "text" }],
+      filters: [{ field: "ghost", label: "Ghost" }],
+      derived: [{ id: "d", label: "D", kind: "sum", field: "phantom" }],
+      actions: [{ id: "a", label: "A", sets: { spectre: true }, when: { field: "wraith", mode: "truthy" } }],
+      sort: { field: "shade" },
+    };
+    const problems = validateParameters({ ...valid, entities: [entity] }).join(" ");
+    for (const name of ["ghost", "phantom", "spectre", "wraith", "shade"]) {
+      expect(problems).toContain(name);
+    }
+  });
+
+  it("accepts a field name the kernel supplies rather than the entity", () => {
+    const entity = {
+      ...valid.entities[0],
+      sort: { field: "createdAt", direction: "desc" },
+    };
+    expect(validateParameters({ ...valid, entities: [entity] })).toEqual([]);
+  });
+
+  it("rejects an action that would do nothing and a repeated action id", () => {
+    const entity = {
+      ...valid.entities[0],
+      actions: [
+        { id: "a", label: "A" },
+        { id: "a", label: "Again", sets: { title: "x" } },
+      ],
+    };
+    const problems = validateParameters({ ...valid, entities: [entity] }).join(" ");
+    expect(problems).toContain("does nothing");
+    expect(problems).toContain('repeats the action id "a"');
+  });
+
+  it("rejects a select with no options and an unknown field type", () => {
+    const entity = {
+      ...valid.entities[0],
+      fields: [
+        { name: "title", label: "Title", type: "text" },
+        { name: "kind", label: "Kind", type: "select" },
+        { name: "odd", label: "Odd", type: "colour" },
+      ],
+    };
+    const problems = validateParameters({ ...valid, entities: [entity] }).join(" ");
+    expect(problems).toContain("non-empty options list");
+    expect(problems).toContain("must be one of: text");
+  });
+
+  it("accepts a combobox with options, which are suggestions rather than a closed set", () => {
+    const entity = {
+      ...valid.entities[0],
+      fields: [{ name: "kind", label: "Kind", type: "combobox", options: ["Novel"] }],
+    };
+    expect(validateParameters({ ...valid, entities: [entity] })).toEqual([]);
+  });
+
   it("rejects anything that is not an object", () => {
     expect(validateParameters(null)).toHaveLength(1);
     expect(validateParameters([])).toHaveLength(1);

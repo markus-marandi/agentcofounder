@@ -6,6 +6,8 @@ interface Props {
   field: FieldSpec;
   value: FieldValue;
   error?: string;
+  /** Extra `combobox` suggestions beyond `field.options` — usually values other records already use. */
+  suggestions?: string[];
   onChange: (value: FieldValue) => void;
 }
 
@@ -14,10 +16,11 @@ interface Props {
  * elements bound by id so automation and screen readers can find controls by
  * name instead of by position.
  */
-export function Field({ field, value, error, onChange }: Props) {
+export function Field({ field, value, error, suggestions, onChange }: Props) {
   const id = useId();
   const errorId = `${id}-error`;
   const helpId = `${id}-help`;
+  const listId = `${id}-options`;
   const describedBy = [error ? errorId : null, field.help ? helpId : null].filter(Boolean).join(" ") || undefined;
 
   const shared = {
@@ -88,6 +91,27 @@ export function Field({ field, value, error, onChange }: Props) {
               </option>
             ))}
           </select>
+        ) : field.type === "combobox" ? (
+          // Suggestions without a closed set: the listed options are offered,
+          // and a value nobody has used yet is still accepted.
+          <>
+            <input
+              {...shared}
+              type="text"
+              list={listId}
+              autoComplete="off"
+              value={String(value ?? "")}
+              onChange={(event) => onChange(event.target.value)}
+              className={inputClasses}
+            />
+            <datalist id={listId}>
+              {[...new Set([...(field.options ?? []), ...(suggestions ?? [])])]
+                .filter((option) => option !== "")
+                .map((option) => (
+                  <option key={option} value={option} />
+                ))}
+            </datalist>
+          </>
         ) : (
           <input
             {...shared}

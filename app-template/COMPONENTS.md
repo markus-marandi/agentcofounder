@@ -13,14 +13,14 @@ dependency of one that is on.
 
 | Component | File | Activated by | Depends on |
 |---|---|---|---|
-| `collectionView` | `CollectionView.tsx` | a `navigation` entry with `kind: "collection"` (the default route) | `StatRow`, `RecordForm`, `EmptyState` |
+| `collectionView` | `CollectionView.tsx` | a `navigation` entry with `kind: "collection"` (the default route); row actions come from `entities[].actions` | `StatRow`, `RecordForm`, `EmptyState`, `Field` |
 | `dashboardGrid` | `DashboardGrid.tsx` | a `navigation` entry with `kind: "dashboard"` + a top-level `dashboard` block | `Chart` |
 | `landingPage` | `LandingPage.tsx` | a `navigation` entry with `kind: "landing"` | `Field` |
 | `prototypeFlow` | `PrototypeFlow.tsx` | a `navigation` entry with `kind: "screen"` + a top-level `prototype` block | `Field` |
 | `authBar` | `AuthBar.tsx` | `features.auth: true` | — |
 | `chart` | `Chart.tsx` | rendered only inside `dashboardGrid`; hand-drawn SVG, no charting dependency | — |
 | `recordForm` | `RecordForm.tsx` | rendered only inside `collectionView`, for create/edit | `Field` |
-| `field` | `Field.tsx` | one accessible control per declared field type; rendered by `recordForm`, `landingPage`, `prototypeFlow` | — |
+| `field` | `Field.tsx` | one accessible control per declared field type, `combobox` included; rendered by `recordForm`, `landingPage`, `prototypeFlow`, and by `collectionView` for an action's inline prompt | — |
 | `emptyState` | `EmptyState.tsx` | rendered by `collectionView` when a list has zero records or zero matches | — |
 | `statRow` | `StatRow.tsx` | rendered by `collectionView` for `entity.derived` totals | — |
 

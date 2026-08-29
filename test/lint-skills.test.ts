@@ -94,4 +94,19 @@ describe("verify-loop output condensing", () => {
     expect(condensed.length).toBeLessThan(260);
     expect(condensed.startsWith("…")).toBe(true);
   });
+
+  it("keeps the parameters problems, which carry none of the words the generic filter looks for", () => {
+    const condensed = condense(
+      [
+        "vite v7.3.6 building client environment for production...",
+        "Invalid parameters.json:",
+        '- entities[0].filters[0] names field "ghost", which entities[0] does not declare',
+        "- entities[0].actions[1] does nothing: give it a prompt, a sets block, or both",
+        "    at loadConfig (/app/src/kernel/config.ts:1:1)",
+      ].join("\n"),
+    );
+    expect(condensed).toContain("ghost");
+    expect(condensed).toContain("does nothing");
+    expect(condensed).not.toContain("loadConfig");
+  });
 });

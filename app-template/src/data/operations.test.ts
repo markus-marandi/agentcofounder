@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { applyFilters, computeDerived, formatDerived, toRecordInput, validateDraft } from "./operations.js";
+import {
+  actionApplies,
+  applyFilters,
+  canonicalize,
+  computeDerived,
+  formatDerived,
+  knownValues,
+  resolveActionValues,
+  sortRecords,
+  toRecordInput,
+  validateDraft,
+  validateValue,
+} from "./operations.js";
 import { searchRecords } from "./searchIndex.js";
-import type { EntitySpec, StoredRecord } from "../kernel/types.js";
+import type { EntitySpec, FieldSpec, StoredRecord } from "../kernel/types.js";
 
 const entity: EntitySpec = {
   name: "item",
@@ -100,5 +112,86 @@ describe("search", () => {
     expect(searchRecords(entity, records, "alpha")).toHaveLength(1);
     expect(searchRecords(entity, records, "alpha zzz")).toHaveLength(0);
     expect(searchRecords(entity, records, "   ")).toHaveLength(3);
+  });
+});
+
+describe("sorting", () => {
+  it("orders by a field in either direction", () => {
+    const titles = (list: StoredRecord[]) => list.map((record) => record.title);
+    expect(titles(sortRecords(records, { field: "title", direction: "desc" }))).toEqual(["Gamma", "Beta", "Alpha"]);
+    expect(titles(sortRecords(records, { field: "amount" }))).toEqual(["Alpha", "Beta", "Gamma"]);
+  });
+
+  it("sinks records missing the sort field to the bottom in either direction", () => {
+    const withBlank: StoredRecord[] = [
+      { id: "4", createdAt: "2026-01-04T00:00:00.000Z", title: "" },
+      ...records,
+    ];
+    expect(sortRecords(withBlank, { field: "title" }).at(-1)?.id).toBe("4");
+    expect(sortRecords(withBlank, { field: "title", direction: "desc" }).at(-1)?.id).toBe("4");
+  });
+
+  it("leaves insertion order alone when no sort is configured", () => {
+    expect(sortRecords(records)).toBe(records);
+  });
+});
+
+describe("free-text categories", () => {
+  const category: FieldSpec = { name: "kind", label: "Kind", type: "combobox", options: ["Novel"] };
+
+  it("accepts a value nobody has used before", () => {
+    expect(validateValue(category, "Cookbook")).toBeUndefined();
+  });
+
+  it("folds a new spelling into the one already in use", () => {
+    const known = knownValues(category, [
+      { id: "1", createdAt: "", kind: "Cookbook" },
+    ]);
+    expect(canonicalize("  cookbook ", known)).toBe("Cookbook");
+    expect(canonicalize("NOVEL", known)).toBe("Novel");
+    expect(canonicalize("Reference  book", known)).toBe("Reference book");
+  });
+
+  it("canonicalises through toRecordInput, so storage never holds two spellings", () => {
+    const combo: EntitySpec = { ...entity, fields: [entity.fields[0], category] };
+    const stored = toRecordInput(combo, { title: "Book", kind: "novel" }, [
+      { id: "1", createdAt: "", title: "Other", kind: "Novel" },
+    ]);
+    expect(stored.kind).toBe("Novel");
+  });
+});
+
+describe("row actions", () => {
+  const returnAction = {
+    id: "return",
+    label: "Mark returned",
+    sets: { borrower: null, done: true },
+    when: { field: "done", mode: "falsy" as const },
+  };
+
+  it("is offered only on records the when clause matches", () => {
+    expect(actionApplies(returnAction, records[0])).toBe(false);
+    expect(actionApplies(returnAction, records[1])).toBe(true);
+  });
+
+  it("is offered everywhere when it has no when clause", () => {
+    expect(actionApplies({ id: "a", label: "A", sets: { done: true } }, records[0])).toBe(true);
+  });
+
+  it("resolves the date tokens at the moment it runs", () => {
+    const now = new Date("2026-03-04T05:06:07.000Z");
+    const values = resolveActionValues(
+      { id: "lend", label: "Lend", sets: { lentOn: "@today", touchedAt: "@now", borrower: null } },
+      now,
+    );
+    expect(values).toEqual({
+      lentOn: "2026-03-04",
+      touchedAt: "2026-03-04T05:06:07.000Z",
+      borrower: null,
+    });
+  });
+
+  it("writes nothing when it only prompts", () => {
+    expect(resolveActionValues({ id: "note", label: "Note", prompt: "borrower" })).toEqual({});
   });
 });

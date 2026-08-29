@@ -5,7 +5,7 @@
 
 export type Route = "landing-page" | "web-app" | "prototype" | "mock-dashboard" | "open-build";
 
-export type FieldType = "text" | "longtext" | "number" | "date" | "select" | "boolean";
+export type FieldType = "text" | "longtext" | "number" | "date" | "select" | "combobox" | "boolean";
 
 export type FilterMode = "equals" | "truthy" | "falsy" | "contains";
 
@@ -39,6 +39,43 @@ export interface FieldSpec {
   help?: string;
 }
 
+/**
+ * A value an action writes. The two tokens resolve when the action runs, so a
+ * configuration never has to hard-code a date.
+ */
+export type ActionValue = string | number | boolean | null;
+
+export const TODAY_TOKEN = "@today";
+export const NOW_TOKEN = "@now";
+
+/**
+ * A one-click change to a single record, offered in the collection row.
+ *
+ * This is the verb an idea describes but a form cannot express well: "mark it
+ * returned", "note who borrowed it", "mark paid". `when` scopes the button to
+ * the records it makes sense for, which is also what makes repeat clicks
+ * impossible rather than merely harmless.
+ */
+export interface ActionSpec {
+  id: string;
+  label: string;
+  /** A declared field collected inline before the action applies. */
+  prompt?: string;
+  /** Field values written when the action runs; `@today` and `@now` resolve at click time. */
+  sets?: Record<string, ActionValue>;
+  /** Offer the action only on records that match. */
+  when?: { field: string; mode: FilterMode; value?: unknown };
+  /** Ask for confirmation first. Use for anything a person would not want to undo. */
+  confirm?: boolean;
+  style?: "default" | "primary" | "danger";
+}
+
+/** Resting order of the collection. Omit for insertion order. */
+export interface SortSpec {
+  field: string;
+  direction?: "asc" | "desc";
+}
+
 export interface FilterSpec {
   field: string;
   label: string;
@@ -61,6 +98,8 @@ export interface EntitySpec {
   fields: FieldSpec[];
   filters?: FilterSpec[];
   derived?: DerivedSpec[];
+  actions?: ActionSpec[];
+  sort?: SortSpec;
 }
 
 export interface NavigationSpec {

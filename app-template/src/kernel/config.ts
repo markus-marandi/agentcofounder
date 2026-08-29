@@ -29,6 +29,79 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Present on every stored record, so they are addressable without being declared. */
+const KERNEL_FIELDS = ["id", "createdAt"];
+
+const FIELD_TYPES = ["text", "longtext", "number", "date", "select", "combobox", "boolean"];
+
+/**
+ * Every place a configuration names a field. A typo here is the most common way
+ * a `parameters.json` reaches the browser and then silently filters nothing, so
+ * it is caught by name at load rather than by absence at runtime.
+ */
+function checkEntityReferences(entity: Record<string, unknown>, index: number, problems: string[]): void {
+  const fields = Array.isArray(entity.fields) ? entity.fields.filter(isRecord) : [];
+  const declared = new Set([...fields.map((field) => String(field.name)), ...KERNEL_FIELDS]);
+  const where = `entities[${index}]`;
+
+  const requireField = (name: unknown, at: string): void => {
+    if (name === undefined) return;
+    if (!declared.has(String(name))) {
+      problems.push(`${at} names field "${String(name)}", which ${where} does not declare`);
+    }
+  };
+
+  for (const [position, field] of fields.entries()) {
+    const type = String(field.type);
+    if (!FIELD_TYPES.includes(type)) {
+      problems.push(`${where}.fields[${position}].type must be one of: ${FIELD_TYPES.join(", ")}`);
+    }
+    if (type === "select" && (!Array.isArray(field.options) || field.options.length === 0)) {
+      problems.push(`${where}.fields[${position}] is a select and needs a non-empty options list`);
+    }
+  }
+
+  requireField(entity.titleField, `${where}.titleField`);
+
+  if (Array.isArray(entity.filters)) {
+    for (const [position, filter] of entity.filters.entries()) {
+      if (isRecord(filter)) requireField(filter.field, `${where}.filters[${position}]`);
+    }
+  }
+
+  if (Array.isArray(entity.derived)) {
+    for (const [position, derived] of entity.derived.entries()) {
+      if (!isRecord(derived)) continue;
+      requireField(derived.field, `${where}.derived[${position}]`);
+      if (isRecord(derived.where)) requireField(derived.where.field, `${where}.derived[${position}].where`);
+      if (derived.kind === "countWhere" && !isRecord(derived.where)) {
+        problems.push(`${where}.derived[${position}] is a countWhere and needs a where clause`);
+      }
+    }
+  }
+
+  if (Array.isArray(entity.actions)) {
+    const ids = new Set<string>();
+    for (const [position, action] of entity.actions.entries()) {
+      if (!isRecord(action)) continue;
+      const at = `${where}.actions[${position}]`;
+      const id = String(action.id);
+      if (ids.has(id)) problems.push(`${at} repeats the action id "${id}"`);
+      ids.add(id);
+      if (action.prompt === undefined && !isRecord(action.sets)) {
+        problems.push(`${at} does nothing: give it a prompt, a sets block, or both`);
+      }
+      requireField(action.prompt, `${at}.prompt`);
+      if (isRecord(action.when)) requireField(action.when.field, `${at}.when`);
+      if (isRecord(action.sets)) {
+        for (const name of Object.keys(action.sets)) requireField(name, `${at}.sets`);
+      }
+    }
+  }
+
+  if (isRecord(entity.sort)) requireField(entity.sort.field, `${where}.sort`);
+}
+
 /**
  * Collects every problem rather than throwing on the first, so a misconfigured
  * `parameters.json` produces one actionable list instead of a guessing game.
@@ -73,7 +146,9 @@ export function validateParameters(candidate: unknown): string[] {
       }
       if (!Array.isArray(entity.fields) || entity.fields.length === 0) {
         problems.push(`entities[${index}].fields must list at least one field`);
+        continue;
       }
+      checkEntityReferences(entity, index, problems);
     }
   }
 

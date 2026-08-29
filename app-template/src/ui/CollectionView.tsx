@@ -1,10 +1,21 @@
 import { useMemo, useState } from "react";
-import type { EntitySpec, StoredRecord } from "../kernel/types.js";
+import type { ActionSpec, EntitySpec, StoredRecord } from "../kernel/types.js";
 import { titleOf } from "../kernel/config.js";
 import { useRepository } from "../kernel/useRepository.js";
-import { applyFilters, type ActiveFilter, type FieldValue } from "../data/operations.js";
+import {
+  actionApplies,
+  applyFilters,
+  canonicalize,
+  knownValues,
+  resolveActionValues,
+  sortRecords,
+  validateValue,
+  type ActiveFilter,
+  type FieldValue,
+} from "../data/operations.js";
 import { searchRecords } from "../data/searchIndex.js";
 import { EmptyState } from "./EmptyState.js";
+import { Field } from "./Field.js";
 import { RecordForm } from "./RecordForm.js";
 import { StatRow } from "./StatRow.js";
 
@@ -12,6 +23,24 @@ interface Props {
   entity: EntitySpec;
   searchEnabled?: boolean;
   canEdit?: boolean;
+}
+
+/** One pending row action: which record, which action, and what has been typed into it. */
+interface PendingAction {
+  recordId: string;
+  actionId: string;
+  value: FieldValue;
+  error?: string;
+}
+
+function actionClasses(style: ActionSpec["style"]): string {
+  if (style === "primary") {
+    return "rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-accent-ink hover:brightness-110";
+  }
+  if (style === "danger") {
+    return "rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft";
+  }
+  return "rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk";
 }
 
 function displayValue(value: unknown): string {
@@ -31,9 +60,11 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [choices, setChoices] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<PendingAction | null>(null);
 
   const editing = editingId ? records.find((record) => record.id === editingId) : undefined;
   const filterSpecs = entity.filters ?? [];
+  const actions = entity.actions ?? [];
 
   const visible = useMemo(() => {
     const active: ActiveFilter[] = filterSpecs
@@ -45,13 +76,65 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
           : { field: spec.field, mode, value: choices[spec.field] };
       });
     const filtered = applyFilters(records, active);
-    return searchEnabled && query.trim() !== "" ? searchRecords(entity, filtered, query) : filtered;
+    const found = searchEnabled && query.trim() !== "" ? searchRecords(entity, filtered, query) : filtered;
+    return sortRecords(found, entity.sort);
   }, [records, filterSpecs, choices, searchEnabled, query, entity]);
 
   const optionsFor = (field: string): string[] => {
     const declared = entity.fields.find((candidate) => candidate.name === field);
-    if (declared?.options) return declared.options;
-    return [...new Set(records.map((record) => String(record[field] ?? "")).filter((value) => value !== ""))].sort();
+    // A `select` is a closed set, so its declared order is meaningful and kept.
+    // Anything else — a `combobox` above all — has to offer the values records
+    // actually hold, or a user-invented category becomes unfilterable.
+    if (declared?.type === "select" && declared.options) return declared.options;
+    const used = records.map((record) => String(record[field] ?? ""));
+    return [...new Set([...(declared?.options ?? []), ...used])].filter((value) => value !== "").sort();
+  };
+
+  const fieldNamed = (name: string | undefined) =>
+    name ? entity.fields.find((candidate) => candidate.name === name) : undefined;
+
+  /** Writes an action's changes through the repository — the same boundary the form uses. */
+  const applyAction = (action: ActionSpec, record: StoredRecord, promptValue?: FieldValue): void => {
+    const values: Record<string, FieldValue> = resolveActionValues(action);
+    if (action.prompt) values[action.prompt] = promptValue ?? null;
+    run(() => repository.update(record.id, values));
+    setPending(null);
+  };
+
+  const startAction = (action: ActionSpec, record: StoredRecord): void => {
+    if (!action.prompt && !action.confirm) {
+      applyAction(action, record);
+      return;
+    }
+    const field = fieldNamed(action.prompt);
+    const current = action.prompt ? record[action.prompt] : undefined;
+    setPending({
+      recordId: record.id,
+      actionId: action.id,
+      value:
+        current === undefined || current === null
+          ? field?.type === "number"
+            ? null
+            : ""
+          : (current as FieldValue),
+    });
+  };
+
+  const submitAction = (action: ActionSpec, record: StoredRecord): void => {
+    const field = fieldNamed(action.prompt);
+    const typed = pending?.value ?? null;
+    if (field) {
+      const problem = validateValue(field, typed);
+      if (problem) {
+        setPending((current) => (current ? { ...current, error: problem } : current));
+        return;
+      }
+      if (field.type === "combobox") {
+        applyAction(action, record, canonicalize(String(typed ?? ""), knownValues(field, records)));
+        return;
+      }
+    }
+    applyAction(action, record, typed);
   };
 
   const submit = (values: Record<string, FieldValue>): void => {
@@ -193,8 +276,16 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
           />
         ) : (
           <ul className="divide-y divide-line rounded-lg border border-line bg-surface overflow-hidden">
-            {visible.map((record: StoredRecord) => (
-              <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between" key={record.id}>
+            {visible.map((record: StoredRecord) => {
+              const offered = actions.filter((action) => actionApplies(action, record));
+              const open = pending?.recordId === record.id
+                ? offered.find((action) => action.id === pending.actionId)
+                : undefined;
+              const promptField = fieldNamed(open?.prompt);
+
+              return (
+              <li className="flex flex-col gap-3 p-4" key={record.id}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex flex-col gap-2">
                   <span className="font-semibold text-ink">{titleOf(entity, record)}</span>
                   <dl className="flex flex-col gap-1">
@@ -211,6 +302,39 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
 
                 {canEdit ? (
                   <div className="flex flex-wrap items-center gap-3">
+                    {offered.map((action) =>
+                      open?.id === action.id && action.prompt ? null : open?.id === action.id ? (
+                        <span className="flex flex-wrap items-center gap-3" key={action.id}>
+                          <span className="text-sm text-ink-soft">{action.label}?</span>
+                          <button
+                            type="button"
+                            className={actionClasses(action.style)}
+                            onClick={() => applyAction(action, record)}
+                            aria-label={`Confirm ${action.label.toLowerCase()}: ${titleOf(entity, record)}`}
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
+                            onClick={() => setPending(null)}
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          key={action.id}
+                          type="button"
+                          className={actionClasses(action.style)}
+                          onClick={() => startAction(action, record)}
+                          aria-label={`${action.label}: ${titleOf(entity, record)}`}
+                        >
+                          {action.label}
+                        </button>
+                      ),
+                    )}
+
                     <button
                       type="button"
                       className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk"
@@ -255,8 +379,51 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
                     )}
                   </div>
                 ) : null}
+                </div>
+
+                {canEdit && open && open.prompt && promptField ? (
+                  <form
+                    className="flex flex-col gap-3 rounded-md border border-line bg-surface-sunk p-4 sm:flex-row sm:items-end"
+                    noValidate
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      submitAction(open, record);
+                    }}
+                  >
+                    <div className="flex-1">
+                      <Field
+                        field={promptField}
+                        value={pending?.value ?? null}
+                        error={pending?.error}
+                        suggestions={
+                          promptField.type === "combobox" ? knownValues(promptField, records) : undefined
+                        }
+                        onChange={(value) =>
+                          setPending((current) => (current ? { ...current, value, error: undefined } : current))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="submit"
+                        className={actionClasses(open.style ?? "primary")}
+                        aria-label={`Confirm ${open.label.toLowerCase()}: ${titleOf(entity, record)}`}
+                      >
+                        {open.label}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
+                        onClick={() => setPending(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>

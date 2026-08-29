@@ -205,7 +205,7 @@ Acceptance criteria:
 
 - [ ] Extend `parameters.schema.json` with system-module feature flags and the IAM/user/policy contract.
 - [ ] Extend `src/kernel/types.ts` with typed feature, user, role, and policy definitions.
-- [ ] Extend `validateParameters` with duplicate and cross-reference validation.
+- [x] Extend `validateParameters` with duplicate and cross-reference validation. Every place a configuration names a field — `titleField`, `filters`, `derived`, `derived.where`, `actions.prompt`, `actions.sets`, `actions.when`, `sort` — is now checked against the entity's declared fields, plus duplicate action ids, empty `select` options, and unknown field types.
 - [ ] Keep the current `features.auth` boolean compatible with the default seed configuration.
 - [ ] Add normalized accessors such as `entityByName`, `navigationById`, and `policyFor` so components do not parse raw JSON.
 - [ ] Define a single default behavior for missing optional system configuration.
@@ -216,6 +216,34 @@ Acceptance criteria:
 - The default parameters file remains valid and builds without manual changes.
 - A malformed role, user, entity reference, or policy is reported at build time.
 - No component needs to know the shape of raw JSON beyond typed kernel accessors.
+
+### 2a. Verb coverage in the parameter contract - P0
+
+The ideas this harness is given differ by subject and repeat by verb, so the
+contract is built around the verbs. Done:
+
+- [x] `entities[].actions` — one-click record changes, with `prompt` (collect
+      one field inline), `sets` (`@today`/`@now`/`null` included), `when`
+      (scopes the button to the records it applies to, which is also what makes
+      a repeated click impossible), `confirm`, and `style`. Applied through
+      `repository.update`, so no second write path exists.
+- [x] `combobox` field type — declared options as suggestions, unlisted values
+      accepted, and a new spelling folded into one already in use. This is the
+      general answer to the "roughly what kind of book" class of buried
+      ambiguity, and the filter bar offers the invented values too.
+- [x] `entities[].sort` — resting order, blanks sinking to the bottom.
+- [x] Seed `parameters.json` demonstrates all three, so the model has a
+      copyable example rather than only a schema.
+- [x] `condense()` in the verify loop keeps the kernel's `Invalid
+      parameters.json` bullet list, which the generic filter used to drop —
+      the most actionable failure message was reaching the model as "the build
+      failed".
+
+Acceptance criteria:
+
+- A state change an idea describes as a moment ("when it comes back I clear
+  that off") is configuration, never generated component code.
+- A filter over a free-text category lists the values users actually invented.
 
 ### 3. Authentication module - P0
 

@@ -3,6 +3,7 @@ import type { EntitySpec, StoredRecord } from "../kernel/types.js";
 import {
   draftFromRecord,
   emptyDraft,
+  knownValues,
   toRecordInput,
   validateDraft,
   type Draft,
@@ -48,7 +49,7 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
         const found = validateDraft(entity, draft, existing, editing?.id);
         setErrors(found);
         if (Object.keys(found).length > 0) return;
-        onSubmit(toRecordInput(entity, draft));
+        onSubmit(toRecordInput(entity, draft, existing));
         if (!editing) setDraft(emptyDraft(entity));
       }}
     >
@@ -65,6 +66,7 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
             field={field}
             value={draft[field.name] ?? null}
             error={errors[field.name]}
+            suggestions={field.type === "combobox" ? knownValues(field, existing) : undefined}
             onChange={(value) => set(field.name, value)}
           />
         ))}

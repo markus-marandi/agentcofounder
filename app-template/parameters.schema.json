@@ -86,7 +86,7 @@
               "properties": {
                 "name": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$" },
                 "label": { "type": "string", "minLength": 1 },
-                "type": { "enum": ["text", "longtext", "number", "date", "select", "boolean"] },
+                "type": { "enum": ["text", "longtext", "number", "date", "select", "combobox", "boolean"] },
                 "required": { "type": "boolean" },
                 "unique": { "type": "boolean" },
                 "options": { "type": "array", "items": { "type": "string" } },
@@ -108,6 +108,52 @@
                 "label": { "type": "string" },
                 "mode": { "enum": ["equals", "truthy", "falsy", "contains"] }
               }
+            }
+          },
+          "actions": {
+            "description": "One-click changes to a single record, offered in its row. This is where a verb the idea states but a form expresses badly belongs: \"mark it returned\", \"note who borrowed it\", \"mark paid\". Give each action a `when` clause so it is only offered on records it makes sense for.",
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "label"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+                "label": { "type": "string", "minLength": 1, "maxLength": 32 },
+                "prompt": {
+                  "description": "Name of a declared field collected inline before the action applies.",
+                  "type": "string"
+                },
+                "sets": {
+                  "description": "Field values written when the action runs. \"@today\" and \"@now\" resolve at click time; null clears a field.",
+                  "type": "object",
+                  "additionalProperties": { "type": ["string", "number", "boolean", "null"] }
+                },
+                "when": {
+                  "description": "Offer the action only on records that match.",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["field", "mode"],
+                  "properties": {
+                    "field": { "type": "string" },
+                    "mode": { "enum": ["equals", "truthy", "falsy", "contains"] },
+                    "value": {}
+                  }
+                },
+                "confirm": { "type": "boolean" },
+                "style": { "enum": ["default", "primary", "danger"] }
+              }
+            }
+          },
+          "sort": {
+            "description": "Resting order of the collection. Omit for insertion order.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field"],
+            "properties": {
+              "field": { "type": "string" },
+              "direction": { "enum": ["asc", "desc"] }
             }
           },
           "derived": {

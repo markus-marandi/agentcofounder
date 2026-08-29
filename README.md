@@ -73,7 +73,7 @@ and the kernel refuses to start on an invalid file.
   "product": { "name": "...", "tagline": "..." },
   "theme": { "preset": "ocean-depths" },     // 10 presets, colour only
   "navigation": [ /* menu count picks the layout */ ],
-  "entities": [ /* fields, filters, derived values */ ],
+  "entities": [ /* fields, filters, derived values, row actions, sort */ ],
   "features": { "search": true, "auth": false, "limitations": ["..."] },
   "persistence": { "adapter": "localStorage", "namespace": "..." }
 }
@@ -82,6 +82,31 @@ and the kernel refuses to start on an invalid file.
 Navigation count decides the chrome: one entry means no navigation at all, two
 to four a bar, five or more a sidebar that wraps on narrow screens. The agent
 never picks a layout by hand.
+
+### Verbs, not domains
+
+The ideas this harness is given differ by subject and repeat by verb. So the
+configuration surface is built around the verbs rather than around books,
+recipes, or invoices:
+
+| The idea says | Configuration |
+|---|---|
+| "mark it returned", "clear that off" | `entities[].actions` with `sets` and a `when` clause |
+| "note down who borrowed it" | an action with `prompt`, collecting one field in the row |
+| "record when it went out" | `"@today"` / `"@now"` inside an action's `sets` |
+| "roughly what kind of book" | a `combobox` field: suggestions that still accept a new value |
+| "see everything in one list" | `entities[].sort` |
+
+The first three exist because a state change a person describes as a moment
+reads badly as *open the edit form, blank a field, save*. An action is one
+click, and its `when` clause means only the applicable one of a pair is ever
+offered — which is also why clicking twice cannot do anything twice.
+
+The fourth is the ambiguity the development prompt buries on purpose. A fixed
+dropdown loses the category nobody anticipated; free text fragments into
+"Cookbook", "cookbook", and " cookbook ". The `combobox` refuses the choice:
+declared options are offered, an unlisted value is accepted, and a new
+spelling folds into the one already in use.
 
 ## The prebuilt kernel
 
@@ -92,8 +117,8 @@ In `app-template/src`, shipped tested and building green with zero model edits.
 | `kernel/` | Loads and validates `parameters.json`; `useRepository` binds a collection to a view |
 | `data/repository.ts` | The single boundary between interface and storage |
 | `data/localStorageAdapter.ts` | Browser persistence that recovers from corrupt or foreign data |
-| `data/operations.ts` | Validation, filters, derived values — pure functions, no React |
-| `ui/CollectionView.tsx` | Add, edit, delete with confirmation, filter, search, totals, empty states |
+| `data/operations.ts` | Validation, filters, derived values, sorting, row actions — pure functions, no React |
+| `ui/CollectionView.tsx` | Add, edit, delete with confirmation, one-click row actions, filter, search, totals, empty states |
 | `ui/Chart.tsx`, `ui/DashboardGrid.tsx` | SVG charts with accessible summaries; one headline plus four supporting plots |
 | `ui/LandingPage.tsx` | Hero, comparison, FAQ, call to action, with a real capture form |
 | `ui/PrototypeFlow.tsx` | Multi-screen walkthrough that carries state and stores a record |

@@ -16,7 +16,9 @@ fail, and the primitives are already covered by tests.
 ## Delivery floor — every route, no exceptions
 
 1. At least one persisted entity, reached only through the repository boundary.
-2. Create, edit, and delete.
+2. Create, edit, and delete — plus a one-click `action` for any state change
+   the idea describes as a moment ("when it comes back I clear that off")
+   rather than as editing a field.
 3. At least one filter and at least one derived value.
 4. Data survives a page refresh.
 5. At least one passing test; never `.skip` or `.todo`.
@@ -34,7 +36,9 @@ forms write real records. A form that discards what it collects is a mock.
 |---|---|
 | Read or write records | `src/data/repository.ts` via `src/kernel/useRepository.ts` |
 | Browser persistence | `src/data/localStorageAdapter.ts` (recovers from corrupt data) |
-| Validation, filters, derived values | `src/data/operations.ts` |
+| Validation, filters, derived values, sorting | `src/data/operations.ts` |
+| One-click record changes (mark returned, lend to, mark paid) | `entities[].actions` in `parameters.json` |
+| A category that is suggested but not closed | a `combobox` field |
 | Local search | `src/data/searchIndex.ts` |
 | Full CRUD screen | `src/ui/CollectionView.tsx` |
 | Form controls | `src/ui/Field.tsx`, `src/ui/RecordForm.tsx` |
@@ -45,11 +49,13 @@ forms write real records. A form that discards what it collects is a mock.
 | Clickable walkthrough | `src/ui/PrototypeFlow.tsx` |
 | Failure containment | `src/ui/ErrorBoundary.tsx` |
 | Offline comparison material | `src/content/positioning.json` |
-| Styling | semantic classes in `src/styles.css`; themes in `src/themes/presets.css` |
+| Styling | Tailwind utilities over the theme tokens defined in `src/styles.css`; presets in `src/themes/presets.css` |
 
-Style with the existing semantic classes (`.card`, `.stack`, `.row`, `.field`,
-`.button`, `.notice`, `.empty`, `.stat`). Add CSS only for something genuinely
-new, and use the theme custom properties rather than literal colours.
+Match the styling of the component nearest to what you are building rather
+than inventing a look: the kernel components are the reference. Use the theme
+tokens (`surface`, `ink`, `ink-soft`, `line`, `accent`, `danger`) rather than
+literal colours, so every preset keeps working. Add CSS only for something
+genuinely new.
 
 ## Rules
 

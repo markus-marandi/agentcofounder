@@ -1,4 +1,14 @@
-import type { DerivedSpec, EntitySpec, FieldSpec, FilterMode, StoredRecord } from "../kernel/types.js";
+import {
+  NOW_TOKEN,
+  TODAY_TOKEN,
+  type ActionSpec,
+  type DerivedSpec,
+  type EntitySpec,
+  type FieldSpec,
+  type FilterMode,
+  type SortSpec,
+  type StoredRecord,
+} from "../kernel/types.js";
 
 /** Domain rules. No storage calls, no React — pure functions over records. */
 
@@ -56,11 +66,19 @@ function validateField(field: FieldSpec, value: FieldValue): string | undefined 
     return `${field.label} must be one of: ${field.options.join(", ")}.`;
   }
 
-  if (field.type === "text" && String(value).length > 200) {
+  if ((field.type === "text" || field.type === "combobox") && String(value).length > 200) {
     return `${field.label} cannot be longer than 200 characters.`;
   }
 
   return undefined;
+}
+
+/**
+ * Exported so a single value collected outside the record form — an action's
+ * inline prompt — is judged by exactly the same rules as the form.
+ */
+export function validateValue(field: FieldSpec, value: FieldValue): string | undefined {
+  return validateField(field, value);
 }
 
 /**
@@ -91,8 +109,36 @@ export function validateDraft(
   return errors;
 }
 
-/** Normalises a validated draft into the value shape actually stored. */
-export function toRecordInput(entity: EntitySpec, draft: Draft): Record<string, FieldValue> {
+/**
+ * Values already in use for a field: what a `combobox` suggests, and what a
+ * new entry is matched against so free text does not fragment into
+ * "Cookbook", "cookbook", and " cookbook ".
+ */
+export function knownValues(field: FieldSpec, existing: StoredRecord[] = []): string[] {
+  const used = existing
+    .map((record) => String(record[field.name] ?? "").trim())
+    .filter((value) => value !== "");
+  return [...new Set([...(field.options ?? []), ...used])];
+}
+
+/** Returns the established spelling of a value, or the trimmed value when it is new. */
+export function canonicalize(value: string, known: string[]): string {
+  const trimmed = value.trim().replace(/\s+/gu, " ");
+  if (trimmed === "") return "";
+  const match = known.find((candidate) => candidate.trim().toLowerCase() === trimmed.toLowerCase());
+  return match ?? trimmed;
+}
+
+/**
+ * Normalises a validated draft into the value shape actually stored. `existing`
+ * is only needed for `combobox` fields, where it decides which spelling of a
+ * free-text value wins.
+ */
+export function toRecordInput(
+  entity: EntitySpec,
+  draft: Draft,
+  existing: StoredRecord[] = [],
+): Record<string, FieldValue> {
   const input: Record<string, FieldValue> = {};
   for (const field of entity.fields) {
     const value = draft[field.name] ?? null;
@@ -100,6 +146,8 @@ export function toRecordInput(entity: EntitySpec, draft: Draft): Record<string, 
       input[field.name] = Boolean(value);
     } else if (field.type === "number") {
       input[field.name] = isBlank(value) ? null : Number(value);
+    } else if (field.type === "combobox") {
+      input[field.name] = canonicalize(String(value ?? ""), knownValues(field, existing));
     } else {
       input[field.name] = typeof value === "string" ? value.trim() : value;
     }
@@ -131,6 +179,47 @@ export interface ActiveFilter {
 export function applyFilters(records: StoredRecord[], filters: ActiveFilter[]): StoredRecord[] {
   if (filters.length === 0) return records;
   return records.filter((record) => filters.every((filter) => matches(record, filter.field, filter.mode, filter.value)));
+}
+
+/**
+ * Resting order for the collection. Numbers compare numerically, everything
+ * else by locale so "Émile" lands next to "Emile" rather than after "Z".
+ */
+export function sortRecords(records: StoredRecord[], sort?: SortSpec): StoredRecord[] {
+  if (!sort) return records;
+  const direction = sort.direction === "desc" ? -1 : 1;
+  return [...records].sort((left, right) => {
+    const a = left[sort.field];
+    const b = right[sort.field];
+    const aBlank = a === undefined || a === null || a === "";
+    const bBlank = b === undefined || b === null || b === "";
+    // Blanks sink to the bottom in either direction: an unfilled field is not
+    // a small value, it is an absent one.
+    if (aBlank || bBlank) return aBlank && bBlank ? 0 : aBlank ? 1 : -1;
+    if (typeof a === "number" && typeof b === "number") return (a - b) * direction;
+    if (typeof a === "boolean" && typeof b === "boolean") return (Number(a) - Number(b)) * direction;
+    return String(a).localeCompare(String(b), undefined, { numeric: true }) * direction;
+  });
+}
+
+/** Whether a row action is offered on this record at all. */
+export function actionApplies(action: ActionSpec, record: StoredRecord): boolean {
+  if (!action.when) return true;
+  return matches(record, action.when.field, action.when.mode, action.when.value);
+}
+
+/**
+ * The changes an action writes, with `@today` and `@now` resolved. `now` is a
+ * parameter so the behaviour is assertable rather than clock-dependent.
+ */
+export function resolveActionValues(action: ActionSpec, now: Date = new Date()): Record<string, FieldValue> {
+  const values: Record<string, FieldValue> = {};
+  for (const [name, value] of Object.entries(action.sets ?? {})) {
+    if (value === TODAY_TOKEN) values[name] = now.toISOString().slice(0, 10);
+    else if (value === NOW_TOKEN) values[name] = now.toISOString();
+    else values[name] = value;
+  }
+  return values;
 }
 
 function numbersFor(records: StoredRecord[], field: string | undefined): number[] {
