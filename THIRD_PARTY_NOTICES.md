@@ -28,7 +28,7 @@ See `app-template/src/ui/blocks/README.md` and `docs/tailwind-plus-catalog/`.
 
 | Path | Block | Note |
 |---|---|---|
-| `app-template/src/ui/blocks/HomeScreenSidebar.tsx` | Page Examples → Home Screens → "Sidebar", plus Data Display → Stats "With trending", Lists → Feeds "Simple with icons", Lists → Tables "Simple", Overlays → Modal Dialogs "Centered with single action", Overlays → Notifications "Simple", Feedback → Alerts "With description", Navigation → Tabs "Tabs with underline", Navigation → Breadcrumbs "Contained", Navigation → Progress Bars "Simple", Elements → Dropdowns "Simple", Elements → Avatars "Avatar group stacked bottom to top" | Illustrative sample data, not wired to the repository |
+| `app-template/src/ui/blocks/HomeScreenSidebar.tsx` | Page Examples → Home Screens → "Sidebar", plus Data Display → Stats "With trending", Data Display → Description Lists "Left-aligned", Data Display → Calendars "Small with meetings" (day-state `data-*` selectors simplified to conditional classNames), Lists → Feeds "Simple with icons", Lists → Tables "Simple", Lists → Stacked Lists "Simple", Overlays → Modal Dialogs "Centered with single action", Overlays → Notifications "Simple", Overlays → Drawers "Empty", Feedback → Alerts "With description", Navigation → Tabs "Tabs with underline", Navigation → Breadcrumbs "Contained", Navigation → Progress Bars "Simple", Navigation → Pagination "Card footer with page buttons", Elements → Dropdowns "Simple", Elements → Avatars "Avatar group stacked bottom to top", Forms → Action Panels "Simple", Forms → Form Layouts "Stacked" (trimmed to a workspace field and the Notifications fieldset), Forms → Sign-in and Registration "Simple" (reframed as a "Switch account" confirm dialog, no logo assets) | Illustrative sample data, not wired to the repository |
 | `app-template/src/ui/Alert.tsx` | Feedback → Alerts "With description" | Shared primitive |
 | `app-template/src/ui/Breadcrumbs.tsx` | Navigation → Breadcrumbs "Contained" | Shared primitive |
 | `app-template/src/ui/Dropdown.tsx` | Elements → Dropdowns "Simple" | Shared primitive |
@@ -37,6 +37,7 @@ See `app-template/src/ui/blocks/README.md` and `docs/tailwind-plus-catalog/`.
 | `app-template/src/ui/Badge.tsx` | Elements → Badges "With border" | Shared primitive |
 | `app-template/src/ui/Button.tsx` | Elements → Buttons "Primary buttons" | Shared primitive |
 | `app-template/src/ui/ButtonGroup.tsx` | Elements → Button Groups "Basic" | Shared primitive |
+| `app-template/src/ui/Field.tsx` | Forms → Input Groups "Input with label", Textareas "Simple", Select Menus "Simple native" (chevron overlay), Toggles "Simple toggle" | Restyle only — the field types and behavior predate this pass |
 
 Two MIT-licensed npm packages were added to `app-template/package.json` to
 support this block's interactive/iconography needs: `@headlessui/react` and
