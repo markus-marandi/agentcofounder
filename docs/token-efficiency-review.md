@@ -39,10 +39,23 @@ weighting, and credentialed runs.
 - Existing solution prompts, skills, extensions, fixtures, components, and
   organizer documents remain in the repository.
 - The original tool-enabled `runPi` adapter and its contract tests remain. It is
-  intentionally not exposed as a second runtime mode until the tool-broker and
-  hostile-code isolation boundary is approved.
+  not exposed as a second runtime mode in this branch; compare it from the base
+  revision during the paired benchmark.
 - The compiler reuses the existing generic collection kernel instead of asking
   the model to rewrite UI, tests, or storage code.
+
+## Verification on this branch
+
+`npm run check` passed on Node 22.19.0:
+
+- root: 70 tests passed, 4 platform-specific tests skipped;
+- generated app: 65 tests passed;
+- TypeScript, skill lint, parameter schema, HTTP/server probes, and both
+  production builds passed;
+- no tracked file is deleted, and `app-template/parameters.json` is unchanged.
+
+GitHub reported no configured checks for this branch when the draft PR opened,
+so these are local gate results rather than hosted CI evidence.
 
 ## Main files to review
 
