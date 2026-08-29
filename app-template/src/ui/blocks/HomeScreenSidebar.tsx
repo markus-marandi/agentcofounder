@@ -20,14 +20,17 @@ import {
   GlobeAltIcon,
   ServerIcon,
   SignalIcon,
+  UserCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import {
   ArrowUpTrayIcon,
   Bars3Icon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpDownIcon,
   MagnifyingGlassIcon,
+  MapPinIcon,
 } from "@heroicons/react/20/solid";
 import { parameters } from "../../kernel/config.js";
 import type { ShowcaseBlockProps } from "../../kernel/types.js";
@@ -66,13 +69,32 @@ import { Tabs } from "../Tabs.js";
  * "more actions" menu — trigger swapped for an icon-only ellipsis button),
  * and elements/avatars "Avatar group stacked bottom to top" (photo `<img>`s
  * swapped for the initials `Avatar` already used elsewhere in this file).
- * Also: overlays/drawers "Empty" (clicking a deployment row opens a
- * right-side drawer instead of a dead "#" anchor) filled with data-display/
- * description-lists "Left-aligned" (team/environment/status/source for that
- * deployment), and navigation/pagination "Card footer with page buttons"
- * (illustrative — the sample arrays are short enough that Previous/Next
- * don't page anything real, same convention as the rest of this file's
- * static data).
+ * Also: overlays/drawers "Empty" (a shared `SideDrawer` shell, used for two
+ * different triggers) filled with data-display/description-lists
+ * "Left-aligned" (clicking a deployment row — team/environment/status/
+ * source) or lists/stacked-lists "Simple" (clicking a team in the sidebar —
+ * that team's members, "Online"/"Offline" dot instead of a photo), and
+ * navigation/pagination "Card footer with page buttons" under the
+ * deployments list and projects table (illustrative — the sample arrays are
+ * short enough that Previous/Next don't page anything real, same convention
+ * as the rest of this file's static data).
+ *
+ * "Activity" and "Settings" in the sidebar are now real sections too:
+ * Activity is data-display/calendars "Small with meetings" — the original's
+ * Tailwind v4 `data-*` day-state selectors are simplified to plain
+ * conditional classNames here (same `classNames` helper already used
+ * throughout this file) rather than replicated exactly, and the month grid
+ * is a fixed illustrative sample, not a real calendar. Settings is
+ * forms/action-panels "Simple" (a "Rotate deploy tokens" card) stacked with
+ * a trimmed forms/form-layouts "Stacked" (workspace name/description plus a
+ * Notifications fieldset — a checkbox list and a radio list, both plain
+ * static JSX with no relation to this app's `Field.tsx`/`FieldSpec` system,
+ * same as everything else in this illustrative block). Clicking the sidebar
+ * footer's account row now opens forms/sign-in-forms "Simple", reframed as
+ * a "Switch account" confirm dialog in the existing centered-modal shell
+ * instead of a full-page screen (the two `tailwindcss.com/plus-assets` logo
+ * marks in the original are dropped — this dialog has no logo).
+ *
  * All were dependency-free and asset-free in the catalog (avatars aside,
  * which was always going to need the initials swap), so no new adaptation
  * concerns beyond the usual token remap. Alert/Tabs/Breadcrumbs/Dropdown
@@ -166,10 +188,52 @@ const navigation = [
 ];
 
 const teams = [
-  { id: 1, name: "Planetaria", href: "#", initial: "P", current: false },
-  { id: 2, name: "Protocol", href: "#", initial: "P", current: false },
-  { id: 3, name: "Tailwind Labs", href: "#", initial: "T", current: false },
+  { id: 1, name: "Planetaria", initial: "P" },
+  { id: 2, name: "Protocol", initial: "P" },
+  { id: 3, name: "Tailwind Labs", initial: "T" },
 ];
+
+/** Vendored from Tailwind Plus lists/stacked-lists, "Simple" — photo avatars swapped for the initials `Avatar`, "Online"/"Offline" dot kept. */
+const teamMembers: Record<string, Array<{ name: string; email: string; role: string; online: boolean }>> = {
+  Planetaria: [
+    { name: "Michael Foster", email: "michael.foster@planetaria.example", role: "Engineer", online: true },
+    { name: "Whitney Francis", email: "whitney.francis@planetaria.example", role: "Designer", online: false },
+    { name: "Lindsay Walton", email: "lindsay.walton@planetaria.example", role: "Front-end developer", online: true },
+  ],
+  Protocol: [
+    { name: "Michael Foster", email: "michael.foster@protocol.example", role: "Backend engineer", online: false },
+    { name: "Courtney Henry", email: "courtney.henry@protocol.example", role: "Site reliability", online: true },
+  ],
+  "Tailwind Labs": [
+    { name: "Courtney Henry", email: "courtney.henry@tailwindlabs.example", role: "Designer", online: true },
+    { name: "Whitney Francis", email: "whitney.francis@tailwindlabs.example", role: "Support", online: false },
+  ],
+};
+
+function TeamMemberList({ members }: { members: Array<{ name: string; email: string; role: string; online: boolean }> }) {
+  return (
+    <ul role="list" className="divide-y divide-line">
+      {members.map((member) => (
+        <li key={member.email} className="flex items-center justify-between gap-x-4 py-4">
+          <div className="flex min-w-0 gap-x-3">
+            <Avatar name={member.name} size="size-10" />
+            <div className="min-w-0 flex-auto">
+              <p className="text-sm font-semibold text-ink">{member.name}</p>
+              <p className="mt-0.5 truncate text-xs text-ink-soft">{member.email}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end">
+            <p className="text-sm text-ink">{member.role}</p>
+            <p className="mt-1 flex items-center gap-x-1.5 text-xs text-ink-soft">
+              <span className={classNames(member.online ? "bg-ok" : "bg-ink-soft/40", "size-1.5 rounded-full")} />
+              {member.online ? "Online" : "Offline"}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 const statuses: Record<string, string> = {
   offline: "text-ink-soft bg-surface-sunk",
@@ -375,16 +439,20 @@ function ProjectsTable() {
   );
 }
 
-/** Vendored from Tailwind Plus overlays/drawers, "Empty", filled with data-display/description-lists "Left-aligned". */
-function DeploymentDrawer({
-  deployment,
+/** Vendored from Tailwind Plus overlays/drawers, "Empty" — a shared shell for the deployment-detail and team-members drawers below. */
+function SideDrawer({
+  open,
+  title,
   onClose,
+  children,
 }: {
-  deployment: (typeof deployments)[number] | null;
+  open: boolean;
+  title: string;
   onClose: () => void;
+  children: React.ReactNode;
 }) {
   return (
-    <Dialog open={deployment !== null} onClose={onClose} className="relative z-50">
+    <Dialog open={open} onClose={onClose} className="relative z-50">
       <DialogBackdrop
         transition
         className="fixed inset-0 bg-ink/50 transition-opacity duration-500 ease-in-out data-closed:opacity-0"
@@ -399,9 +467,7 @@ function DeploymentDrawer({
               <div className="flex h-full flex-col overflow-y-auto bg-surface shadow-xl">
                 <div className="border-b border-line px-4 py-6 sm:px-6">
                   <div className="flex items-start justify-between">
-                    <DialogTitle className="text-base font-semibold text-ink">
-                      {deployment ? `${deployment.teamName} / ${deployment.projectName}` : ""}
-                    </DialogTitle>
+                    <DialogTitle className="text-base font-semibold text-ink">{title}</DialogTitle>
                     <div className="ml-3 flex h-7 items-center">
                       <button
                         type="button"
@@ -414,29 +480,27 @@ function DeploymentDrawer({
                     </div>
                   </div>
                 </div>
-                {deployment ? (
-                  <div className="px-4 py-6 sm:px-6">
-                    <dl className="divide-y divide-line">
-                      {[
-                        { label: "Team", value: deployment.teamName },
-                        { label: "Environment", value: deployment.environment },
-                        { label: "Status", value: deployment.statusText },
-                        { label: "Source", value: deployment.description },
-                      ].map((field) => (
-                        <div key={field.label} className="py-4 first:pt-0 sm:grid sm:grid-cols-3 sm:gap-4">
-                          <dt className="text-sm font-medium text-ink-soft">{field.label}</dt>
-                          <dd className="mt-1 text-sm text-ink sm:col-span-2 sm:mt-0">{field.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </div>
-                ) : null}
+                <div className="px-4 py-6 sm:px-6">{children}</div>
               </div>
             </DialogPanel>
           </div>
         </div>
       </div>
     </Dialog>
+  );
+}
+
+/** Vendored from Tailwind Plus data-display/description-lists, "Left-aligned". */
+function DescriptionList({ items }: { items: Array<{ label: string; value: string }> }) {
+  return (
+    <dl className="divide-y divide-line">
+      {items.map((item) => (
+        <div key={item.label} className="py-4 first:pt-0 sm:grid sm:grid-cols-3 sm:gap-4">
+          <dt className="text-sm font-medium text-ink-soft">{item.label}</dt>
+          <dd className="mt-1 text-sm text-ink sm:col-span-2 sm:mt-0">{item.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -468,6 +532,311 @@ function Pagination({ count, label }: { count: number; label: string }) {
   );
 }
 
+const CALENDAR_WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
+/** 2 trailing days of the prior month + a 31-day month + 2 leading days of the next, to fill a 5-row grid. Illustrative — not a real calendar. */
+const CALENDAR_DAYS = [
+  { day: 27, current: false },
+  { day: 28, current: false },
+  ...Array.from({ length: 31 }, (_, index) => ({ day: index + 1, current: true })),
+  { day: 1, current: false },
+  { day: 2, current: false },
+];
+const CALENDAR_TODAY = 12;
+const CALENDAR_SELECTED = 22;
+
+const MEETINGS = [
+  { name: "Deploy freeze review", time: "10:00 AM", location: "Video call", attendees: ["Michael Foster", "Courtney Henry"] },
+  { name: "Q1 infra planning", time: "1:30 PM", location: "Room 4B", attendees: ["Whitney Francis", "Lindsay Walton", "Michael Foster"] },
+  { name: "Incident retro: api.protocol.chat", time: "4:00 PM", location: "Video call", attendees: ["Courtney Henry"] },
+];
+
+const MEETING_ROW_ACTIONS = ["Edit", "Cancel"];
+
+/** Vendored from Tailwind Plus data-display/calendars, "Small with meetings" — day-state selectors simplified to conditional classNames, month grid is a fixed illustrative sample. */
+function MeetingsCalendar() {
+  return (
+    <div className="grid grid-cols-1 gap-8 px-4 py-6 sm:px-6 lg:grid-cols-2 lg:px-8">
+      <div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-ink">Illustrative month</h2>
+          <div className="flex items-center gap-1">
+            <button type="button" className="rounded p-1 text-ink-soft hover:bg-surface-sunk hover:text-ink">
+              <span className="sr-only">Previous month</span>
+              <ChevronLeftIcon aria-hidden="true" className="size-5" />
+            </button>
+            <button type="button" className="rounded p-1 text-ink-soft hover:bg-surface-sunk hover:text-ink">
+              <span className="sr-only">Next month</span>
+              <ChevronRightIcon aria-hidden="true" className="size-5" />
+            </button>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-7 text-center text-xs font-semibold text-ink-soft">
+          {CALENDAR_WEEKDAYS.map((weekday, index) => (
+            <div key={index}>{weekday}</div>
+          ))}
+        </div>
+        <div className="mt-2 grid grid-cols-7 gap-y-1 text-sm">
+          {CALENDAR_DAYS.map((cell, index) => {
+            const isToday = cell.current && cell.day === CALENDAR_TODAY;
+            const isSelected = cell.current && cell.day === CALENDAR_SELECTED;
+            return (
+              <button
+                key={index}
+                type="button"
+                className={classNames(
+                  "mx-auto flex size-8 items-center justify-center rounded-full",
+                  !cell.current
+                    ? "text-ink-soft/40"
+                    : isSelected
+                      ? "bg-accent font-semibold text-accent-ink"
+                      : isToday
+                        ? "font-semibold text-accent"
+                        : "text-ink hover:bg-surface-sunk",
+                )}
+              >
+                {cell.day}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-sm font-semibold text-ink">Upcoming meetings</h2>
+        <ul role="list" className="mt-4 divide-y divide-line">
+          {MEETINGS.map((meeting) => (
+            <li key={meeting.name} className="flex items-center gap-x-4 py-4">
+              <div className="min-w-0 flex-auto">
+                <p className="text-sm font-semibold text-ink">{meeting.name}</p>
+                <p className="mt-1 flex items-center gap-x-2 text-xs text-ink-soft">
+                  <time>{meeting.time}</time>
+                  <span aria-hidden="true">&middot;</span>
+                  <span className="flex items-center gap-x-1">
+                    <MapPinIcon aria-hidden="true" className="size-3.5" />
+                    {meeting.location}
+                  </span>
+                </p>
+              </div>
+              <AvatarStack names={meeting.attendees} />
+              <Dropdown
+                label={`Actions for ${meeting.name}`}
+                options={MEETING_ROW_ACTIONS.map((label) => ({ label, onClick: () => {} }))}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/** Vendored from Tailwind Plus forms/action-panels, "Simple". */
+function ActionPanel() {
+  return (
+    <div className="rounded-lg bg-surface-sunk px-4 py-5 shadow-xs ring-1 ring-line sm:flex sm:items-start sm:justify-between sm:p-6">
+      <div>
+        <h3 className="text-base font-semibold text-ink">Deploy tokens</h3>
+        <div className="mt-2 max-w-xl text-sm text-ink-soft">
+          <p>Rotate the API tokens CI uses to trigger deployments. Existing tokens keep working until they expire.</p>
+        </div>
+      </div>
+      <div className="mt-5 sm:mt-0 sm:ml-6 sm:flex sm:shrink-0 sm:items-center">
+        <Button size="sm">Rotate tokens</Button>
+      </div>
+    </div>
+  );
+}
+
+const NOTIFICATION_CHECKBOXES = [
+  { id: "deploy-failures", label: "Deploy failures", description: "Get notified when a deployment fails." },
+  { id: "weekly-digest", label: "Weekly digest", description: "A summary of the week's deployments and activity." },
+  { id: "security-alerts", label: "Security alerts", description: "Get notified about security-relevant events." },
+];
+
+const NOTIFICATION_DELIVERY = ["Email", "SMS", "Push"];
+
+/** Vendored from Tailwind Plus forms/form-layouts, "Stacked" — trimmed to a workspace field and the Notifications fieldset (checkbox list + radio list), re-themed from the original Profile/Personal Information/Notifications settings page. */
+function SettingsForm() {
+  return (
+    <form className="space-y-10 border-t border-line pt-8" onSubmit={(event) => event.preventDefault()}>
+      <div>
+        <h2 className="text-base font-semibold text-ink">Workspace</h2>
+        <p className="mt-1 text-sm text-ink-soft">Illustrative only — nothing here is saved.</p>
+
+        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+          <div className="sm:col-span-4">
+            <label htmlFor="workspace-name" className="block text-sm font-medium text-ink">
+              Workspace name
+            </label>
+            <div className="mt-2">
+              <input
+                id="workspace-name"
+                name="workspace-name"
+                type="text"
+                defaultValue={parameters.product.name}
+                className="block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-ink outline outline-line focus:outline-2 focus:outline-accent"
+              />
+            </div>
+          </div>
+
+          <div className="col-span-full">
+            <label htmlFor="workspace-description" className="block text-sm font-medium text-ink">
+              Description
+            </label>
+            <div className="mt-2">
+              <textarea
+                id="workspace-description"
+                name="workspace-description"
+                rows={3}
+                defaultValue="Deployments and activity for the team."
+                className="block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-ink outline outline-line focus:outline-2 focus:outline-accent"
+              />
+            </div>
+          </div>
+
+          <div className="col-span-full flex items-center gap-x-3">
+            <UserCircleIcon aria-hidden="true" className="size-12 text-ink-soft" />
+            <Button size="sm">Change logo</Button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-base font-semibold text-ink">Notifications</h2>
+        <p className="mt-1 text-sm text-ink-soft">Choose what you hear about, and how.</p>
+
+        <div className="mt-6 space-y-6">
+          <fieldset>
+            <legend className="text-sm font-semibold text-ink">By email</legend>
+            <div className="mt-4 space-y-4">
+              {NOTIFICATION_CHECKBOXES.map((item) => (
+                <div key={item.id} className="flex gap-3">
+                  <div className="flex h-6 shrink-0 items-center">
+                    <input
+                      id={item.id}
+                      name={item.id}
+                      type="checkbox"
+                      defaultChecked
+                      className="size-4 rounded-sm border-line text-accent focus:outline-accent"
+                    />
+                  </div>
+                  <div className="text-sm">
+                    <label htmlFor={item.id} className="font-medium text-ink">
+                      {item.label}
+                    </label>
+                    <p className="text-ink-soft">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-sm font-semibold text-ink">Delivery method</legend>
+            <div className="mt-4 space-y-3">
+              {NOTIFICATION_DELIVERY.map((method, index) => (
+                <div key={method} className="flex items-center gap-3">
+                  <input
+                    id={`delivery-${method}`}
+                    name="delivery-method"
+                    type="radio"
+                    defaultChecked={index === 0}
+                    className="size-4 border-line text-accent focus:outline-accent"
+                  />
+                  <label htmlFor={`delivery-${method}`} className="text-sm font-medium text-ink">
+                    {method}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-x-4">
+        <button type="button" className="text-sm font-semibold text-ink-soft hover:text-ink">
+          Cancel
+        </button>
+        <Button size="sm" type="submit">
+          Save
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function SettingsPanel() {
+  return (
+    <div className="space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+      <ActionPanel />
+      <SettingsForm />
+    </div>
+  );
+}
+
+/** Vendored from Tailwind Plus forms/sign-in-forms, "Simple" — reframed as a "Switch account" confirm dialog in the existing centered-modal shell instead of a full-page screen; the two logo `<img>`s in the original are dropped. */
+function SignInModal({ open, onClose, onSignedIn }: { open: boolean; onClose: () => void; onSignedIn: () => void }) {
+  return (
+    <Dialog open={open} onClose={onClose} className="relative z-50">
+      <DialogBackdrop
+        transition
+        className="fixed inset-0 bg-ink/50 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
+      />
+      <div className="fixed inset-0 z-50 w-screen overflow-y-auto">
+        <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <DialogPanel
+            transition
+            className="relative w-full transform overflow-hidden rounded-lg bg-surface px-4 pt-5 pb-4 text-left shadow-xl transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:max-w-sm sm:p-6"
+          >
+            <DialogTitle as="h3" className="text-base font-semibold text-ink">
+              Switch account
+            </DialogTitle>
+            <form
+              className="mt-4 space-y-4 text-left"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onSignedIn();
+              }}
+            >
+              <div>
+                <label htmlFor="switch-email" className="block text-sm font-medium text-ink">
+                  Email address
+                </label>
+                <div className="mt-2">
+                  <input
+                    id="switch-email"
+                    name="email"
+                    type="email"
+                    defaultValue="tom.cook@planetaria.example"
+                    className="block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-ink outline outline-line focus:outline-2 focus:outline-accent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="switch-password" className="block text-sm font-medium text-ink">
+                  Password
+                </label>
+                <div className="mt-2">
+                  <input
+                    id="switch-password"
+                    name="password"
+                    type="password"
+                    defaultValue="tailwind-plus-demo"
+                    className="block w-full rounded-md bg-surface px-3 py-1.5 text-sm text-ink outline outline-line focus:outline-2 focus:outline-accent"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-ink-soft">Illustrative only — no authentication actually runs here.</p>
+              <Button size="md" type="submit" className="inline-flex w-full justify-center">
+                Sign in
+              </Button>
+            </form>
+          </DialogPanel>
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
 function Logo() {
   return (
     <div className="flex h-16 shrink-0 items-center gap-2">
@@ -479,11 +848,41 @@ function Logo() {
   );
 }
 
-type Section = "deployments" | "projects";
+type Section = "deployments" | "projects" | "activity" | "settings";
 
 const SECTION_BY_NAV_NAME: Partial<Record<string, Section>> = {
   Deployments: "deployments",
   Projects: "projects",
+  Activity: "activity",
+  Settings: "settings",
+};
+
+const SECTION_TITLES: Record<Section, string> = {
+  deployments: "Deployments",
+  projects: "Projects",
+  activity: "Activity",
+  settings: "Settings",
+};
+
+const NEW_ACTION_LABEL: Partial<Record<Section, string>> = {
+  deployments: "New deployment",
+  projects: "New project",
+  activity: "New meeting",
+};
+
+const MODAL_COPY: Partial<Record<Section, { title: string; body: string }>> = {
+  deployments: {
+    title: "Deployment started",
+    body: "Illustrative only — no build actually runs here. In a real app this would kick off the deploy pipeline.",
+  },
+  projects: { title: "Project created", body: "Illustrative only — no project is actually created here." },
+  activity: { title: "Meeting scheduled", body: "Illustrative only — no calendar invite is actually sent here." },
+};
+
+const TOAST_COPY: Partial<Record<Section, { title: string; body: string }>> = {
+  deployments: { title: "Deployment triggered", body: "You'll see it appear in the list above shortly." },
+  projects: { title: "Project created", body: "It now shows up in the table above." },
+  activity: { title: "Meeting scheduled", body: "It now shows up on the calendar below." },
 };
 
 function SidebarNav({
@@ -491,7 +890,14 @@ function SidebarNav({
   onNavigate,
   section,
   onSelectSection,
-}: ShowcaseBlockProps & { section: Section; onSelectSection: (section: Section) => void }) {
+  onSelectTeam,
+  onOpenSignIn,
+}: ShowcaseBlockProps & {
+  section: Section;
+  onSelectSection: (section: Section) => void;
+  onSelectTeam: (team: string) => void;
+  onOpenSignIn: () => void;
+}) {
   return (
     <nav className="relative flex flex-1 flex-col">
       <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -531,23 +937,16 @@ function SidebarNav({
           <ul role="list" className="-mx-2 mt-2 space-y-1">
             {teams.map((team) => (
               <li key={team.name}>
-                <a
-                  href={team.href}
-                  className={classNames(
-                    team.current ? "bg-surface text-accent" : "text-ink-soft hover:bg-surface hover:text-accent",
-                    "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold",
-                  )}
+                <button
+                  type="button"
+                  onClick={() => onSelectTeam(team.name)}
+                  className="group flex w-full gap-x-3 rounded-md p-2 text-left text-sm/6 font-semibold text-ink-soft hover:bg-surface hover:text-accent"
                 >
-                  <span
-                    className={classNames(
-                      team.current ? "border-accent text-accent" : "border-line text-ink-soft group-hover:border-accent group-hover:text-accent",
-                      "flex size-6 shrink-0 items-center justify-center rounded-lg border bg-surface text-[0.625rem] font-medium",
-                    )}
-                  >
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-line bg-surface text-[0.625rem] font-medium text-ink-soft group-hover:border-accent group-hover:text-accent">
                     {team.initial}
                   </span>
                   <span className="truncate">{team.name}</span>
-                </a>
+                </button>
               </li>
             ))}
           </ul>
@@ -571,11 +970,15 @@ function SidebarNav({
           </li>
         ) : null}
         <li className="-mx-6 mt-auto">
-          <a href="#" className="flex items-center gap-x-4 px-6 py-3 text-sm/6 font-semibold text-ink hover:bg-surface">
+          <button
+            type="button"
+            onClick={onOpenSignIn}
+            className="flex w-full items-center gap-x-4 px-6 py-3 text-left text-sm/6 font-semibold text-ink hover:bg-surface"
+          >
             <Avatar name="Tom Cook" size="size-8" />
-            <span className="sr-only">Your profile</span>
+            <span className="sr-only">Switch account</span>
             <span aria-hidden="true">Tom Cook</span>
-          </a>
+          </button>
         </li>
       </ul>
     </nav>
@@ -589,18 +992,29 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
   const [feedRange, setFeedRange] = useState(FEED_RANGES[0]);
   const [section, setSection] = useState<Section>("deployments");
   const [modalOpen, setModalOpen] = useState(false);
-  const [toastOpen, setToastOpen] = useState(false);
+  const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
   const [envFilter, setEnvFilter] = useState(ENVIRONMENT_FILTERS[0]);
   const [selectedDeployment, setSelectedDeployment] = useState<(typeof deployments)[number] | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [signInOpen, setSignInOpen] = useState(false);
 
   const failedDeployments = deployments.filter((deployment) => deployment.status === "error");
   const inProgressDeployment = deployments.find((deployment) => deployment.status === "offline");
   const visibleDeployments =
     envFilter === "All" ? deployments : deployments.filter((deployment) => deployment.environment === envFilter);
 
+  const modalCopy = MODAL_COPY[section] ?? { title: "", body: "" };
+  const newActionLabel = NEW_ACTION_LABEL[section] ?? "";
+  const showPagination = section === "deployments" || section === "projects";
+
   const finishAction = (): void => {
     setModalOpen(false);
-    setToastOpen(true);
+    setToast(TOAST_COPY[section] ?? null);
+  };
+
+  const finishSignIn = (): void => {
+    setSignInOpen(false);
+    setToast({ title: "Signed in", body: "Illustrative only — your session didn't actually change." });
   };
 
   return (
@@ -627,7 +1041,14 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
 
             <div className="relative flex grow flex-col gap-y-5 overflow-y-auto bg-surface-sunk px-6">
               <Logo />
-              <SidebarNav otherViews={otherViews} onNavigate={onNavigate} section={section} onSelectSection={setSection} />
+              <SidebarNav
+                otherViews={otherViews}
+                onNavigate={onNavigate}
+                section={section}
+                onSelectSection={setSection}
+                onSelectTeam={setSelectedTeam}
+                onOpenSignIn={() => setSignInOpen(true)}
+              />
             </div>
           </DialogPanel>
         </div>
@@ -636,7 +1057,14 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
       <div className="hidden xl:fixed xl:inset-y-0 xl:z-50 xl:flex xl:w-72 xl:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-surface-sunk px-6 ring-1 ring-line">
           <Logo />
-          <SidebarNav otherViews={otherViews} onNavigate={onNavigate} section={section} onSelectSection={setSection} />
+          <SidebarNav
+            otherViews={otherViews}
+            onNavigate={onNavigate}
+            section={section}
+            onSelectSection={setSection}
+            onSelectTeam={setSelectedTeam}
+            onOpenSignIn={() => setSignInOpen(true)}
+          />
         </div>
       </div>
 
@@ -672,48 +1100,48 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
         </div>
 
         <div className="pt-4 pr-4 pl-4 sm:pr-6 sm:pl-6 lg:pr-96 lg:pl-8">
-          <Breadcrumbs
-            items={[{ label: parameters.product.name, href: "#" }, { label: section === "deployments" ? "Deployments" : "Projects" }]}
-          />
+          <Breadcrumbs items={[{ label: parameters.product.name, href: "#" }, { label: SECTION_TITLES[section] }]} />
         </div>
 
         <main className="lg:pr-96">
           <header className="flex items-center justify-between border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-            <h1 className="text-base/7 font-semibold text-ink">
-              {section === "deployments" ? "Deployments" : "Projects"}
-            </h1>
+            <h1 className="text-base/7 font-semibold text-ink">{SECTION_TITLES[section]}</h1>
 
-            <div className="flex items-center gap-x-4">
-              <Menu as="div" className="relative">
-              <MenuButton className="flex items-center gap-x-1 text-sm/6 font-medium text-ink">
-                Sort by
-                <ChevronUpDownIcon aria-hidden="true" className="size-5 text-ink-soft" />
-              </MenuButton>
-              <MenuItems
-                transition
-                className="absolute right-0 z-10 mt-2.5 w-40 origin-top-right rounded-md bg-surface py-2 shadow-lg outline outline-line transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-              >
-                <MenuItem>
-                  <a href="#" className="block px-3 py-1 text-sm/6 text-ink data-focus:bg-surface-sunk data-focus:outline-hidden">
-                    Name
-                  </a>
-                </MenuItem>
-                <MenuItem>
-                  <a href="#" className="block px-3 py-1 text-sm/6 text-ink data-focus:bg-surface-sunk data-focus:outline-hidden">
-                    Date updated
-                  </a>
-                </MenuItem>
-                <MenuItem>
-                  <a href="#" className="block px-3 py-1 text-sm/6 text-ink data-focus:bg-surface-sunk data-focus:outline-hidden">
-                    Environment
-                  </a>
-                </MenuItem>
-              </MenuItems>
-              </Menu>
-              <Button size="sm" onClick={() => setModalOpen(true)}>
-                {section === "deployments" ? "New deployment" : "New project"}
-              </Button>
-            </div>
+            {section === "deployments" || section === "projects" || section === "activity" ? (
+              <div className="flex items-center gap-x-4">
+                {section === "deployments" || section === "projects" ? (
+                  <Menu as="div" className="relative">
+                    <MenuButton className="flex items-center gap-x-1 text-sm/6 font-medium text-ink">
+                      Sort by
+                      <ChevronUpDownIcon aria-hidden="true" className="size-5 text-ink-soft" />
+                    </MenuButton>
+                    <MenuItems
+                      transition
+                      className="absolute right-0 z-10 mt-2.5 w-40 origin-top-right rounded-md bg-surface py-2 shadow-lg outline outline-line transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+                    >
+                      <MenuItem>
+                        <a href="#" className="block px-3 py-1 text-sm/6 text-ink data-focus:bg-surface-sunk data-focus:outline-hidden">
+                          Name
+                        </a>
+                      </MenuItem>
+                      <MenuItem>
+                        <a href="#" className="block px-3 py-1 text-sm/6 text-ink data-focus:bg-surface-sunk data-focus:outline-hidden">
+                          Date updated
+                        </a>
+                      </MenuItem>
+                      <MenuItem>
+                        <a href="#" className="block px-3 py-1 text-sm/6 text-ink data-focus:bg-surface-sunk data-focus:outline-hidden">
+                          Environment
+                        </a>
+                      </MenuItem>
+                    </MenuItems>
+                  </Menu>
+                ) : null}
+                <Button size="sm" onClick={() => setModalOpen(true)}>
+                  {newActionLabel}
+                </Button>
+              </div>
+            ) : null}
           </header>
 
           {section === "deployments" && failedDeployments.length > 0 ? (
@@ -776,14 +1204,20 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : section === "projects" ? (
             <ProjectsTable />
+          ) : section === "activity" ? (
+            <MeetingsCalendar />
+          ) : (
+            <SettingsPanel />
           )}
 
-          <Pagination
-            count={section === "deployments" ? visibleDeployments.length : projects.length}
-            label={section === "deployments" ? "Deployments" : "Projects"}
-          />
+          {showPagination ? (
+            <Pagination
+              count={section === "deployments" ? visibleDeployments.length : projects.length}
+              label={SECTION_TITLES[section]}
+            />
+          ) : null}
         </main>
 
         <aside className="bg-surface-sunk lg:fixed lg:top-16 lg:right-0 lg:bottom-0 lg:w-96 lg:overflow-y-auto lg:border-l lg:border-line">
@@ -844,14 +1278,10 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                 </div>
                 <div className="mt-3 text-center sm:mt-5">
                   <DialogTitle as="h3" className="text-base font-semibold text-ink">
-                    {section === "deployments" ? "Deployment started" : "Project created"}
+                    {modalCopy.title}
                   </DialogTitle>
                   <div className="mt-2">
-                    <p className="text-sm text-ink-soft">
-                      {section === "deployments"
-                        ? "Illustrative only — no build actually runs here. In a real app this would kick off the deploy pipeline."
-                        : "Illustrative only — no project is actually created here."}
-                    </p>
+                    <p className="text-sm text-ink-soft">{modalCopy.body}</p>
                   </div>
                 </div>
               </div>
@@ -865,9 +1295,11 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
         </div>
       </Dialog>
 
+      <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} onSignedIn={finishSignIn} />
+
       <div aria-live="assertive" className="pointer-events-none fixed inset-0 z-50 flex items-end px-4 py-6 sm:items-start sm:p-6">
         <div className="flex w-full flex-col items-center space-y-4 sm:items-end">
-          <Transition show={toastOpen}>
+          <Transition show={toast !== null}>
             <div className="pointer-events-auto w-full max-w-sm rounded-lg bg-surface shadow-lg outline outline-line transition data-closed:opacity-0 data-enter:transform data-enter:duration-300 data-enter:ease-out data-closed:data-enter:translate-y-2 data-leave:duration-100 data-leave:ease-in data-closed:data-enter:sm:translate-x-2 data-closed:data-enter:sm:translate-y-0">
               <div className="p-4">
                 <div className="flex items-start">
@@ -875,17 +1307,13 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                     <CheckCircleIcon aria-hidden="true" className="size-6 text-ok" />
                   </div>
                   <div className="ml-3 w-0 flex-1 pt-0.5">
-                    <p className="text-sm font-medium text-ink">
-                      {section === "deployments" ? "Deployment triggered" : "Project created"}
-                    </p>
-                    <p className="mt-1 text-sm text-ink-soft">
-                      {section === "deployments" ? "You'll see it appear in the list above shortly." : "It now shows up in the table above."}
-                    </p>
+                    <p className="text-sm font-medium text-ink">{toast?.title}</p>
+                    <p className="mt-1 text-sm text-ink-soft">{toast?.body}</p>
                   </div>
                   <div className="ml-4 flex shrink-0">
                     <button
                       type="button"
-                      onClick={() => setToastOpen(false)}
+                      onClick={() => setToast(null)}
                       className="inline-flex rounded-md text-ink-soft hover:text-ink focus:outline-2 focus:outline-offset-2 focus:outline-accent"
                     >
                       <span className="sr-only">Close</span>
@@ -899,7 +1327,26 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
         </div>
       </div>
 
-      <DeploymentDrawer deployment={selectedDeployment} onClose={() => setSelectedDeployment(null)} />
+      <SideDrawer
+        open={selectedDeployment !== null}
+        title={selectedDeployment ? `${selectedDeployment.teamName} / ${selectedDeployment.projectName}` : ""}
+        onClose={() => setSelectedDeployment(null)}
+      >
+        {selectedDeployment ? (
+          <DescriptionList
+            items={[
+              { label: "Team", value: selectedDeployment.teamName },
+              { label: "Environment", value: selectedDeployment.environment },
+              { label: "Status", value: selectedDeployment.statusText },
+              { label: "Source", value: selectedDeployment.description },
+            ]}
+          />
+        ) : null}
+      </SideDrawer>
+
+      <SideDrawer open={selectedTeam !== null} title={selectedTeam ?? ""} onClose={() => setSelectedTeam(null)}>
+        {selectedTeam ? <TeamMemberList members={teamMembers[selectedTeam] ?? []} /> : null}
+      </SideDrawer>
     </div>
   );
 }
