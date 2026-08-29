@@ -127,10 +127,11 @@ describe("product decision", () => {
     expect(report.tests_run.every((entry) => entry.result === "passed")).toBe(true);
   });
 
-  it("keeps the entire participant system prompt below 900 characters", () => {
-    expect(PRODUCT_DECISION_SYSTEM_PROMPT.length).toBeLessThan(900);
+  it("does not regress the frozen compact protocol size", () => {
+    expect(PRODUCT_DECISION_SYSTEM_PROMPT.length).toBeLessThanOrEqual(814);
     expect(PRODUCT_DECISION_SYSTEM_PROMPT).not.toMatch(/run npm|read AGENTS|write tests/iu);
     const example = PRODUCT_DECISION_SYSTEM_PROMPT.split("\n")[1] ?? "";
+    expect(example.length).toBeLessThanOrEqual(232);
     expect(() => parseProductDecision(example)).not.toThrow();
   });
 });

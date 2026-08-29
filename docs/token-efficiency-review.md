@@ -48,7 +48,7 @@ weighting, and credentialed runs.
 
 `npm run check` passed on Node 22.19.0:
 
-- root: 70 tests passed, 4 platform-specific tests skipped;
+- root: 74 tests passed, 4 platform-specific tests skipped;
 - generated app: 65 tests passed;
 - TypeScript, skill lint, parameter schema, HTTP/server probes, and both
   production builds passed;
@@ -69,6 +69,9 @@ so these are local gate results rather than hosted CI evidence.
   submit, persistence, edit, and delete journey.
 - `app-template/src/kernel/config.ts`: additive validation of supplied field,
   filter, derived, feature, navigation, and persistence references.
+- `src/compare-runs.ts`: matched-population, same-model comparison that ranks
+  verified success before total tokens per verified success.
+- `docs/token-benchmark.md`: frozen paired-run procedure and manifest format.
 
 ## Reviewer checks
 

@@ -133,6 +133,8 @@ can be compared from the base revision without deleting the original work.
 
 For a concise before/after summary and reviewer checklist, see
 [`docs/token-efficiency-review.md`](docs/token-efficiency-review.md).
+The credentialed A/B procedure and quality-first comparator are documented in
+[`docs/token-benchmark.md`](docs/token-benchmark.md).
 
 ## Scoring
 
@@ -164,6 +166,12 @@ npm run challenge
 
 ```bash
 npm run score
+```
+
+Compare matched base and compact result sets:
+
+```bash
+npm run benchmark:compare -- --manifest path/to/benchmark-manifest.json
 ```
 
 Run a fixture instead of the default idea:
