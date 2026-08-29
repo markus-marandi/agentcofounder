@@ -66,6 +66,13 @@ import { Tabs } from "../Tabs.js";
  * "more actions" menu — trigger swapped for an icon-only ellipsis button),
  * and elements/avatars "Avatar group stacked bottom to top" (photo `<img>`s
  * swapped for the initials `Avatar` already used elsewhere in this file).
+ * Also: overlays/drawers "Empty" (clicking a deployment row opens a
+ * right-side drawer instead of a dead "#" anchor) filled with data-display/
+ * description-lists "Left-aligned" (team/environment/status/source for that
+ * deployment), and navigation/pagination "Card footer with page buttons"
+ * (illustrative — the sample arrays are short enough that Previous/Next
+ * don't page anything real, same convention as the rest of this file's
+ * static data).
  * All were dependency-free and asset-free in the catalog (avatars aside,
  * which was always going to need the initials swap), so no new adaptation
  * concerns beyond the usual token remap. Alert/Tabs/Breadcrumbs/Dropdown
@@ -368,6 +375,99 @@ function ProjectsTable() {
   );
 }
 
+/** Vendored from Tailwind Plus overlays/drawers, "Empty", filled with data-display/description-lists "Left-aligned". */
+function DeploymentDrawer({
+  deployment,
+  onClose,
+}: {
+  deployment: (typeof deployments)[number] | null;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open={deployment !== null} onClose={onClose} className="relative z-50">
+      <DialogBackdrop
+        transition
+        className="fixed inset-0 bg-ink/50 transition-opacity duration-500 ease-in-out data-closed:opacity-0"
+      />
+      <div className="fixed inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+            <DialogPanel
+              transition
+              className="pointer-events-auto w-screen max-w-md transform transition duration-500 ease-in-out data-closed:translate-x-full sm:duration-700"
+            >
+              <div className="flex h-full flex-col overflow-y-auto bg-surface shadow-xl">
+                <div className="border-b border-line px-4 py-6 sm:px-6">
+                  <div className="flex items-start justify-between">
+                    <DialogTitle className="text-base font-semibold text-ink">
+                      {deployment ? `${deployment.teamName} / ${deployment.projectName}` : ""}
+                    </DialogTitle>
+                    <div className="ml-3 flex h-7 items-center">
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-md text-ink-soft hover:text-ink focus:outline-2 focus:outline-offset-2 focus:outline-accent"
+                      >
+                        <span className="sr-only">Close panel</span>
+                        <XMarkIcon aria-hidden="true" className="size-6" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {deployment ? (
+                  <div className="px-4 py-6 sm:px-6">
+                    <dl className="divide-y divide-line">
+                      {[
+                        { label: "Team", value: deployment.teamName },
+                        { label: "Environment", value: deployment.environment },
+                        { label: "Status", value: deployment.statusText },
+                        { label: "Source", value: deployment.description },
+                      ].map((field) => (
+                        <div key={field.label} className="py-4 first:pt-0 sm:grid sm:grid-cols-3 sm:gap-4">
+                          <dt className="text-sm font-medium text-ink-soft">{field.label}</dt>
+                          <dd className="mt-1 text-sm text-ink sm:col-span-2 sm:mt-0">{field.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ) : null}
+              </div>
+            </DialogPanel>
+          </div>
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+/** Vendored from Tailwind Plus navigation/pagination, "Card footer with page buttons". Illustrative — sample data is too short to actually page. */
+function Pagination({ count, label }: { count: number; label: string }) {
+  return (
+    <nav aria-label={`${label} pagination`} className="flex items-center justify-between border-t border-line px-4 py-3 sm:px-6 lg:px-8">
+      <div className="hidden sm:block">
+        <p className="text-sm text-ink-soft">
+          Showing <span className="font-medium text-ink">1</span> to <span className="font-medium text-ink">{count}</span> of{" "}
+          <span className="font-medium text-ink">{count}</span> results
+        </p>
+      </div>
+      <div className="flex flex-1 justify-between sm:justify-end">
+        <a
+          href="#"
+          className="relative inline-flex items-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-medium text-ink-soft hover:bg-surface-sunk"
+        >
+          Previous
+        </a>
+        <a
+          href="#"
+          className="relative ml-3 inline-flex items-center rounded-md border border-line bg-surface px-4 py-2 text-sm font-medium text-ink-soft hover:bg-surface-sunk"
+        >
+          Next
+        </a>
+      </div>
+    </nav>
+  );
+}
+
 function Logo() {
   return (
     <div className="flex h-16 shrink-0 items-center gap-2">
@@ -491,6 +591,7 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
   const [modalOpen, setModalOpen] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const [envFilter, setEnvFilter] = useState(ENVIRONMENT_FILTERS[0]);
+  const [selectedDeployment, setSelectedDeployment] = useState<(typeof deployments)[number] | null>(null);
 
   const failedDeployments = deployments.filter((deployment) => deployment.status === "error");
   const inProgressDeployment = deployments.find((deployment) => deployment.status === "offline");
@@ -646,12 +747,12 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
                         <div className="size-2 rounded-full bg-current" />
                       </div>
                       <h2 className="min-w-0 text-sm/6 font-semibold text-ink">
-                        <a href={deployment.href} className="flex gap-x-2">
+                        <button type="button" onClick={() => setSelectedDeployment(deployment)} className="flex gap-x-2 text-left">
                           <span className="truncate">{deployment.teamName}</span>
                           <span className="text-ink-soft">/</span>
                           <span className="whitespace-nowrap">{deployment.projectName}</span>
                           <span className="absolute inset-0" />
-                        </a>
+                        </button>
                       </h2>
                     </div>
                     <div className="mt-3 flex items-center gap-x-2.5 text-xs/5 text-ink-soft">
@@ -678,6 +779,11 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
           ) : (
             <ProjectsTable />
           )}
+
+          <Pagination
+            count={section === "deployments" ? visibleDeployments.length : projects.length}
+            label={section === "deployments" ? "Deployments" : "Projects"}
+          />
         </main>
 
         <aside className="bg-surface-sunk lg:fixed lg:top-16 lg:right-0 lg:bottom-0 lg:w-96 lg:overflow-y-auto lg:border-l lg:border-line">
@@ -792,6 +898,8 @@ export function HomeScreenSidebar({ otherViews, onNavigate }: ShowcaseBlockProps
           </Transition>
         </div>
       </div>
+
+      <DeploymentDrawer deployment={selectedDeployment} onClose={() => setSelectedDeployment(null)} />
     </div>
   );
 }
