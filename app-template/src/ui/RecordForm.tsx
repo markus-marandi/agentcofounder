@@ -15,7 +15,7 @@ interface Props {
   entity: EntitySpec;
   existing: StoredRecord[];
   editing?: StoredRecord;
-  onSubmit: (values: Record<string, FieldValue>) => void;
+  onSubmit: (values: Record<string, FieldValue>) => boolean;
   onCancel?: () => void;
 }
 
@@ -48,8 +48,8 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
         const found = validateDraft(entity, draft, existing, editing?.id);
         setErrors(found);
         if (Object.keys(found).length > 0) return;
-        onSubmit(toRecordInput(entity, draft));
-        if (!editing) setDraft(emptyDraft(entity));
+        const saved = onSubmit(toRecordInput(entity, draft));
+        if (saved && !editing) setDraft(emptyDraft(entity));
       }}
     >
       {errorCount > 0 ? (

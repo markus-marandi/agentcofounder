@@ -7,8 +7,20 @@ const valid = {
   product: { name: "Thing", tagline: "Does a thing" },
   theme: { preset: "modern-minimalist" },
   navigation: [{ id: "all", label: "All", kind: "collection", entity: "item" }],
-  entities: [{ name: "item", label: "Item", labelPlural: "Items", fields: [{ name: "title", label: "Title", type: "text" }] }],
-  features: {},
+  entities: [{
+    name: "item",
+    label: "Item",
+    labelPlural: "Items",
+    titleField: "title",
+    fields: [{ name: "title", label: "Title", type: "text", required: true }],
+    filters: [{ field: "title", label: "Title", mode: "contains" }],
+    derived: [{ id: "total", label: "Total", kind: "count" }],
+  }],
+  features: {
+    search: true,
+    auth: false,
+    limitations: ["Stored in this browser only.", "Clearing browser storage removes records."],
+  },
   persistence: { adapter: "localStorage", namespace: "thing" },
 };
 
@@ -33,6 +45,27 @@ describe("parameters validation", () => {
       navigation: [{ id: "all", label: "All", kind: "collection", entity: "ghost" }],
     });
     expect(problems.join(" ")).toContain("ghost");
+  });
+
+  it("rejects malformed optional filters, derived values, features, and field references", () => {
+    const problems = validateParameters({
+      ...valid,
+      entities: [{ ...valid.entities[0], titleField: "missing", filters: "bad", derived: "bad" }],
+      features: { search: "yes", auth: "no", limitations: "hidden" },
+    });
+    expect(problems.join(" ")).toMatch(/titleField.*filters.*derived.*features\.search.*features\.auth.*features\.limitations/u);
+  });
+
+  it("preserves Markus's showcase navigation, optional feature surface, and memory adapter", () => {
+    expect(validateParameters({
+      ...valid,
+      route: "prototype",
+      navigation: [{ id: "home", label: "Home", kind: "showcase" }],
+      entities: [{ name: "item", label: "Item", labelPlural: "Items", fields: valid.entities[0]!.fields }],
+      features: {},
+      persistence: { adapter: "memory", namespace: "thing" },
+      showcase: { blocks: ["home-screen-sidebar"] },
+    })).toEqual([]);
   });
 
   it("rejects anything that is not an object", () => {

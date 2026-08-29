@@ -106,7 +106,7 @@
               "properties": {
                 "field": { "type": "string" },
                 "label": { "type": "string" },
-                "mode": { "enum": ["equals", "truthy", "falsy", "contains"] }
+                "mode": { "enum": ["equals", "truthy", "falsy", "contains", "beforeToday"] }
               }
             }
           },
@@ -128,7 +128,7 @@
                   "required": ["field", "mode"],
                   "properties": {
                     "field": { "type": "string" },
-                    "mode": { "enum": ["equals", "truthy", "falsy", "contains"] },
+                    "mode": { "enum": ["equals", "truthy", "falsy", "contains", "beforeToday"] },
                     "value": {}
                   }
                 }

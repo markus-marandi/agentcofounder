@@ -40,7 +40,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
       .filter((spec) => (choices[spec.field] ?? "") !== "")
       .map((spec) => {
         const mode = spec.mode ?? "equals";
-        return mode === "truthy" || mode === "falsy"
+        return mode === "truthy" || mode === "falsy" || mode === "beforeToday"
           ? { field: spec.field, mode }
           : { field: spec.field, mode, value: choices[spec.field] };
       });
@@ -54,12 +54,14 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
     return [...new Set(records.map((record) => String(record[field] ?? "")).filter((value) => value !== ""))].sort();
   };
 
-  const submit = (values: Record<string, FieldValue>): void => {
-    run(() => {
+  const submit = (values: Record<string, FieldValue>): boolean => {
+    const saved = run(() => {
       if (editing) repository.update(editing.id, values);
       else repository.create(values);
+      return true;
     });
-    setEditingId(null);
+    if (saved) setEditingId(null);
+    return saved === true;
   };
 
   return (
@@ -118,7 +120,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
           {filterSpecs.map((spec) => {
             const mode = spec.mode ?? "equals";
             const id = `filter-${spec.field}`;
-            if (mode === "truthy" || mode === "falsy") {
+            if (mode === "truthy" || mode === "falsy" || mode === "beforeToday") {
               return (
                 <div className="flex items-center gap-3" key={spec.field}>
                   <input

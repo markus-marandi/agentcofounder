@@ -2,6 +2,9 @@ import rawParameters from "../../parameters.json";
 import type { EntitySpec, NavigationSpec, Parameters, Route, ThemePreset } from "./types.js";
 
 const ROUTES: Route[] = ["landing-page", "web-app", "prototype", "mock-dashboard", "open-build"];
+const FIELD_TYPES = new Set(["text", "longtext", "number", "date", "select", "boolean"]);
+const FILTER_MODES = new Set(["equals", "truthy", "falsy", "contains", "beforeToday"]);
+const DERIVED_KINDS = new Set(["count", "countWhere", "sum", "average", "min", "max", "distinct"]);
 
 const THEMES: ThemePreset[] = [
   "modern-minimalist",
@@ -71,9 +74,70 @@ export function validateParameters(candidate: unknown): string[] {
       if (typeof entity.name !== "string" || entity.name === "") {
         problems.push(`entities[${index}].name is required`);
       }
+      if (typeof entity.label !== "string" || entity.label === "") problems.push(`entities[${index}].label is required`);
+      if (typeof entity.labelPlural !== "string" || entity.labelPlural === "") problems.push(`entities[${index}].labelPlural is required`);
       if (!Array.isArray(entity.fields) || entity.fields.length === 0) {
         problems.push(`entities[${index}].fields must list at least one field`);
+        continue;
       }
+      const fieldNames = new Set<string>();
+      for (const [fieldIndex, field] of entity.fields.entries()) {
+        if (!isRecord(field) || typeof field.name !== "string" || field.name === "") {
+          problems.push(`entities[${index}].fields[${fieldIndex}].name is required`);
+          continue;
+        }
+        if (fieldNames.has(field.name)) problems.push(`entities[${index}].field names must be unique`);
+        fieldNames.add(field.name);
+        if (!FIELD_TYPES.has(String(field.type))) problems.push(`entities[${index}].fields[${fieldIndex}].type is unsupported`);
+        if (field.type === "select" && (!Array.isArray(field.options) || field.options.length === 0)) {
+          problems.push(`entities[${index}].fields[${fieldIndex}].options are required`);
+        }
+      }
+      if (entity.titleField !== undefined && (typeof entity.titleField !== "string" || !fieldNames.has(entity.titleField))) {
+        problems.push(`entities[${index}].titleField must reference a field when supplied`);
+      }
+      if (entity.filters !== undefined && !Array.isArray(entity.filters)) {
+        problems.push(`entities[${index}].filters must be an array when supplied`);
+      } else if (Array.isArray(entity.filters)) {
+        for (const [filterIndex, filter] of entity.filters.entries()) {
+          if (!isRecord(filter) || !fieldNames.has(String(filter.field))) {
+            problems.push(`entities[${index}].filters[${filterIndex}].field must reference a field`);
+          }
+          if (!isRecord(filter) || !FILTER_MODES.has(String(filter.mode ?? "equals"))) {
+            problems.push(`entities[${index}].filters[${filterIndex}].mode is unsupported`);
+          }
+        }
+      }
+      if (entity.derived !== undefined && !Array.isArray(entity.derived)) {
+        problems.push(`entities[${index}].derived must be an array when supplied`);
+      } else if (Array.isArray(entity.derived)) {
+        for (const [derivedIndex, derived] of entity.derived.entries()) {
+          if (!isRecord(derived) || !DERIVED_KINDS.has(String(derived.kind))) {
+            problems.push(`entities[${index}].derived[${derivedIndex}].kind is unsupported`);
+            continue;
+          }
+          if (derived.field !== undefined && !fieldNames.has(String(derived.field))) {
+            problems.push(`entities[${index}].derived[${derivedIndex}].field must reference a field`);
+          }
+          if (derived.kind === "countWhere") {
+            const where = derived.where;
+            if (!isRecord(where) || !fieldNames.has(String(where.field)) || !FILTER_MODES.has(String(where.mode))) {
+              problems.push(`entities[${index}].derived[${derivedIndex}].where is invalid`);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const features = candidate.features;
+  if (features !== undefined && !isRecord(features)) {
+    problems.push("features must be an object when supplied");
+  } else if (isRecord(features)) {
+    if (features.search !== undefined && typeof features.search !== "boolean") problems.push("features.search must be boolean");
+    if (features.auth !== undefined && typeof features.auth !== "boolean") problems.push("features.auth must be boolean");
+    if (features.limitations !== undefined && !Array.isArray(features.limitations)) {
+      problems.push("features.limitations must be an array when supplied");
     }
   }
 

@@ -73,6 +73,15 @@ describe("filters", () => {
     ]);
     expect(narrowed.map((record) => record.id)).toEqual(["3"]);
   });
+
+  it("matches valid dates before today and rejects empty or malformed dates", () => {
+    const dated: StoredRecord[] = [
+      { id: "old", createdAt: "2026-01-01T00:00:00.000Z", due: "2020-01-01" },
+      { id: "future", createdAt: "2026-01-01T00:00:00.000Z", due: "2999-01-01" },
+      { id: "empty", createdAt: "2026-01-01T00:00:00.000Z", due: "" },
+    ];
+    expect(applyFilters(dated, [{ field: "due", mode: "beforeToday" }]).map((record) => record.id)).toEqual(["old"]);
+  });
 });
 
 describe("derived values", () => {

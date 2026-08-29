@@ -17,25 +17,25 @@ telemetry ownership, freeze procedure, security — is in
 
 ```mermaid
 flowchart TD
-    idea["Product idea<br/>(plain language)"] --> pi
+    idea["Product idea<br/>(plain language)"] --> session
 
-    subgraph pi["Pi — one run, offline, cwd = output/app"]
+    subgraph session["Pi — one compact decision, offline"]
         direction TB
-        prompt["system-prompt.md<br/>+ journeys.md<br/>+ app AGENTS.md<br/>+ skill descriptions"]
-        analyzer["product-analyzer skill<br/>extract the idea"]
-        spec["idea_spec.json<br/>parameters.json"]
-        route["web-app skill"]
-        build["wire the kernel<br/>write journey tests"]
-        loop{"verify-loop<br/>tests + build pass?"}
+        prompt["compact JSON contract<br/>no tools, skills, context, or extensions"]
+        decision["one product decision"]
 
-        prompt --> analyzer --> spec --> route --> build --> loop
-        loop -- "no, repair" --> build
+        prompt --> decision
     end
 
-    loop -- yes --> report["report.partial.json"]
-    report --> runner["Runner verifies independently:<br/>vitest · build · :3000 probe"]
+    decision --> compiler["deterministic compiler:<br/>parameters.json · API.md · journey report"]
+    compiler --> runner["Runner verifies independently:<br/>vitest · build · :3000 probe"]
     runner --> result["result.json<br/>audited telemetry"]
 ```
+
+The normal path makes one model call. A second call is permitted only when the
+first response fails the compact decision validator. The model cannot read the
+repository or write files; deterministic code compiles its decision into every
+generated artifact.
 
 One route, one floor. The harness builds a `web-app`: a full collection
 screen with create, edit, and delete, at least one filter, at least one
@@ -110,24 +110,29 @@ rest of this strategy.
 
 ### Why offline shapes everything
 
-The runner sets `PI_OFFLINE=1` and passes `--offline`, and judging blocks
+The runner sets `PI_OFFLINE=1`, and judging blocks
 outbound network. So there is no competitor search (a committed
 [positioning dataset](app-template/src/content/positioning.json) of general
 alternatives instead), no CDN, no `npx`, no Supabase, and no hosted auth. The
 repository boundary is the integration story: implement one more `StorageAdapter`
 and nothing above it changes.
 
-## The agentic loop
+## The token path
 
-`solution/extensions/verify-loop.ts` listens for `agent_settled` — the moment the
-model believes it is finished — then runs the tests and the production build. On
-failure it hands the shortest decisive output back through `pi.sendMessage()` so
-the agent repairs it inside the same run, bounded by three attempts and a
-wall-clock budget. It never starts a development server: the runner owns port
-3000.
+`src/decision-session.ts` replaces Pi's coding-agent prompt with the compact
+decision contract and disables tools, skills, prompt templates, themes,
+extensions, and context files. `src/product-decision.ts` validates the response
+and writes the configuration, API boundary, journey report, and decision audit.
+Tests and the production build run once outside the model session; the runner
+owns port 3000 and verifies that it is released.
 
-Without it, a failure is discovered after the run is over, when it can only be
-recorded.
+Markus's original system prompt, product-analyzer and web-app skills,
+protected-paths and verify-loop extensions, and `runPi` CLI adapter remain in
+the repository. The compact runtime does not invoke that tool-enabled path; it
+can be compared from the base revision without deleting the original work.
+
+For a concise before/after summary and reviewer checklist, see
+[`docs/token-efficiency-review.md`](docs/token-efficiency-review.md).
 
 ## Scoring
 
@@ -171,14 +176,16 @@ npm run challenge -- --idea-file docs/fixtures/skeleton.txt
 
 | Path | Owner | Purpose |
 |---|---|---|
-| `solution/system-prompt.md` | Us | What the agent is told |
-| `solution/skills/` | Us | product-analyzer and the web-app route |
-| `solution/extensions/` | Us | Write guard and the verify-repair loop |
+| `src/decision-session.ts` | Us | One-call, no-tool Pi session and raw event capture |
+| `src/product-decision.ts` | Us | Decision validation and deterministic artifact compiler |
+| `solution/system-prompt.md` | Us | Original agent instructions, retained for comparison |
+| `solution/skills/` | Us | Original product-analyzer and web-app route |
+| `solution/extensions/` | Us | Original write guard and verify-repair loop |
 | `app-template/` | Us | The prebuilt kernel, copied into a fresh workspace each run |
 | `src/` | Organizer | Runner, verification, telemetry, scoring |
 | `contract-public/` | Organizer | Public idea, journey guidance, result schema |
 | `output/`, `artifacts/` | Runner | Generated. Reset every run |
 
 `AGENTS.md` and `MEMORY.md` at the root are development context for coding
-agents working on this harness. Pi never reads them — the runner passes
-`--no-context-files`. Both are deleted before submission.
+agents working on this harness. Pi never reads them because the resource loader
+disables context files. Both are deleted before submission.

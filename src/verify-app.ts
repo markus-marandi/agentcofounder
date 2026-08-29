@@ -12,6 +12,12 @@ interface CommandOutcome {
   timedOut: boolean;
 }
 
+interface CommandInvocation {
+  command: string;
+  argsPrefix: string[];
+  display: string;
+}
+
 interface VitestReport {
   numTotalTests?: unknown;
   numPassedTests?: unknown;
@@ -38,6 +44,27 @@ interface CapturedOutput {
 
 function commandName(name: string): string {
   return process.platform === "win32" ? `${name}.cmd` : name;
+}
+
+function npmInvocation(override?: string): CommandInvocation {
+  if (override) return { command: override, argsPrefix: [], display: override };
+  if (process.platform !== "win32") return { command: "npm", argsPrefix: [], display: "npm" };
+  return {
+    command: process.execPath,
+    argsPrefix: [path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js")],
+    display: "npm",
+  };
+}
+
+function vitestInvocation(appDirectory: string, override?: string): CommandInvocation {
+  if (override) return { command: override, argsPrefix: [], display: override };
+  const display = path.join(appDirectory, "node_modules", ".bin", "vitest");
+  if (process.platform !== "win32") return { command: display, argsPrefix: [], display };
+  return {
+    command: process.execPath,
+    argsPrefix: [path.join(appDirectory, "node_modules", "vitest", "vitest.mjs")],
+    display,
+  };
 }
 
 function delay(milliseconds: number): Promise<void> {
@@ -205,6 +232,7 @@ async function verifyDevelopmentServer(
   logPath: string,
   timeoutMs: number,
   npmCommand: string,
+  npmArgsPrefix: string[],
   port: number,
 ): Promise<boolean> {
   if (await portHasListener(port)) {
@@ -215,7 +243,7 @@ async function verifyDevelopmentServer(
   const captured: CapturedOutput = { chunks: [], length: 0, truncated: false };
   let child: ChildProcess;
   try {
-    const args = ["run", "dev"];
+    const args = [...npmArgsPrefix, "run", "dev"];
     if (port !== 3000) args.push("--", "--port", String(port));
     child = spawn(npmCommand, args, {
       cwd: appDirectory,
@@ -363,26 +391,24 @@ export async function verifyGeneratedApp(
   const commandTimeoutMs = options.commandTimeoutMs ?? 120_000;
   const displayRoot = options.displayRoot ?? process.cwd();
   const serverTimeoutMs = options.serverTimeoutMs ?? 20_000;
-  const npmCommand = options.npmCommand ?? commandName("npm");
+  const npm = npmInvocation(options.npmCommand);
   const port = options.port ?? 3000;
-  const vitestCommand =
-    options.vitestCommand ??
-    path.join(appDirectory, "node_modules", ".bin", process.platform === "win32" ? "vitest.cmd" : "vitest");
-  const commands = verificationCommands(appDirectory, artifactDirectory, displayRoot, npmCommand, vitestCommand, port);
+  const vitest = vitestInvocation(appDirectory, options.vitestCommand);
+  const commands = verificationCommands(appDirectory, artifactDirectory, displayRoot, npm.display, vitest.display, port);
   const testReportPath = path.join(artifactDirectory, "app-test-results.json");
 
   try {
     const test = await runLoggedCommand(
-      vitestCommand,
-      commands.test.args,
+      vitest.command,
+      [...vitest.argsPrefix, ...commands.test.args],
       appDirectory,
       path.join(artifactDirectory, "app-test.log"),
       commandTimeoutMs,
     );
     const testsPassed = test.exitCode === 0 && (await hasPassingVitestReport(testReportPath));
     const build = await runLoggedCommand(
-      npmCommand,
-      ["run", "build"],
+      npm.command,
+      [...npm.argsPrefix, "run", "build"],
       appDirectory,
       path.join(artifactDirectory, "app-build.log"),
       commandTimeoutMs,
@@ -391,7 +417,8 @@ export async function verifyGeneratedApp(
       appDirectory,
       path.join(artifactDirectory, "app-dev.log"),
       serverTimeoutMs,
-      npmCommand,
+      npm.command,
+      npm.argsPrefix,
       port,
     );
 

@@ -3,20 +3,23 @@ import { createWriteStream } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { prepareOutput } from "./prepare-output.js";
 import { auditAppPortAfterPi } from "./port-owner.js";
 import { signalProcessTree, terminateProcessTree, usesDetachedProcessGroup } from "./process-tree.js";
 import {
   composeResult,
   missingRequiredResultPaths,
-  readPartialResult,
   rootStartCommand,
   writeResult,
 } from "./result.js";
 import { collectUsageFromJsonLines } from "./usage.js";
-import type { RunResult } from "./types.js";
+import type { PartialRunResult, RunResult } from "./types.js";
 import { validateResultObject } from "./validate-result.js";
+import { validateParametersFile } from "./validate-parameters.js";
 import { portHasListener, unavailableAppVerification, verifyGeneratedApp } from "./verify-app.js";
+import { runDecisionSession } from "./decision-session.js";
+import { deterministicPartialResult, materializeDecision } from "./product-decision.js";
 
 interface Arguments {
   ideaFile: string;
@@ -33,14 +36,7 @@ export interface CommandResult {
 const SOURCE_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = path.resolve(SOURCE_DIRECTORY, "..");
 const APP_PORT = 3000;
-
 const EXTENSIONS = ["protected-paths.ts", "verify-loop.ts"];
-
-/**
- * Only names and descriptions enter the system prompt; a body is read on
- * demand. The analyzer is listed first because it runs first and hands off
- * to web-app, the only route.
- */
 const SKILLS = ["product-analyzer", "web-app"];
 
 export function runRequiresFailureExit(
@@ -108,9 +104,33 @@ function commandName(name: string): string {
   return process.platform === "win32" ? `${name}.cmd` : name;
 }
 
+function directInvocation(command: string, args: string[]): { command: string; args: string[] } {
+  if (process.platform !== "win32") return { command, args };
+  const base = path.basename(command).toLowerCase();
+  if (base === "npm.cmd") {
+    return {
+      command: process.execPath,
+      args: [path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"), ...args],
+    };
+  }
+  if (base === "pi.cmd") {
+    return {
+      command: process.execPath,
+      args: [path.resolve(path.dirname(command), "..", "@earendil-works", "pi-coding-agent", "dist", "cli.js"), ...args],
+    };
+  }
+  return { command, args };
+}
+
 async function runInherited(command: string, args: string[], cwd: string): Promise<number> {
   return await new Promise<number>((resolve, reject) => {
-    const child = spawn(command, args, { cwd, stdio: "inherit", env: process.env, shell: false });
+    const invocation = directInvocation(command, args);
+    const child = spawn(invocation.command, invocation.args, {
+      cwd,
+      stdio: "inherit",
+      env: process.env,
+      shell: false,
+    });
     child.once("error", reject);
     child.once("close", (code) => resolve(code ?? 1));
   });
@@ -136,6 +156,8 @@ function summarizeEventLine(line: string): void {
   }
 }
 
+/** Legacy CLI adapter retained for compatibility tests. The challenge runtime
+ * uses runDecisionSession and never calls this tool-enabled path. */
 export async function runPi(
   args: string[],
   cwd: string,
@@ -149,6 +171,21 @@ export async function runPi(
   let piChild: ReturnType<typeof spawn> | undefined;
 
   try {
+    const providerIndex = args.indexOf("--provider");
+    const modelIndex = args.indexOf("--model");
+    const provider = providerIndex >= 0 ? args[providerIndex + 1] : undefined;
+    const model = modelIndex >= 0 ? args[modelIndex + 1] : undefined;
+    if (provider) {
+      const runtime = await ModelRuntime.create();
+      if (!runtime.getProvider(provider)) {
+        errors.write(`Error: Unknown provider "${provider}". Use --list-models to see available providers/models.\n`);
+        return { exitCode: 1, timedOut: false };
+      }
+      if (model && !runtime.getModel(provider, model)) {
+        errors.write(`Error: Unknown model "${provider}/${model}". Use --list-models to see available providers/models.\n`);
+        return { exitCode: 1, timedOut: false };
+      }
+    }
     return await new Promise<CommandResult>((resolve, reject) => {
       const piBinary = path.join(
         REPOSITORY_ROOT,
@@ -156,7 +193,8 @@ export async function runPi(
         ".bin",
         process.platform === "win32" ? "pi.cmd" : "pi",
       );
-      const child = spawn(piBinary, args, {
+      const invocation = directInvocation(piBinary, args);
+      const child = spawn(invocation.command, invocation.args, {
         cwd,
         detached: usesDetachedProcessGroup(),
         env: { ...process.env, PI_OFFLINE: "1" },
@@ -236,15 +274,6 @@ export function buildPiArguments(
   return args;
 }
 
-function timeoutFromEnvironment(): number {
-  const raw = process.env.CHALLENGE_TIMEOUT_MS ?? "900000";
-  const value = Number(raw);
-  if (!Number.isSafeInteger(value) || value < 1_000) {
-    throw new Error("CHALLENGE_TIMEOUT_MS must be an integer of at least 1000");
-  }
-  return value;
-}
-
 async function main(): Promise<void> {
   const args = parseArguments(process.argv.slice(2));
   const idea = await readFile(args.ideaFile, "utf8");
@@ -261,12 +290,6 @@ async function main(): Promise<void> {
   }
   if (args.prepareOnly) return;
 
-  const [systemPrompt, publicJourneys, appContext] = await Promise.all([
-    readFile(path.join(REPOSITORY_ROOT, "solution", "system-prompt.md"), "utf8"),
-    readFile(path.join(REPOSITORY_ROOT, "contract-public", "journeys.md"), "utf8"),
-    readFile(path.join(outputDirectory, "AGENTS.md"), "utf8"),
-  ]);
-
   const runId = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
   const artifactDirectory = path.join(REPOSITORY_ROOT, "artifacts", "runs", runId);
   await mkdir(path.join(artifactDirectory, "sessions"), { recursive: true });
@@ -274,14 +297,9 @@ async function main(): Promise<void> {
 
   const eventFile = path.join(artifactDirectory, "events.jsonl");
   const stderrFile = path.join(artifactDirectory, "pi.stderr.log");
+  await writeFile(stderrFile, "", { encoding: "utf8", flag: "wx" });
   const appPortHadListenerBeforePi = await portHasListener(APP_PORT);
-  const pi = await runPi(
-    buildPiArguments(idea, systemPrompt, publicJourneys, appContext, artifactDirectory),
-    outputDirectory,
-    eventFile,
-    stderrFile,
-    timeoutFromEnvironment(),
-  );
+  const decisionRun = await runDecisionSession(idea, outputDirectory, artifactDirectory);
   const portReclamation = await auditAppPortAfterPi(APP_PORT, outputDirectory, appPortHadListenerBeforePi);
   if (portReclamation.listener_after_pi) {
     const message = `${portReclamation.diagnostic}; pids=${portReclamation.process_ids.join(",") || "none"}`;
@@ -290,13 +308,39 @@ async function main(): Promise<void> {
   }
 
   const usage = collectUsageFromJsonLines(await readFile(eventFile, "utf8"));
-  const partial = await readPartialResult(outputDirectory);
-  const canVerifyApp = pi.exitCode === 0 && usage.model_calls > 0;
+  let decisionExitCode = decisionRun.exitCode;
+  let decision = decisionRun.decision;
+  if (decision) {
+    await materializeDecision(outputDirectory, decision);
+    const parameterProblems = await validateParametersFile(
+      path.join(outputDirectory, "parameters.json"),
+      path.join(outputDirectory, "parameters.schema.json"),
+    );
+    if (parameterProblems.length > 0) {
+      for (const problem of parameterProblems) console.error(`- ${problem}`);
+      decisionExitCode = 1;
+      decision = undefined;
+    }
+  }
+  if (decisionRun.error) console.error(decisionRun.error);
+
+  const canVerifyApp = decisionExitCode === 0 && usage.model_calls > 0 && decision !== undefined;
   const startCommand = rootStartCommand(REPOSITORY_ROOT, outputDirectory);
   let verification = unavailableAppVerification(
     canVerifyApp ? "app verification had not completed" : "Pi did not complete with audited model usage",
   );
-  let result = composeResult(partial, usage, pi.exitCode, verification, portReclamation, startCommand);
+  let partial: PartialRunResult = decision
+    ? deterministicPartialResult(decision, false)
+    : {
+      status: "failed",
+      app_url: "http://localhost:3000",
+      start_command: "npm run dev",
+      summary: decisionRun.error ?? "The model did not produce a valid product decision.",
+      implemented_features: [],
+      assumptions: [],
+      tests_run: [],
+    };
+  let result = composeResult(partial, usage, decisionExitCode, verification, portReclamation, startCommand);
   const appResultPath = path.join(outputDirectory, "result.json");
   const rootResultPath = path.join(REPOSITORY_ROOT, "result.json");
   const requiredResultPaths = [appResultPath, rootResultPath];
@@ -305,11 +349,13 @@ async function main(): Promise<void> {
     result,
     [rootResultPath],
   );
-  if (canVerifyApp) {
+  if (canVerifyApp && decision) {
     verification = await verifyGeneratedApp(outputDirectory, artifactDirectory, { displayRoot: REPOSITORY_ROOT });
-    result = composeResult(partial, usage, pi.exitCode, verification, portReclamation, startCommand);
+    partial = deterministicPartialResult(decision, verification.passed);
+    result = composeResult(partial, usage, decisionExitCode, verification, portReclamation, startCommand);
     resultPaths = await writeResult(outputDirectory, result, [rootResultPath]);
   }
+  await writeFile(path.join(outputDirectory, "report.partial.json"), `${JSON.stringify(partial, null, 2)}\n`, "utf8");
   const missingResultPaths = missingRequiredResultPaths(resultPaths, requiredResultPaths);
   const validationErrors = await validateResultObject(result);
   if (validationErrors.length > 0) {
@@ -323,8 +369,7 @@ async function main(): Promise<void> {
   for (const missingResultPath of missingResultPaths) {
     console.error(`Required result destination was not written: ${missingResultPath}`);
   }
-  if (pi.timedOut) console.error("Pi exceeded CHALLENGE_TIMEOUT_MS and was terminated.");
-  if (runRequiresFailureExit(pi.exitCode, result.status, missingResultPaths)) process.exitCode = 1;
+  if (runRequiresFailureExit(decisionExitCode, result.status, missingResultPaths)) process.exitCode = 1;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -28,9 +28,21 @@ const valid = {
   theme: { preset: "modern-minimalist" },
   navigation: [{ id: "all", label: "All", kind: "collection", entity: "item" }],
   entities: [
-    { name: "item", label: "Item", labelPlural: "Items", fields: [{ name: "title", label: "Title", type: "text" }] },
+    {
+      name: "item",
+      label: "Item",
+      labelPlural: "Items",
+      titleField: "title",
+      fields: [{ name: "title", label: "Title", type: "text", required: true }],
+      filters: [{ label: "Title contains", field: "title", mode: "contains" }],
+      derived: [{ id: "total", label: "Total", kind: "count" }],
+    },
   ],
-  features: { search: true },
+  features: {
+    search: true,
+    auth: false,
+    limitations: ["Browser-local storage only", "No multi-user synchronization"],
+  },
   persistence: { adapter: "localStorage", namespace: "thing" },
 };
 

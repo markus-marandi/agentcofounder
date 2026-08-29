@@ -57,7 +57,11 @@ async function createTestApp(testSource?: string): Promise<{ appDirectory: strin
     recursive: true,
     filter: (source) => !source.split(path.sep).includes("node_modules") && !source.endsWith(`${path.sep}dist`),
   });
-  await symlink(path.join(seedDirectory, "node_modules"), path.join(appDirectory, "node_modules"), "dir");
+  await symlink(
+    path.join(seedDirectory, "node_modules"),
+    path.join(appDirectory, "node_modules"),
+    process.platform === "win32" ? "junction" : "dir",
+  );
   await writeFile(
     path.join(appDirectory, "src", "generated.test.tsx"),
     testSource ?? [
@@ -159,7 +163,11 @@ describe("app verification", () => {
         return !segments.includes("node_modules") && !segments.includes("dist") && !/\.test\.tsx?$/u.test(source);
       },
     });
-    await symlink(path.join(seed, "node_modules"), path.join(appDirectory, "node_modules"), "dir");
+    await symlink(
+      path.join(seed, "node_modules"),
+      path.join(appDirectory, "node_modules"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
 
     const result = await verifyGeneratedApp(appDirectory, path.join(root, "artifacts"), {
       commandTimeoutMs: 60_000,

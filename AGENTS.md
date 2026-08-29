@@ -3,9 +3,8 @@
 # Working on this harness
 
 Context for coding agents (Claude Code, Codex) working **on the AgentCofounder
-harness itself**. This file is not read by Pi: `buildPiArguments` in
-`src/run-challenge.ts` passes `--no-context-files`, so only
-`output/app/AGENTS.md` reaches the model at run time.
+harness itself**. This file is not read by Pi: `src/decision-session.ts`
+disables context files, skills, extensions, prompt templates, themes, and tools.
 
 Read `MEMORY.md` for the decision log before proposing anything that reverses a
 decision already taken.
@@ -23,7 +22,7 @@ decisions.** See `README.md` for the architecture.
 |---|---|---|
 | `src/`, `contract-public/`, `docs/organizer-checklist.md` | Organizer | Change only with a clear reason; judged behaviour depends on it |
 | `docs/starter.md` | Organizer | Verbatim relocation of the original README. Do not reword |
-| `solution/` | Us | Prompt, skills, extensions |
+| `solution/` | Us | Legacy compatibility assets; not used by the challenge runtime |
 | `app-template/` | Us | The seed copied into `output/app` every run |
 | `output/`, `artifacts/`, `result.json` | Runner | Generated. Never hand-edit |
 
@@ -37,16 +36,16 @@ Team split during the hackathon:
 
 ## Hard constraints (verified in code — do not relitigate)
 
-1. **No network at run time.** `src/run-challenge.ts` sets `PI_OFFLINE=1` and
-   `--offline`, and `docs/organizer-checklist.md` says the judge blocks
+1. **No network at run time.** `src/decision-session.ts` sets `PI_OFFLINE=1`,
+   and `docs/organizer-checklist.md` says the judge blocks
    outbound network. No search APIs, no CDNs, no `npx <remote-package>`.
 2. **No new dependencies at agent time.** `app-template/AGENTS.md` and
    `solution/system-prompt.md` both forbid it. To add a dependency, add it to
    `app-template/package.json`, regenerate `app-template/package-lock.json` on
    **Node 22.19.x**, and run `npm run check`. Never regenerate a lockfile on
    Node 23+ — `npm ci` will then fail for the organizer.
-3. **`.env` writes are blocked.** `solution/extensions/protected-paths.ts`
-   rejects `.env` and `.env.*`. Fixtures belong in committed source files.
+3. **The model has no write authority.** The direct session exposes no tools,
+   and deterministic compiler code owns every generated file.
 4. **Port 3000 is the runner's.** Nothing in `solution/` may leave a listener
    behind; `src/port-owner.ts` audits it and a stray listener degrades the run.
 5. **The seed must always build green.** `npm run check` runs the seed's tests
@@ -61,8 +60,8 @@ Team split during the hackathon:
 Ranking counts Pi's `usage.totalTokens`, which includes cache reads. Two
 consequences:
 
-- Every skill's `name` and `description` sits in the system prompt on **every**
-  model call. Adding a skill is a permanent per-call cost. Justify each one.
+- The challenge session loads no skills, tools, extensions, repository context,
+  or coding-agent instructions. Keep the compact decision prompt bounded.
 - Work moved from model output into committed seed code is a direct win. Prefer
   extending a kernel primitive over prompting the model to write the same code.
 

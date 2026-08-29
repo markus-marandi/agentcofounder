@@ -68,7 +68,10 @@ async function collectSources(directory: string): Promise<Array<{ path: string; 
       }
       if (!/\.(tsx?|css)$/u.test(entry)) continue;
       // Relative to `src`, so a caller can match on "ui/" without repeating the prefix.
-      files.push({ path: path.relative(sourceRoot, full), text: await readFile(full, "utf8") });
+      files.push({
+        path: path.relative(sourceRoot, full).split(path.sep).join("/"),
+        text: await readFile(full, "utf8"),
+      });
     }
   }
 

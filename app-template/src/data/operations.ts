@@ -116,6 +116,13 @@ export function matches(record: StoredRecord, field: string, mode: FilterMode, v
       return !actual;
     case "contains":
       return String(actual ?? "").toLowerCase().includes(String(value ?? "").toLowerCase());
+    case "beforeToday": {
+      const timestamp = Date.parse(String(actual ?? ""));
+      if (Number.isNaN(timestamp)) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return timestamp < today.getTime();
+    }
     case "equals":
     default:
       return String(actual ?? "") === String(value ?? "");
