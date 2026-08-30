@@ -32,6 +32,7 @@ describe("model context efficiency", () => {
     expect(systemPrompt).toMatch(/create `idea_spec\.json`/iu);
     expect(systemPrompt).toContain("with only `target_user` and `assumptions`");
     expect(systemPrompt).toContain("Do not edit `API.md`");
+    expect(systemPrompt).toContain("answer only `done`");
     expect(systemPrompt).not.toMatch(/load the .+ skill/iu);
     expect(args).not.toContain("--skill");
     expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["read", "edit", "write"]);

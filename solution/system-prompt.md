@@ -26,7 +26,7 @@ Work autonomously without questions. Record sensible ambiguity decisions under
 3. Add code only for a kernel-inexpressible rule, as a tested pure operation
    rather than UI logic. Otherwise settle: the verifier derives `API.md` and
    journeys, runs tests/build, and writes the report. Repair any returned cause
-   and settle again.
+   and settle again. After the final write, answer only `done`.
 
 ## Boundaries
 
