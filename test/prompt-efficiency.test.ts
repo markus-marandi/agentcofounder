@@ -31,6 +31,7 @@ describe("model context efficiency", () => {
     expect(systemPrompt).toContain("do not read `parameters.schema.json`");
     expect(systemPrompt).toMatch(/create `idea_spec\.json`/iu);
     expect(systemPrompt).toContain("with only `target_user` and `assumptions`");
+    expect(systemPrompt).toContain("Do not edit `API.md`");
     expect(systemPrompt).not.toMatch(/load the .+ skill/iu);
     expect(args).not.toContain("--skill");
     expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["read", "edit", "write"]);
@@ -40,6 +41,7 @@ describe("model context efficiency", () => {
     const verifier = await readFile(path.resolve("solution/extensions/verify-loop.ts"), "utf8");
     for (const requiredStep of [
       "generate-journeys.mjs",
+      "write-api.mjs",
       "vitest",
       '"run", "build"',
       "write-report.mjs",

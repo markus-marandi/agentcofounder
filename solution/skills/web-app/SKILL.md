@@ -64,8 +64,8 @@ The kernel already implements this route. Most of the work is configuration.
    express — a relationship between two entities, an arithmetic rule — add it to
    `src/data/operations.ts` as a pure function and cover it with tests, keeping
    it out of components.
-9. Update `API.md`: replace the entities section with what you actually built,
-   and note any new operation.
+9. Do not edit `API.md`; the settle-time verifier derives its entity section
+   from `parameters.json`. Document a genuinely new operation beside its code.
 
 ## Tests
 
@@ -85,7 +85,7 @@ and `src/ui/CollectionView.actions.test.tsx` are the kernel's own examples.
 
 ## Finish
 
-Settle after the configuration, API description, and any necessary code are
-ready. Do not run `npm run journeys`, `npm test`, `npm run build`, or
+Settle after the configuration and any necessary code are ready. Do not run
+`npm run api`, `npm run journeys`, `npm test`, `npm run build`, or
 `npm run report`; the verifier does so once, writes the derived report, and
 returns condensed failures. Repair the cause and settle again when asked.

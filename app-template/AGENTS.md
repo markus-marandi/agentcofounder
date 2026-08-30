@@ -11,8 +11,8 @@ This app is already built. `parameters.json` assembles tested primitives in
 3. The responsive rail, sticky header, single search box, day/night mode,
    palette, and row hierarchy are fixed chrome. Navigation configures what the
    rail contains, not whether the shell exists.
-4. On settle, the verifier regenerates journeys from `parameters.json`, runs
-   tests and the build, and derives `report.partial.json`.
+4. On settle, the verifier regenerates `API.md` and journeys from
+   `parameters.json`, runs tests/build, and derives `report.partial.json`.
 
 ## Delivery floor — every route, no exceptions
 
@@ -24,7 +24,7 @@ This app is already built. `parameters.json` assembles tested primitives in
 5. At least one passing test; never `.skip` or `.todo`.
 6. Works on narrow and wide screens.
 7. Reachable boundaries appear in `features.limitations`.
-8. `API.md` describes the data boundary.
+8. Generated `API.md` describes the configured data boundary.
 9. Runs at `http://localhost:3000` and leaves no process behind.
 
 Landing pages and walkthroughs meet the same floor: their forms persist real
@@ -41,7 +41,7 @@ records. A form that discards input is a mock.
 | Search and responsive chrome | `src/data/searchIndex.ts`, `src/ui/AppShell.tsx` |
 | CRUD, forms, row actions, recovery | `src/ui/CollectionView.tsx`, `src/ui/RecordForm.tsx` |
 | Dashboard, marketing, walkthrough | `src/ui/DashboardGrid.tsx`, `src/ui/LandingPage.tsx`, `src/ui/PrototypeFlow.tsx` |
-| Journey suite and report | settle-time verifier, derived from configuration and real results |
+| API, journey suite, report | settle-time verifier, derived from configuration and real results |
 | Styling | existing components and the tokens in `src/styles.css` |
 
 Write a new pure function in `src/data/operations.ts` only for a rule this map
@@ -62,7 +62,7 @@ components.
 ## Rules
 
 - No network, CDN, external service, dependency installation, or `.env` file.
-- Do not create or edit `result.json`, `report.partial.json`, or
+- Do not create or edit `API.md`, `result.json`, `report.partial.json`, or
   `src/journeys.generated.test.tsx`.
 - A missing journey is a missing field, filter, action, or derived value in
   `parameters.json`; fix the configuration.

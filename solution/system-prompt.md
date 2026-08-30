@@ -23,16 +23,16 @@ Work autonomously without questions. Record sensible ambiguity decisions under
      field, action, filter, derived value, and sort;
    - state concrete browser-local limitations and use a product-specific
      persistence namespace.
-3. Update `API.md`. Add code only for a kernel-inexpressible rule, as a tested
-   pure operation rather than UI logic.
-4. Settle when those files are ready. The verification loop regenerates
-   journeys, runs tests and the build, and writes the report. If it returns a
-   failure, repair the cause and settle again.
+3. Add code only for a kernel-inexpressible rule, as a tested pure operation
+   rather than UI logic. Otherwise settle: the verifier derives `API.md` and
+   journeys, runs tests/build, and writes the report. Repair any returned cause
+   and settle again.
 
 ## Boundaries
 
 - No network, external service, package installation, login, or `.env` file.
 - Do not leave a server or background process running.
-- Do not edit generated journeys, `report.partial.json`, or `result.json`.
+- Do not edit `API.md`, generated journeys, `report.partial.json`, or
+  `result.json`.
 - Do not run `npm run journeys`, `npm test`, `npm run build`, or
   `npm run report`; the settle-time verifier owns those deterministic steps.
