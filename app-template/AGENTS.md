@@ -52,6 +52,8 @@ forms write real records. A form that discards what it collects is a mock.
 | Marketing page | `src/ui/LandingPage.tsx` |
 | Clickable walkthrough | `src/ui/PrototypeFlow.tsx` |
 | Failure containment | `src/ui/ErrorBoundary.tsx` |
+| Brand mark and wordmark | `src/ui/Logo.tsx`; the same art as `public/logo.svg` / `public/favicon.svg` |
+| The one search box | `src/ui/AppShell.tsx` owns it, views read it via `src/ui/shellSearch.ts` |
 | The journey suite | `npm run journeys`, from `parameters.json` |
 | `report.partial.json` | `npm run report`, from the suite it runs |
 | Offline comparison material | `src/content/positioning.json` |
@@ -61,7 +63,21 @@ Match the styling of the component nearest to what you are building rather
 than inventing a look: the kernel components are the reference. Use the theme
 tokens (`surface`, `ink`, `ink-soft`, `line`, `accent`, `danger`) rather than
 literal colours, so every preset keeps working. Add CSS only for something
-genuinely new.
+genuinely new — and put any element-level rule inside `@layer base`, or it
+will silently outrank every Tailwind utility in the app.
+
+The look is fixed and is not a per-product decision:
+
+- **No tinted backgrounds.** The page is `surface`, full stop. A preset changes
+  the accent hue and nothing else; panels are separated by `line` borders, not
+  by fills. `surface-sunk` is for hover and for a sunk row, never for a page.
+- **Chrome tells the truth.** Everything in the header and the rail does what
+  it looks like it does. Nothing decorative, no placeholder tabs, no second
+  search box beside the shell's.
+- **One button per row.** The action a row is *for* is a button; edit/remove
+  and the rest are text links.
+- `product.name` and `product.tagline` in `parameters.json` are the only
+  wordmark. Never hard-code a product name in a component.
 
 ## Rules
 

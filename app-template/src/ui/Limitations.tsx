@@ -7,14 +7,11 @@ export function Limitations() {
   const limitations = parameters.features.limitations ?? [];
   if (limitations.length === 0) return null;
   return (
-    <section
-      className="rounded-md border border-line border-l-4 border-l-accent bg-surface px-6 py-4"
-      aria-labelledby="limitations-title"
-    >
-      <h2 id="limitations-title" className="text-sm font-semibold text-ink m-0">
+    <section className="rounded-lg border border-line px-6 py-5" aria-labelledby="limitations-title">
+      <h2 id="limitations-title" className="m-0 text-sm font-semibold text-ink">
         What this version does not do
       </h2>
-      <ul className="text-ink-soft text-sm m-0 mt-2 pl-5 list-disc">
+      <ul className="m-0 mt-2 list-disc space-y-1 pl-5 text-sm text-ink-soft">
         {limitations.map((limitation) => (
           <li key={limitation}>{limitation}</li>
         ))}

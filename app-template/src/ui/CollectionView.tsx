@@ -20,6 +20,7 @@ import { Field } from "./Field.js";
 import { ConfirmDialog, type ConfirmTone } from "./Modal.js";
 import { RecordForm } from "./RecordForm.js";
 import { StatRow } from "./StatRow.js";
+import { useShellSearch } from "./shellSearch.js";
 
 interface Props {
   entity: EntitySpec;
@@ -60,14 +61,18 @@ function describeConfirm(
   };
 }
 
+/**
+ * Only the action a row is *for* is drawn as a button. Everything else in the
+ * actions cell is a text link, the way the Tailwind Plus tables do it — three
+ * filled buttons per row turns a list into a wall of chrome and stops the one
+ * that matters from standing out.
+ */
 function actionClasses(style: ActionSpec["style"]): string {
   if (style === "primary") {
-    return "rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-accent-ink hover:brightness-110";
+    return "rounded-md bg-accent px-2.5 py-1.5 text-sm font-semibold text-accent-ink hover:brightness-110";
   }
-  if (style === "danger") {
-    return "rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft";
-  }
-  return "rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk";
+  if (style === "danger") return "text-sm font-semibold text-danger hover:brightness-110";
+  return "text-sm font-semibold text-accent hover:brightness-110";
 }
 
 function displayValue(value: unknown): string {
@@ -85,7 +90,12 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   const { records, storageError, dismissStorageError, run, repository } = useRepository(entity.name);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<ConfirmTarget | null>(null);
-  const [query, setQuery] = useState("");
+  // The shell owns the search box when there is one, so the app never shows two.
+  const shellSearch = useShellSearch();
+  const [ownQuery, setOwnQuery] = useState("");
+  const query = shellSearch ? shellSearch.query : ownQuery;
+  const setQuery = shellSearch ? shellSearch.setQuery : setOwnQuery;
+  const ownsSearch = searchEnabled && shellSearch === null;
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<PendingAction | null>(null);
 
@@ -208,12 +218,12 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
         </section>
       ) : null}
 
-      {(searchEnabled || filterSpecs.length > 0) && records.length > 0 ? (
+      {(ownsSearch || filterSpecs.length > 0) && records.length > 0 ? (
         <section
-          className="rounded-lg border border-line bg-surface p-4 flex flex-wrap items-end gap-4"
+          className="flex flex-wrap items-end gap-4"
           aria-label={`Narrow ${entity.labelPlural.toLowerCase()}`}
         >
-          {searchEnabled ? (
+          {ownsSearch ? (
             <div className="flex-1 min-w-[220px]">
               <label htmlFor="collection-search" className="block text-sm font-medium text-ink">
                 Search
@@ -362,7 +372,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
 
                               <button
                                 type="button"
-                                className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk"
+                                className="text-sm font-semibold text-ink-soft hover:text-ink"
                                 onClick={() => setEditingId(record.id)}
                                 aria-label={`Edit ${titleOf(entity, record)}`}
                               >
@@ -371,7 +381,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
 
                               <button
                                 type="button"
-                                className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
+                                className="text-sm font-semibold text-danger hover:brightness-110"
                                 onClick={() => setConfirming({ kind: "delete", record })}
                                 aria-label={`Remove ${titleOf(entity, record)}`}
                               >

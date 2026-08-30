@@ -15,7 +15,7 @@ export function EmptyState({
     <div className="text-center rounded-lg border border-dashed border-line bg-surface px-6 py-16">
       <DocumentPlusIcon aria-hidden="true" className="mx-auto size-10 text-ink-soft" />
       <h3 className="mt-2 text-sm font-semibold text-ink m-0">{title}</h3>
-      {description ? <p className="mt-1 text-sm text-ink-soft mx-auto">{description}</p> : null}
+      {description ? <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">{description}</p> : null}
       {action ? <div className="mt-6">{action}</div> : null}
     </div>
   );

@@ -4,8 +4,27 @@
     {
       "name": "app-template",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "app-template", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "app-template",
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "app-template-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "app-template",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3100"
+      ],
+      "port": 3100
     }
   ]
 }

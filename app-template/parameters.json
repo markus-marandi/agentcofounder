@@ -126,7 +126,10 @@
   "features": {
     "search": true,
     "auth": false,
-    "limitations": []
+    "limitations": [
+      "Your records live only in this browser on this device. Nothing syncs to another browser or another machine, and clearing site data clears the list.",
+      "There are no accounts. Anyone using this browser profile sees and edits the same records."
+    ]
   },
   "persistence": {
     "adapter": "localStorage",

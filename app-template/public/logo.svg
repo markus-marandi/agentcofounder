@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Product mark">
+  <title>Product mark</title>
+  <!--
+    The generated app's brand mark: a rounded tile with the record rows knocked
+    out of it (fill-rule="evenodd"), so the glyph is transparent and the mark
+    sits on any background without a matte. One path, no gradients, no text —
+    it stays legible at 16px in a browser tab.
+
+    This standalone copy is the favicon and is deliberately neutral: it follows
+    the reader's colour scheme rather than the product's accent, because the
+    accent is chosen per product in parameters.json. src/ui/Logo.tsx draws the
+    same geometry inline with `currentColor` so the in-app mark does take the
+    accent.
+  -->
+  <style>
+    .mark { fill: #101828; }
+    @media (prefers-color-scheme: dark) { .mark { fill: #ffffff; } }
+  </style>
+  <path class="mark" fill-rule="evenodd" d="M10 2h12a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H10a8 8 0 0 1-8-8V10a8 8 0 0 1 8-8Zm-0.5 7.5h13a1.5 1.5 0 0 1 0 3h-13a1.5 1.5 0 0 1 0-3Zm0 5h13a1.5 1.5 0 0 1 0 3h-13a1.5 1.5 0 0 1 0-3Zm0 5h7a1.5 1.5 0 0 1 0 3h-7a1.5 1.5 0 0 1 0-3ZM21 19.25a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5Z"/>
+</svg>

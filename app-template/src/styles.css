@@ -25,20 +25,11 @@
   --font-sans: var(--font);
 }
 
-/*
- * The classes below are used only by the retired landing-page/prototype
- * routes (LandingPage.tsx, PrototypeFlow.tsx — unreachable now, but still
- * present and compiled). Everything reachable from the web-app route uses
- * Tailwind utilities directly instead.
- *
- * Every layout rule here is mobile-first; the breakpoint below widens it.
- */
-
 :root {
   --step: 0.5rem;
   --gap: calc(var(--step) * 2);
   --pad: calc(var(--step) * 2.5);
-  --radius: 10px;
+  --radius: 8px;
   --measure: 68ch;
   --shadow: 0 1px 2px rgb(16 24 32 / 6%), 0 8px 24px rgb(16 24 32 / 6%);
   /* Tailwind's actual default font-sans stack — tailwindcss.com/docs/font-family */
@@ -57,47 +48,61 @@
   --pad: calc(var(--step) * 2);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/*
+ * Element defaults live in `@layer base` on purpose. Unlayered rules beat
+ * everything Tailwind emits, so an unlayered `h2 { font-size: … }` silently
+ * overrode `text-base` on every heading in the app and `p { margin: 0 0 … }`
+ * overrode `mt-1`/`mx-auto` — the type scale and spacing a component asked
+ * for were not the ones that rendered. Inside `base`, a utility always wins
+ * and these stay what they are meant to be: defaults for unstyled prose.
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink);
+    /* The page itself is never tinted; panels and rails carry the only fills. */
+    background: var(--surface);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    line-height: 1.2;
+    margin: 0 0 var(--step);
+    letter-spacing: -0.015em;
+  }
+
+  h1 { font-size: clamp(1.7rem, 1.2rem + 2.2vw, 2.6rem); }
+  h2 { font-size: clamp(1.3rem, 1.1rem + 1vw, 1.7rem); }
+  h3 { font-size: 1.05rem; }
+
+  p { margin: 0 0 var(--step); max-width: var(--measure); }
+
+  a { color: var(--accent); }
+
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  margin: 0;
-  font-family: var(--font);
-  font-size: 16px;
-  line-height: 1.55;
-  color: var(--ink);
-  background: var(--surface-sunk);
-}
-
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
-  line-height: 1.2;
-  margin: 0 0 var(--step);
-  letter-spacing: -0.015em;
-}
-
-h1 { font-size: clamp(1.7rem, 1.2rem + 2.2vw, 2.6rem); }
-h2 { font-size: clamp(1.3rem, 1.1rem + 1vw, 1.7rem); }
-h3 { font-size: 1.05rem; }
-
-p { margin: 0 0 var(--step); max-width: var(--measure); }
-
-a { color: var(--accent); }
-
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+/*
+ * The classes below are used only by the retired landing-page/prototype
+ * routes (LandingPage.tsx, PrototypeFlow.tsx — unreachable now, but still
+ * present and compiled). Everything reachable from the web-app route uses
+ * Tailwind utilities directly instead.
+ *
+ * Every layout rule here is mobile-first; the breakpoint below widens it.
+ */
 
 /* Layout primitives ------------------------------------------------------ */
 

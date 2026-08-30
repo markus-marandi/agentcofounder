@@ -36,6 +36,9 @@ redistributed verbatim: theme tokens replace literal `indigo`/`gray` classes,
 | `app-template/src/ui/Button.tsx` | Elements → Buttons "Primary buttons" | Shared primitive |
 | `app-template/src/ui/ButtonGroup.tsx` | Elements → Button Groups "Basic" | Shared primitive |
 | `app-template/src/ui/Field.tsx` | Forms → Input Groups "Input with label", Textareas "Simple", Select Menus "Simple native" (chevron overlay), Toggles "Simple toggle" | Restyle only — the field types and behavior predate this pass |
+| `app-template/src/ui/AppShell.tsx` | Application Shells → Sidebar "Sidebar with header" (static rail, mobile drawer, sticky search header) | Layout adapted; the nav, the search, and the header text come from `parameters.json` |
+| `app-template/src/ui/EmptyState.tsx` | Lists → Empty States "Simple" | Shared primitive |
+| `app-template/src/ui/Modal.tsx` | Overlays → Modal Dialogs "Centered with single action" | Shared primitive |
 
 Two MIT-licensed npm packages were added to `app-template/package.json` to
 support these primitives' interactive/iconography needs: `@headlessui/react`

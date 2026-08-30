@@ -1,147 +1,113 @@
 /*
- * Palettes on Tailwind's official color scale (tailwindcss.com/docs/colors),
- * hex values read from the live rendered page, not hand-picked. Selected by
- * parameters.theme.preset, which sets data-theme on the document element.
+ * Palettes on Tailwind's official color scale (tailwindcss.com/docs/colors).
+ * Selected by parameters.theme.preset, which sets data-theme on the document
+ * element.
  *
- * ink/ink-soft/surface stay neutral slate across every preset — Tailwind
- * Plus dashboards read body text in neutral gray/slate and carry the brand
- * hue only in the accent, so that's what distinguishes each preset here.
- * accent is the family's 600 shade, bumped to 700 for the handful of hues
- * (amber, orange, green, teal, lime) whose 600 step fails 4.5:1 against
- * white button/link text — verified against WCAG contrast math, not eyeballed.
+ * A preset changes ONE thing: the accent hue. Everything structural —
+ * ink/ink-soft/surface/surface-sunk/line — is the same neutral gray ramp in
+ * every preset, because that is what the Tailwind Plus dashboards this app is
+ * styled after actually do: neutral gray chrome, brand hue only on the accent.
+ * Tinting the page and the borders per preset (a cream page for golden-hour,
+ * a mint page for forest-canopy) is what made the app read as a themed demo
+ * rather than a product, so no preset sets a page fill any more.
  *
- * Each preset defines only colour. Spacing, type scale, and layout live in
- * styles.css so themes stay interchangeable.
+ * Each preset defines two accent steps:
+ *   --accent       the 600 step (700 for the hues whose 600 fails 4.5:1
+ *                  against white), used on light backgrounds
+ *   --accent-lift  the 400 step, swapped in for dark mode where a 600 accent
+ *                  is too close to the gray-900 surface to read
+ * --accent-ink follows: white against the 600, near-black against the 400.
  */
+
+:root {
+  /* gray — shared by every preset, light mode */
+  --ink: #101828;
+  --ink-soft: #6a7282;
+  --surface: #ffffff;
+  --surface-sunk: #f9fafb;
+  --line: #e5e7eb;
+  --accent-ink: #ffffff;
+}
 
 :root,
 [data-theme="modern-minimalist"] {
   /* slate */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #f8fafc;
-  --line: #e2e8f0;
   --accent: #45556c;
-  --accent-ink: #ffffff;
+  --accent-lift: #90a1b9;
   --accent-soft: #f1f5f9;
 }
 
 [data-theme="arctic-frost"] {
   /* sky */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #f0f9ff;
-  --line: #b8e6fe;
   --accent: #0084d1;
-  --accent-ink: #ffffff;
+  --accent-lift: #00bcff;
   --accent-soft: #dff2fe;
 }
 
 [data-theme="tech-innovation"] {
   /* blue */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #eff6ff;
-  --line: #bedbff;
   --accent: #155dfc;
-  --accent-ink: #ffffff;
+  --accent-lift: #51a2ff;
   --accent-soft: #dbeafe;
 }
 
 [data-theme="ocean-depths"] {
   /* teal — 600 (#009689) fails 4.5:1 with white text, use 700 */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #f0fdfa;
-  --line: #96f7e4;
   --accent: #00786f;
-  --accent-ink: #ffffff;
+  --accent-lift: #00d5be;
   --accent-soft: #cbfbf1;
 }
 
 [data-theme="forest-canopy"] {
   /* green — 600 (#00a63e) fails 4.5:1 with white text, use 700 */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #f0fdf4;
-  --line: #b9f8cf;
   --accent: #008236;
-  --accent-ink: #ffffff;
+  --accent-lift: #05df72;
   --accent-soft: #dbfce7;
 }
 
 [data-theme="botanical-garden"] {
   /* lime — 600 (#5ea500) fails 4.5:1 with white text, use 700 */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #f7fee7;
-  --line: #d8f999;
   --accent: #497d00;
-  --accent-ink: #ffffff;
+  --accent-lift: #9ae600;
   --accent-soft: #ecfcca;
 }
 
 [data-theme="golden-hour"] {
   /* amber — 600 (#ffb900) fails 4.5:1 with white text, use 700 */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #fffbeb;
-  --line: #fee685;
   --accent: #bb4d00;
-  --accent-ink: #ffffff;
+  --accent-lift: #ffb900;
   --accent-soft: #fef3c6;
 }
 
 [data-theme="sunset-boulevard"] {
   /* orange — 600 (#ff6900) fails 4.5:1 with white text, use 700 */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #fff7ed;
-  --line: #ffd6a7;
   --accent: #ca3500;
-  --accent-ink: #ffffff;
+  --accent-lift: #ff8904;
   --accent-soft: #ffedd4;
 }
 
 [data-theme="desert-rose"] {
   /* rose */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #fff1f2;
-  --line: #ffccd3;
   --accent: #ec003f;
-  --accent-ink: #ffffff;
+  --accent-lift: #ff637e;
   --accent-soft: #ffe4e6;
 }
 
 [data-theme="midnight-galaxy"] {
   /* violet */
-  --ink: #0f172b;
-  --ink-soft: #45556c;
-  --surface: #ffffff;
-  --surface-sunk: #f5f3ff;
-  --line: #ddd6ff;
   --accent: #7f22fe;
-  --accent-ink: #ffffff;
+  --accent-lift: #a684ff;
   --accent-soft: #ede9fe;
 }
 
 /*
  * Day/night switch — a layer on top of the preset above, not a second set of
- * ten palettes. It inverts the shared neutral scale (ink/surface/line, the
- * same across every preset) and re-derives the "soft" tint tokens from
- * whichever accent/danger/warning hex the active preset already set, via
- * color-mix, instead of hand-picking a dark pastel per preset. accent-ink
- * stays white in both modes: a 600-step accent is bright enough either way.
+ * ten palettes. It swaps the shared neutral ramp for its dark counterpart
+ * (gray-900 surfaces, gray-700 lines), promotes the preset's 400-step accent
+ * so it still reads against them, and re-derives the "soft" tints from
+ * whichever accent/danger/warning the preset already set, via color-mix,
+ * instead of hand-picking a dark pastel per preset. The status hues move up
+ * to their 400 steps for the same reason the accent does.
  *
  * `:root[data-mode]` beats a plain `[data-theme="…"]` rule on specificity
  * regardless of source order, so this can stay a single block rather than
@@ -151,24 +117,34 @@
  */
 @media (prefers-color-scheme: dark) {
   html:not([data-mode="light"]) {
-    --ink: #f8fafc;
-    --ink-soft: #94a3b8;
-    --surface: #0f172b;
-    --surface-sunk: #1e293b;
-    --line: #334155;
-    --accent-soft: color-mix(in srgb, var(--accent) 25%, transparent);
-    --danger-soft: color-mix(in srgb, var(--danger) 22%, transparent);
-    --warning-soft: color-mix(in srgb, var(--warning) 22%, transparent);
+    --ink: #ffffff;
+    --ink-soft: #99a1af;
+    --surface: #101828;
+    --surface-sunk: #1e2939;
+    --line: #364153;
+    --accent: var(--accent-lift);
+    --accent-ink: #101828;
+    --accent-soft: color-mix(in srgb, var(--accent-lift) 22%, transparent);
+    --danger: #ff6467;
+    --danger-soft: color-mix(in srgb, #ff6467 20%, transparent);
+    --ok: #05df72;
+    --warning: #ffb900;
+    --warning-soft: color-mix(in srgb, #ffb900 20%, transparent);
   }
 }
 
 :root[data-mode="dark"] {
-  --ink: #f8fafc;
-  --ink-soft: #94a3b8;
-  --surface: #0f172b;
-  --surface-sunk: #1e293b;
-  --line: #334155;
-  --accent-soft: color-mix(in srgb, var(--accent) 25%, transparent);
-  --danger-soft: color-mix(in srgb, var(--danger) 22%, transparent);
-  --warning-soft: color-mix(in srgb, var(--warning) 22%, transparent);
+  --ink: #ffffff;
+  --ink-soft: #99a1af;
+  --surface: #101828;
+  --surface-sunk: #1e2939;
+  --line: #364153;
+  --accent: var(--accent-lift);
+  --accent-ink: #101828;
+  --accent-soft: color-mix(in srgb, var(--accent-lift) 22%, transparent);
+  --danger: #ff6467;
+  --danger-soft: color-mix(in srgb, #ff6467 20%, transparent);
+  --ok: #05df72;
+  --warning: #ffb900;
+  --warning-soft: color-mix(in srgb, #ffb900 20%, transparent);
 }
