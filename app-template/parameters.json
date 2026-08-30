@@ -6,7 +6,7 @@
     "description": "A neutral starting point. The analyzer skill rewrites this file from the product idea before any component is written."
   },
   "theme": {
-    "preset": "modern-minimalist",
+    "preset": "tech-innovation",
     "density": "comfortable"
   },
   "navigation": [

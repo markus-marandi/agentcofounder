@@ -17,6 +17,7 @@ import { searchRecords } from "../data/searchIndex.js";
 import { Alert } from "./Alert.js";
 import { EmptyState } from "./EmptyState.js";
 import { Field } from "./Field.js";
+import { ConfirmDialog, type ConfirmTone } from "./Modal.js";
 import { RecordForm } from "./RecordForm.js";
 import { StatRow } from "./StatRow.js";
 
@@ -32,6 +33,31 @@ interface PendingAction {
   actionId: string;
   value: FieldValue;
   error?: string;
+}
+
+/** Delete, or a confirm-gated action with no inline prompt — the two cases the confirm modal covers. */
+type ConfirmTarget = { kind: "delete"; record: StoredRecord } | { kind: "action"; action: ActionSpec; record: StoredRecord };
+
+function describeConfirm(
+  entity: EntitySpec,
+  target: ConfirmTarget,
+): { title: string; description?: string; confirmText: string; confirmAriaLabel: string; tone: ConfirmTone } {
+  const title = titleOf(entity, target.record);
+  if (target.kind === "delete") {
+    return {
+      title: `Remove ${title}?`,
+      description: "This removes the record permanently. This cannot be undone.",
+      confirmText: "Remove",
+      confirmAriaLabel: `Confirm removing ${title}`,
+      tone: "danger",
+    };
+  }
+  return {
+    title: `${target.action.label}?`,
+    confirmText: target.action.label,
+    confirmAriaLabel: `Confirm ${target.action.label.toLowerCase()}: ${title}`,
+    tone: target.action.style === "primary" ? "primary" : "danger",
+  };
 }
 
 function actionClasses(style: ActionSpec["style"]): string {
@@ -58,7 +84,7 @@ function displayValue(value: unknown): string {
 export function CollectionView({ entity, searchEnabled = false, canEdit = true }: Props) {
   const { records, storageError, dismissStorageError, run, repository } = useRepository(entity.name);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<ConfirmTarget | null>(null);
   const [query, setQuery] = useState("");
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<PendingAction | null>(null);
@@ -105,6 +131,11 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   const startAction = (action: ActionSpec, record: StoredRecord): void => {
     if (!action.prompt && !action.confirm) {
       applyAction(action, record);
+      return;
+    }
+    if (!action.prompt) {
+      // action.confirm is true and there's nothing to collect inline — gate it on the shared confirm dialog.
+      setConfirming({ kind: "action", action, record });
       return;
     }
     const field = fieldNamed(action.prompt);
@@ -303,26 +334,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
                 {canEdit ? (
                   <div className="flex flex-wrap items-center gap-3">
                     {offered.map((action) =>
-                      open?.id === action.id && action.prompt ? null : open?.id === action.id ? (
-                        <span className="flex flex-wrap items-center gap-3" key={action.id}>
-                          <span className="text-sm text-ink-soft">{action.label}?</span>
-                          <button
-                            type="button"
-                            className={actionClasses(action.style)}
-                            onClick={() => applyAction(action, record)}
-                            aria-label={`Confirm ${action.label.toLowerCase()}: ${titleOf(entity, record)}`}
-                          >
-                            Yes
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
-                            onClick={() => setPending(null)}
-                          >
-                            Cancel
-                          </button>
-                        </span>
-                      ) : (
+                      open?.id === action.id && action.prompt ? null : (
                         <button
                           key={action.id}
                           type="button"
@@ -344,39 +356,14 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
                       Edit
                     </button>
 
-                    {confirmingId === record.id ? (
-                      <>
-                        <span className="text-sm text-ink-soft">Remove this permanently?</span>
-                        <button
-                          type="button"
-                          className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
-                          onClick={() => {
-                            run(() => repository.remove(record.id));
-                            setConfirmingId(null);
-                            if (editingId === record.id) setEditingId(null);
-                          }}
-                          aria-label={`Confirm removing ${titleOf(entity, record)}`}
-                        >
-                          Yes, remove
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
-                          onClick={() => setConfirmingId(null)}
-                        >
-                          Keep
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
-                        onClick={() => setConfirmingId(record.id)}
-                        aria-label={`Remove ${titleOf(entity, record)}`}
-                      >
-                        Remove
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
+                      onClick={() => setConfirming({ kind: "delete", record })}
+                      aria-label={`Remove ${titleOf(entity, record)}`}
+                    >
+                      Remove
+                    </button>
                   </div>
                 ) : null}
                 </div>
@@ -427,6 +414,22 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
           </ul>
         )}
       </section>
+
+      <ConfirmDialog
+        open={confirming !== null}
+        {...(confirming ? describeConfirm(entity, confirming) : { title: "", confirmText: "", confirmAriaLabel: "" })}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => {
+          if (!confirming) return;
+          if (confirming.kind === "delete") {
+            run(() => repository.remove(confirming.record.id));
+            if (editingId === confirming.record.id) setEditingId(null);
+          } else {
+            applyAction(confirming.action, confirming.record);
+          }
+          setConfirming(null);
+        }}
+      />
     </div>
   );
 }

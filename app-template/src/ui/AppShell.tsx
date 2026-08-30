@@ -1,11 +1,28 @@
 import { useEffect, type ReactNode } from "react";
 import { layout, parameters } from "../kernel/config.js";
 import type { NavigationSpec } from "../kernel/types.js";
+import {
+  ChartBarIcon,
+  DocumentTextIcon,
+  GlobeAltIcon,
+  ListBulletIcon,
+  RectangleStackIcon,
+} from "@heroicons/react/24/outline";
+
+const navIcons: Record<NavigationSpec["kind"], typeof ListBulletIcon> = {
+  collection: ListBulletIcon,
+  dashboard: ChartBarIcon,
+  landing: GlobeAltIcon,
+  screen: RectangleStackIcon,
+  content: DocumentTextIcon,
+};
 
 /**
  * Chrome is chosen from how many menu entries `parameters.json` declares:
  * one view gets no navigation at all, up to four get a bar, more get a sidebar
- * that becomes a wrapped bar on narrow screens.
+ * that becomes a wrapped bar on narrow screens. Vendored from Tailwind Plus
+ * application-shells/sidebar for the sidebar case, adapted onto this app's
+ * theme tokens instead of a literal `indigo`/`gray` palette.
  */
 export function AppShell({
   current,
@@ -53,15 +70,37 @@ export function AppShell({
           {aside ? <div className="ml-auto">{aside}</div> : null}
         </div>
 
-        {layout === "single" ? null : (
-          <nav
-            className={
-              isSidebar
-                ? "flex flex-wrap gap-2 mt-3 lg:flex-col lg:items-stretch lg:mt-6"
-                : "flex flex-wrap gap-2 mt-3"
-            }
-            aria-label="Sections"
-          >
+        {layout === "single" ? null : isSidebar ? (
+          <nav className="mt-6 lg:flex lg:flex-1 lg:flex-col" aria-label="Sections">
+            <ul role="list" className="flex flex-1 flex-col gap-y-1">
+              {navigation.map((entry: NavigationSpec) => {
+                const active = entry.id === current;
+                const Icon = navIcons[entry.kind];
+                return (
+                  <li key={entry.id}>
+                    <button
+                      type="button"
+                      className={
+                        active
+                          ? "group flex w-full items-center gap-x-3 rounded-md bg-surface-sunk p-2 text-left text-sm font-semibold text-ink"
+                          : "group flex w-full items-center gap-x-3 rounded-md p-2 text-left text-sm font-semibold text-ink-soft hover:bg-surface-sunk hover:text-ink"
+                      }
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => onNavigate(entry.id)}
+                    >
+                      <Icon
+                        aria-hidden="true"
+                        className={active ? "size-6 shrink-0 text-accent" : "size-6 shrink-0 text-ink-soft group-hover:text-accent"}
+                      />
+                      {entry.label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : (
+          <nav className="flex flex-wrap gap-2 mt-3" aria-label="Sections">
             {navigation.map((entry: NavigationSpec) => {
               const active = entry.id === current;
               return (
