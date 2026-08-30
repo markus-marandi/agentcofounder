@@ -50,9 +50,8 @@ that sounds like a prototype or a landing page still becomes a real
 collection with real persisted records — never a page or flow that only
 looks finished.
 
-`route` in `idea_spec.json` is always `"web-app"`; `route_rationale` is a
-one-line confirmation that the idea is record-keeping shaped, not a real
-choice between options.
+`parameters.json` carries the `"web-app"` route and every executable decision.
+Do not duplicate its entities, journeys, filters, or persistence in the spec.
 
 ## 3. Write idea_spec.json
 
@@ -60,25 +59,13 @@ At the application root:
 
 ```json
 {
-  "route": "",
-  "route_rationale": "",
   "target_user": "",
-  "problem": "",
-  "primary_entity": { "name": "", "fields": [{ "name": "", "type": "", "required": true }] },
-  "user_journeys": [],
-  "filters": [],
-  "derived_values": [],
-  "persistence": "",
-  "in_scope": [],
-  "out_of_scope": [],
   "assumptions": []
 }
 ```
 
-`user_journeys` is the list you will test. Write each as something a person
-does and can see the result of — "adds a book and sees it in the list", not
-"the create function works". Include every journey the idea implies, not only
-the ones it spells out.
+Keep this file small. The report uses the target user in its summary and carries
+the assumptions; the generated journey suite derives from `parameters.json`.
 
 ## 4. Write parameters.json
 

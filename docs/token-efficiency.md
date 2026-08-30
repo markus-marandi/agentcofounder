@@ -34,7 +34,7 @@ ordinary file inspection.
 
 After this change:
 
-- the self-contained initial prompt is 6,986 characters;
+- the self-contained initial prompt is 6,954 characters;
 - the runner injects no skill metadata or mandatory skill-body reads;
 - the prompt explicitly prevents the duplicate `AGENTS.md` read;
 - Pi exposes only `read`, `edit`, and `write`; removing Bash drops 511
@@ -43,12 +43,16 @@ After this change:
 - the normal path edits the complete 4,411-character seed configuration instead
   of reading the 13,059-character JSON Schema; the verifier remains the
   authoritative validator and directs an exceptional schema read when needed;
+- `idea_spec.json` contains only the two report inputs that are not already in
+  `parameters.json` (`target_user` and `assumptions`) instead of duplicating the
+  route, entity, fields, journeys, filters, derived values, scope, and
+  persistence;
 - the model does not run journeys, tests, build, or report commands;
 - the existing settle-time verifier still regenerates journeys, tests, builds,
   reports, and returns condensed failures for repair.
 
-That is 3,732 fewer initial-prompt characters (34.8%) and 20,819 fewer
-repository-authored characters in the intended context trajectory (74.9%).
+That is 3,764 fewer initial-prompt characters (35.1%) and 20,851 fewer
+repository-authored characters in the intended context trajectory (75.0%).
 These are character counts, not native provider tokens. The native-token claim
 must wait for an authenticated A/B run.
 

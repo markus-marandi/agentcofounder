@@ -10,9 +10,8 @@ Work autonomously without questions. Record sensible ambiguity decisions under
 
 ## Decide and configure
 
-1. Create `idea_spec.json` with the target user, problem, primary entity,
-   observable journeys, scope, persistence, and assumptions. The route is
-   always `web-app`.
+1. Create `idea_spec.json` with only `target_user` and `assumptions`; every
+   executable product decision belongs in `parameters.json`.
 2. Rewrite the existing `parameters.json` in its demonstrated shape:
    - keep the idea's nouns and labels;
    - use `combobox` with the idea's examples when a category is hedged or open;
