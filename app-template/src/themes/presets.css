@@ -134,3 +134,41 @@
   --accent-ink: #ffffff;
   --accent-soft: #ede9fe;
 }
+
+/*
+ * Day/night switch — a layer on top of the preset above, not a second set of
+ * ten palettes. It inverts the shared neutral scale (ink/surface/line, the
+ * same across every preset) and re-derives the "soft" tint tokens from
+ * whichever accent/danger/warning hex the active preset already set, via
+ * color-mix, instead of hand-picking a dark pastel per preset. accent-ink
+ * stays white in both modes: a 600-step accent is bright enough either way.
+ *
+ * `:root[data-mode]` beats a plain `[data-theme="…"]` rule on specificity
+ * regardless of source order, so this can stay a single block rather than
+ * repeating it after every preset. No explicit choice (`data-mode` unset)
+ * falls back to the OS preference; the toggle in AppShell sets `data-mode`
+ * explicitly and persists it, which then wins in either direction.
+ */
+@media (prefers-color-scheme: dark) {
+  html:not([data-mode="light"]) {
+    --ink: #f8fafc;
+    --ink-soft: #94a3b8;
+    --surface: #0f172b;
+    --surface-sunk: #1e293b;
+    --line: #334155;
+    --accent-soft: color-mix(in srgb, var(--accent) 25%, transparent);
+    --danger-soft: color-mix(in srgb, var(--danger) 22%, transparent);
+    --warning-soft: color-mix(in srgb, var(--warning) 22%, transparent);
+  }
+}
+
+:root[data-mode="dark"] {
+  --ink: #f8fafc;
+  --ink-soft: #94a3b8;
+  --surface: #0f172b;
+  --surface-sunk: #1e293b;
+  --line: #334155;
+  --accent-soft: color-mix(in srgb, var(--accent) 25%, transparent);
+  --danger-soft: color-mix(in srgb, var(--danger) 22%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 22%, transparent);
+}

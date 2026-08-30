@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { layout, parameters } from "../kernel/config.js";
 import type { NavigationSpec } from "../kernel/types.js";
 import {
@@ -6,8 +6,31 @@ import {
   DocumentTextIcon,
   GlobeAltIcon,
   ListBulletIcon,
+  MoonIcon,
   RectangleStackIcon,
+  SunIcon,
 } from "@heroicons/react/24/outline";
+
+type ColorMode = "light" | "dark";
+
+const colorModeKey = `${parameters.persistence.namespace}:color-mode`;
+
+function readStoredMode(): ColorMode | null {
+  try {
+    const stored = window.localStorage.getItem(colorModeKey);
+    return stored === "light" || stored === "dark" ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function systemPrefersDark(): boolean {
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch {
+    return false;
+  }
+}
 
 const navIcons: Record<NavigationSpec["kind"], typeof ListBulletIcon> = {
   collection: ListBulletIcon,
@@ -36,6 +59,8 @@ export function AppShell({
   aside?: ReactNode;
 }) {
   const { navigation, product, theme } = parameters;
+  // null = no explicit choice yet, follow the OS via the prefers-color-scheme rule in presets.css.
+  const [mode, setMode] = useState<ColorMode | null>(readStoredMode);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -44,6 +69,24 @@ export function AppShell({
     if (theme.accent) root.style.setProperty("--accent", theme.accent);
     document.title = product.name;
   }, [theme.preset, theme.density, theme.accent, product.name]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (mode) root.dataset.mode = mode;
+    else delete root.dataset.mode;
+  }, [mode]);
+
+  const effectiveMode: ColorMode = mode ?? (systemPrefersDark() ? "dark" : "light");
+
+  const toggleMode = (): void => {
+    const next: ColorMode = effectiveMode === "dark" ? "light" : "dark";
+    setMode(next);
+    try {
+      window.localStorage.setItem(colorModeKey, next);
+    } catch {
+      // Storage blocked (private browsing, quota) — the toggle still works for this session.
+    }
+  };
 
   const isSidebar = layout === "sidebar";
 
@@ -58,7 +101,7 @@ export function AppShell({
       <header
         className={
           isSidebar
-            ? "bg-surface-sunk border-b border-line px-4 py-3 sm:px-6 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r-0 lg:ring-1 lg:ring-line lg:flex lg:flex-col"
+            ? "bg-surface border-b border-line px-4 py-3 sm:px-6 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:flex lg:flex-col"
             : "bg-surface border-b border-line px-4 py-3 sm:px-6"
         }
       >
@@ -67,7 +110,21 @@ export function AppShell({
             <p className="text-base font-bold text-ink m-0">{product.name}</p>
             <p className="text-sm text-ink-soft m-0">{product.tagline}</p>
           </div>
-          {aside ? <div className="ml-auto">{aside}</div> : null}
+          <div className="ml-auto flex items-center gap-3">
+            <button
+              type="button"
+              className="rounded-full p-2 text-ink-soft hover:bg-surface-sunk hover:text-ink"
+              onClick={toggleMode}
+              aria-label={effectiveMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {effectiveMode === "dark" ? (
+                <SunIcon aria-hidden="true" className="size-5" />
+              ) : (
+                <MoonIcon aria-hidden="true" className="size-5" />
+              )}
+            </button>
+            {aside}
+          </div>
         </div>
 
         {layout === "single" ? null : isSidebar ? (
