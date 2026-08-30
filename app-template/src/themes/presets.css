@@ -1,119 +1,39 @@
 /*
- * Palettes on Tailwind's official color scale (tailwindcss.com/docs/colors).
- * Selected by parameters.theme.preset, which sets data-theme on the document
- * element.
+ * One palette. Not ten.
  *
- * A preset changes ONE thing: the accent hue. Everything structural —
- * ink/ink-soft/surface/surface-sunk/line — is the same neutral gray ramp in
- * every preset, because that is what the Tailwind Plus dashboards this app is
- * styled after actually do: neutral gray chrome, brand hue only on the accent.
- * Tinting the page and the borders per preset (a cream page for golden-hour,
- * a mint page for forest-canopy) is what made the app read as a themed demo
- * rather than a product, so no preset sets a page fill any more.
+ * This used to hold a palette per `theme.preset`, so the same app shipped
+ * lime one run and amber the next depending on what the analyzer picked —
+ * a colour lottery on top of an interface that is supposed to look the same
+ * every time. The look is now fixed: Tailwind's neutral gray ramp for all
+ * chrome, and indigo — the accent the Tailwind Plus dashboards this app is
+ * styled after use — for the one accent. `theme.preset` is still validated
+ * so existing configurations stay valid, but it no longer changes a colour.
  *
- * Each preset defines two accent steps:
- *   --accent       the 600 step (700 for the hues whose 600 fails 4.5:1
- *                  against white), used on light backgrounds
- *   --accent-lift  the 400 step, swapped in for dark mode where a 600 accent
- *                  is too close to the gray-900 surface to read
- * --accent-ink follows: white against the 600, near-black against the 400.
+ * Values are Tailwind's own (tailwindcss.com/docs/colors): gray 50/200/400/
+ * 700/800/900 and indigo 400/600.
  */
 
 :root {
-  /* gray — shared by every preset, light mode */
   --ink: #101828;
   --ink-soft: #6a7282;
   --surface: #ffffff;
   --surface-sunk: #f9fafb;
   --line: #e5e7eb;
+  --accent: #4f39f6;
   --accent-ink: #ffffff;
-}
-
-:root,
-[data-theme="modern-minimalist"] {
-  /* slate */
-  --accent: #45556c;
-  --accent-lift: #90a1b9;
-  --accent-soft: #f1f5f9;
-}
-
-[data-theme="arctic-frost"] {
-  /* sky */
-  --accent: #0084d1;
-  --accent-lift: #00bcff;
-  --accent-soft: #dff2fe;
-}
-
-[data-theme="tech-innovation"] {
-  /* blue */
-  --accent: #155dfc;
-  --accent-lift: #51a2ff;
-  --accent-soft: #dbeafe;
-}
-
-[data-theme="ocean-depths"] {
-  /* teal — 600 (#009689) fails 4.5:1 with white text, use 700 */
-  --accent: #00786f;
-  --accent-lift: #00d5be;
-  --accent-soft: #cbfbf1;
-}
-
-[data-theme="forest-canopy"] {
-  /* green — 600 (#00a63e) fails 4.5:1 with white text, use 700 */
-  --accent: #008236;
-  --accent-lift: #05df72;
-  --accent-soft: #dbfce7;
-}
-
-[data-theme="botanical-garden"] {
-  /* lime — 600 (#5ea500) fails 4.5:1 with white text, use 700 */
-  --accent: #497d00;
-  --accent-lift: #9ae600;
-  --accent-soft: #ecfcca;
-}
-
-[data-theme="golden-hour"] {
-  /* amber — 600 (#ffb900) fails 4.5:1 with white text, use 700 */
-  --accent: #bb4d00;
-  --accent-lift: #ffb900;
-  --accent-soft: #fef3c6;
-}
-
-[data-theme="sunset-boulevard"] {
-  /* orange — 600 (#ff6900) fails 4.5:1 with white text, use 700 */
-  --accent: #ca3500;
-  --accent-lift: #ff8904;
-  --accent-soft: #ffedd4;
-}
-
-[data-theme="desert-rose"] {
-  /* rose */
-  --accent: #ec003f;
-  --accent-lift: #ff637e;
-  --accent-soft: #ffe4e6;
-}
-
-[data-theme="midnight-galaxy"] {
-  /* violet */
-  --accent: #7f22fe;
-  --accent-lift: #a684ff;
-  --accent-soft: #ede9fe;
+  --accent-soft: #eef2ff;
 }
 
 /*
- * Day/night switch — a layer on top of the preset above, not a second set of
- * ten palettes. It swaps the shared neutral ramp for its dark counterpart
- * (gray-900 surfaces, gray-700 lines), promotes the preset's 400-step accent
- * so it still reads against them, and re-derives the "soft" tints from
- * whichever accent/danger/warning the preset already set, via color-mix,
- * instead of hand-picking a dark pastel per preset. The status hues move up
- * to their 400 steps for the same reason the accent does.
+ * Day/night is the only thing that moves. The neutrals invert, the accent
+ * steps up to indigo-400 — a 600 accent is too close to a gray-900 surface to
+ * read — and `--accent-ink` follows it down to near-black. The status hues
+ * move to their 400 steps for the same reason. The soft tints are re-derived
+ * with color-mix rather than hand-picked.
  *
- * `:root[data-mode]` beats a plain `[data-theme="…"]` rule on specificity
- * regardless of source order, so this can stay a single block rather than
- * repeating it after every preset. No explicit choice (`data-mode` unset)
- * falls back to the OS preference; the toggle in AppShell sets `data-mode`
- * explicitly and persists it, which then wins in either direction.
+ * `:root[data-mode]` outranks the plain `:root` above regardless of source
+ * order. No explicit choice (`data-mode` unset) follows the OS; the toggle in
+ * AppShell sets `data-mode` and persists it, which then wins either way.
  */
 @media (prefers-color-scheme: dark) {
   html:not([data-mode="light"]) {
@@ -122,9 +42,9 @@
     --surface: #101828;
     --surface-sunk: #1e2939;
     --line: #364153;
-    --accent: var(--accent-lift);
+    --accent: #7c86ff;
     --accent-ink: #101828;
-    --accent-soft: color-mix(in srgb, var(--accent-lift) 22%, transparent);
+    --accent-soft: color-mix(in srgb, #7c86ff 22%, transparent);
     --danger: #ff6467;
     --danger-soft: color-mix(in srgb, #ff6467 20%, transparent);
     --ok: #05df72;
@@ -139,9 +59,9 @@
   --surface: #101828;
   --surface-sunk: #1e2939;
   --line: #364153;
-  --accent: var(--accent-lift);
+  --accent: #7c86ff;
   --accent-ink: #101828;
-  --accent-soft: color-mix(in srgb, var(--accent-lift) 22%, transparent);
+  --accent-soft: color-mix(in srgb, #7c86ff 22%, transparent);
   --danger: #ff6467;
   --danger-soft: color-mix(in srgb, #ff6467 20%, transparent);
   --ok: #05df72;

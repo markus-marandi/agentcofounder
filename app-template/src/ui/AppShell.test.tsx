@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShell } from "./AppShell.js";
-import { layout, parameters } from "../kernel/config.js";
+import { parameters } from "../kernel/config.js";
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -21,12 +21,8 @@ describe("app shell", () => {
   it("offers every navigation entry the configuration declares, and nothing else", () => {
     shell();
     const labels = parameters.navigation.map((entry) => entry.label);
-    // A single entry is a single view: the shell draws no menu at all, so
-    // there is no nav button to find — only the guard below still applies.
-    if (layout !== "single") {
-      for (const label of labels) {
-        expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
-      }
+    for (const label of labels) {
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
     // The chrome used to carry a row of decorative tabs that navigated nowhere.
     const named = screen
@@ -36,11 +32,9 @@ describe("app shell", () => {
     expect(named.filter((text) => !labels.includes(text) && text !== "Open menu")).toEqual([]);
   });
 
-  it("shows the search box once when search is on, and not at all when it is off", () => {
+  it("always shows the search box, exactly once", () => {
     shell();
-    expect(screen.queryAllByRole("searchbox", { name: "Search" })).toHaveLength(
-      parameters.features.search ? 1 : 0,
-    );
+    expect(screen.getAllByRole("searchbox", { name: "Search" })).toHaveLength(1);
   });
 
   it("remembers the day/night choice", async () => {

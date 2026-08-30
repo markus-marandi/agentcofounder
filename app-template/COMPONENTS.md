@@ -30,11 +30,10 @@ Not product content — always compiled in, never independently toggled:
 
 | Component | File | Role |
 |---|---|---|
-| `AppShell.tsx` | Chrome: sticky header with the app's one search box, nav (bar/sidebar/none — picked from `navigation.length`), theme/density and day-night wiring |
+| `AppShell.tsx` | Chrome, identical in every app: sidebar rail with a mobile drawer, sticky header with the one search box, density and day-night wiring. Not configurable |
 | `Logo.tsx` | Brand mark (`LogoMark`) and mark-plus-`product.name` wordmark (`Logo`), drawn inline so the mark takes the accent; same art as `public/logo.svg` and the `public/favicon.svg` the tab uses |
 | `shellSearch.ts` | Carries the header's query to whichever view is on screen. Outside a shell the context is null and the view falls back to its own search box |
 | `ErrorBoundary.tsx` | Wraps every routed view and every dashboard plot so one bad record can't blank the page |
-| `Limitations.tsx` | Renders `features.limitations`; empty array renders nothing, so there is no separate on/off flag |
 
 ## `components` tracking block
 

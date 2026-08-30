@@ -10,8 +10,10 @@ fail, and the primitives are already covered by tests.
 1. Write `parameters.json` (validated against `parameters.schema.json`).
 2. `src/kernel/config.ts` loads it and fails loudly if it is invalid.
 3. `src/App.tsx` renders a view per `navigation` entry.
-4. Chrome follows the menu count: one entry means no navigation, two to four a
-   bar, five or more a sidebar. Do not hand-pick a layout.
+4. Chrome is the same in every generated app: a sidebar rail (a drawer on
+   narrow screens), a sticky header with the one search field, and day/night.
+   It is not configurable and does not depend on how many menu entries there
+   are — `navigation` decides what is *in* the rail, never whether there is one.
 5. `npm run journeys` writes `src/journeys.generated.test.tsx` from the same
    file — one journey per capability the configuration declares.
 6. `npm run report` runs that suite and writes `report.partial.json` from what
@@ -27,7 +29,7 @@ fail, and the primitives are already covered by tests.
 4. Data survives a page refresh.
 5. At least one passing test; never `.skip` or `.todo`.
 6. Works on a narrow screen and a wide one.
-7. Limitations listed in `features.limitations`, which the interface shows.
+7. Limitations listed in `features.limitations`, which the report carries.
 8. `API.md` describes the data boundary.
 9. Runs at `http://localhost:3000` and leaves no process behind.
 
@@ -68,9 +70,13 @@ will silently outrank every Tailwind utility in the app.
 
 The look is fixed and is not a per-product decision:
 
-- **No tinted backgrounds.** The page is `surface`, full stop. A preset changes
-  the accent hue and nothing else; panels are separated by `line` borders, not
-  by fills. `surface-sunk` is for hover and for a sunk row, never for a page.
+- **One palette, always.** Neutral gray chrome and an indigo accent, in every
+  generated app. `theme.preset` is still validated for compatibility but no
+  longer changes a colour — a product that ships lime one run and amber the
+  next is a lottery, not a design.
+- **No tinted backgrounds.** The page is `surface`, full stop. Panels are
+  separated by `line` borders, not by fills. `surface-sunk` is for hover and
+  for a sunk row, never for a page.
 - **Chrome tells the truth.** Everything in the header and the rail does what
   it looks like it does. Nothing decorative, no placeholder tabs, no second
   search box beside the shell's.

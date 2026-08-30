@@ -12,13 +12,15 @@ The kernel already implements this route. Most of the work is configuration.
 1. Confirm `parameters.json` has `route: "web-app"` and every entity the idea
    needs, each with real fields, at least one filter, and at least one derived
    value.
-2. Set `navigation`. One collection is one entry. Add more only when the idea
-   describes distinct areas — a second entity, or a summary view (`kind:
-   "dashboard"`, which also needs a `dashboard` block). Do not invent sections
-   to look fuller: the kernel drops navigation entirely for a single view, which
-   is the right result for a single-purpose app.
-3. Set `features.search` to `true` when the collection will grow past a screenful
-   or the idea mentions finding things.
+2. Set `navigation`. The collection is the first entry. Add one entry per
+   distinct area the idea describes — a second entity, or a summary view
+   (`kind: "dashboard"`, which also needs a `dashboard` block) — and then fill
+   the menu out to at least four entries with `kind: "content"` sections named
+   for what this product's owner would look for. A `content` entry renders the
+   real content view, not a stub, so the menu is never a lie; a one-item rail
+   just reads as an unfinished app.
+3. `features.search` is on in the shell whatever the configuration says — the
+   header always carries the search field — so leave `search: true`.
 4. Set `features.auth` to `true` only when the idea distinguishes between kinds
    of people. It shows demonstration roles, clearly labelled — never present it
    as a real login.

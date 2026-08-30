@@ -10,7 +10,6 @@ import { CollectionView } from "./ui/CollectionView.js";
 import { DashboardGrid } from "./ui/DashboardGrid.js";
 import { ErrorBoundary } from "./ui/ErrorBoundary.js";
 import { LandingPage } from "./ui/LandingPage.js";
-import { Limitations } from "./ui/Limitations.js";
 import { PrototypeFlow } from "./ui/PrototypeFlow.js";
 
 /**
@@ -43,7 +42,7 @@ function View({ entry }: { entry: NavigationSpec }) {
       );
     case "collection":
     default:
-      return <CollectionView entity={entity} searchEnabled={parameters.features.search ?? false} />;
+      return <CollectionView entity={entity} searchEnabled />;
   }
 }
 
@@ -60,7 +59,6 @@ export function App() {
       <ErrorBoundary label={entry.label}>
         <View entry={entry} />
       </ErrorBoundary>
-      <Limitations />
     </AppShell>
   );
 }

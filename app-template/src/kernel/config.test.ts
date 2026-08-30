@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shellLayout, validateParameters } from "./config.js";
+import { validateParameters } from "./config.js";
 import parameters from "../../parameters.json";
 
 const valid = {
@@ -98,19 +98,5 @@ describe("parameters validation", () => {
   it("rejects anything that is not an object", () => {
     expect(validateParameters(null)).toHaveLength(1);
     expect(validateParameters([])).toHaveLength(1);
-  });
-});
-
-describe("shell layout", () => {
-  const entry = (id: string) => ({ id, label: id, kind: "collection" as const });
-
-  it("drops navigation entirely for a single view", () => {
-    expect(shellLayout([entry("a")])).toBe("single");
-  });
-
-  it("uses a bar for two to four views and a sidebar beyond that", () => {
-    expect(shellLayout([entry("a"), entry("b")])).toBe("bar");
-    expect(shellLayout(["a", "b", "c", "d"].map(entry))).toBe("bar");
-    expect(shellLayout(["a", "b", "c", "d", "e"].map(entry))).toBe("sidebar");
   });
 });

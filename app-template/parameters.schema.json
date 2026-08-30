@@ -21,6 +21,7 @@
       }
     },
     "theme": {
+      "description": "Kept for compatibility. The palette is fixed — neutral gray chrome, indigo accent, in every generated app — so preset and accent no longer change a colour; only density is still read.",
       "type": "object",
       "additionalProperties": false,
       "required": ["preset"],
@@ -44,7 +45,7 @@
       }
     },
     "navigation": {
-      "description": "Menu entries. The kernel picks its layout from how many there are: 1 is a single view with no chrome, 2-4 a horizontal bar, 5+ a sidebar that collapses to a drawer on mobile.",
+      "description": "Menu entries, listed in the sidebar rail. The chrome itself is fixed — every generated app has the rail, the search header, and day/night regardless of how many entries there are; these decide only what the rail contains. Fill the menu out to at least four entries so it does not read as unfinished.",
       "type": "array",
       "minItems": 1,
       "maxItems": 8,

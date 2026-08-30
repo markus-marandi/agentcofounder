@@ -1,5 +1,5 @@
 import rawParameters from "../../parameters.json";
-import type { EntitySpec, NavigationSpec, Parameters, Route, ThemePreset } from "./types.js";
+import type { EntitySpec, Parameters, Route, ThemePreset } from "./types.js";
 
 const ROUTES: Route[] = ["landing-page", "web-app", "prototype", "mock-dashboard", "open-build"];
 
@@ -15,15 +15,6 @@ const THEMES: ThemePreset[] = [
   "desert-rose",
   "midnight-galaxy",
 ];
-
-/** Layout is chosen from how many menu entries exist, not hand-picked. */
-export type ShellLayout = "single" | "bar" | "sidebar";
-
-export function shellLayout(navigation: NavigationSpec[]): ShellLayout {
-  if (navigation.length <= 1) return "single";
-  if (navigation.length <= 4) return "bar";
-  return "sidebar";
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -190,8 +181,6 @@ if (problems.length > 0) {
 }
 
 export const parameters = rawParameters as unknown as Parameters;
-
-export const layout: ShellLayout = shellLayout(parameters.navigation);
 
 export function entityByName(name: string | undefined): EntitySpec | undefined {
   if (!name) return undefined;
