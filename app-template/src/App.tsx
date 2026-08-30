@@ -4,7 +4,6 @@ import { useRepository } from "./kernel/useRepository.js";
 import type { NavigationSpec } from "./kernel/types.js";
 import { AppShell } from "./ui/AppShell.js";
 import { AuthBar } from "./ui/AuthBar.js";
-import { showcaseBlocks } from "./ui/blocks/registry.js";
 import { Card } from "./ui/Card.js";
 import { CollectionView } from "./ui/CollectionView.js";
 import { DashboardGrid } from "./ui/DashboardGrid.js";
@@ -51,42 +50,9 @@ function View({ entry }: { entry: NavigationSpec }) {
   }
 }
 
-/**
- * A block owns its whole page (nav, header, content), so it replaces AppShell
- * rather than sitting inside it. Its own nav links are illustrative
- * (Tailwind Plus placeholders), so the only real way back to the rest of the
- * app is `otherViews` — the other configured navigation entries, handed to
- * the block so it can render its own link/button back out.
- */
-function ShowcasePage({ current, onNavigate }: { current: string; onNavigate: (id: string) => void }) {
-  const blocks = parameters.showcase?.blocks ?? [];
-  const otherViews = parameters.navigation.filter((candidate) => candidate.id !== current);
-  if (blocks.length === 0) {
-    return (
-      <p className="m-4 rounded-md border border-danger bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
-        No showcase blocks are configured in parameters.json.
-      </p>
-    );
-  }
-  return (
-    <>
-      {blocks.map((id) => {
-        const Block = showcaseBlocks[id];
-        return (
-          <ErrorBoundary key={id} label={id}>
-            <Block otherViews={otherViews} onNavigate={onNavigate} />
-          </ErrorBoundary>
-        );
-      })}
-    </>
-  );
-}
-
 export function App() {
   const [current, setCurrent] = useState(parameters.navigation[0].id);
   const entry = parameters.navigation.find((candidate) => candidate.id === current) ?? parameters.navigation[0];
-
-  if (entry.kind === "showcase") return <ShowcasePage current={entry.id} onNavigate={setCurrent} />;
 
   return (
     <AppShell

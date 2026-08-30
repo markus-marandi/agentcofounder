@@ -11,11 +11,6 @@
   },
   "navigation": [
     {
-      "id": "showcase",
-      "label": "Home",
-      "kind": "showcase"
-    },
-    {
       "id": "collection",
       "label": "All records",
       "kind": "collection",
@@ -135,11 +130,6 @@
   "persistence": {
     "adapter": "localStorage",
     "namespace": "records"
-  },
-  "showcase": {
-    "blocks": [
-      "home-screen-sidebar"
-    ]
   },
   "components": {
     "collectionView": true,
