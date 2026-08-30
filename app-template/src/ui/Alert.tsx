@@ -10,11 +10,24 @@ const toneStyles: Record<AlertTone, { container: string; icon: string; title: st
   neutral: { container: "bg-accent-soft", icon: "text-accent", title: "text-accent", body: "text-ink-soft", Icon: InformationCircleIcon },
 };
 
-/** Vendored from Tailwind Plus feedback/alerts, "With description". */
+const toneRole: Record<AlertTone, "alert" | "status"> = {
+  warning: "alert",
+  danger: "alert",
+  ok: "status",
+  neutral: "status",
+};
+
+/**
+ * Vendored from Tailwind Plus feedback/alerts, "With description".
+ *
+ * The single error/status banner every view uses — nothing renders its own
+ * ad hoc alert markup. `role` follows tone so callers never have to remember
+ * it: danger/warning interrupt (`alert`), ok/neutral just report (`status`).
+ */
 export function Alert({ tone, title, children }: { tone: AlertTone; title: string; children?: ReactNode }) {
   const styles = toneStyles[tone];
   return (
-    <div className={`rounded-md p-4 ${styles.container}`}>
+    <div className={`rounded-md p-4 ${styles.container}`} role={toneRole[tone]}>
       <div className="flex">
         <div className="shrink-0">
           <styles.Icon aria-hidden="true" className={`size-5 ${styles.icon}`} />

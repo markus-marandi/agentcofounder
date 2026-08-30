@@ -4,6 +4,7 @@ import type { EntitySpec } from "../kernel/types.js";
 import { parameters } from "../kernel/config.js";
 import { useRepository } from "../kernel/useRepository.js";
 import { toRecordInput, validateDraft, emptyDraft, type Draft } from "../data/operations.js";
+import { Alert } from "./Alert.js";
 import { Field } from "./Field.js";
 
 /**
@@ -55,11 +56,7 @@ export function LandingPage({ entity }: { entity: EntitySpec }) {
           Saved. You are number {records.length} on the list, kept in this browser.
         </p>
       ) : null}
-      {storageError ? (
-        <p className="notice notice-error" role="alert">
-          {storageError}
-        </p>
-      ) : null}
+      {storageError ? <Alert tone="danger" title={storageError} /> : null}
     </form>
   );
 

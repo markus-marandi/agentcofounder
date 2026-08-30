@@ -3,6 +3,7 @@ import { defaultEntity, entityByName, parameters } from "./kernel/config.js";
 import { useRepository } from "./kernel/useRepository.js";
 import type { NavigationSpec } from "./kernel/types.js";
 import { AppShell } from "./ui/AppShell.js";
+import { Alert } from "./ui/Alert.js";
 import { AuthBar } from "./ui/AuthBar.js";
 import { Card } from "./ui/Card.js";
 import { CollectionView } from "./ui/CollectionView.js";
@@ -29,11 +30,7 @@ function View({ entry }: { entry: NavigationSpec }) {
     case "dashboard": {
       const dashboard = parameters.dashboard;
       if (!dashboard) {
-        return (
-          <p className="rounded-md border border-danger bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
-            No dashboard is configured in parameters.json.
-          </p>
-        );
+        return <Alert tone="danger" title="No dashboard is configured in parameters.json." />;
       }
       return <DashboardGrid main={dashboard.main} sub={dashboard.sub} records={dashboardRecords} />;
     }

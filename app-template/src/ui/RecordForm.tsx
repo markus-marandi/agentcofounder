@@ -10,6 +10,7 @@ import {
   type FieldErrors,
   type FieldValue,
 } from "../data/operations.js";
+import { Alert } from "./Alert.js";
 import { Field } from "./Field.js";
 
 interface Props {
@@ -54,9 +55,10 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
       }}
     >
       {errorCount > 0 ? (
-        <p className="rounded-md border border-danger bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
-          {errorCount === 1 ? "One field needs attention." : `${errorCount} fields need attention.`}
-        </p>
+        <Alert
+          tone="danger"
+          title={errorCount === 1 ? "One field needs attention." : `${errorCount} fields need attention.`}
+        />
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

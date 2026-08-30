@@ -155,14 +155,56 @@ pts) actually get measured against.
   old plan, already largely done) only where a fixture or the dev prompt
   actually exercises it — not speculatively.
 
-### C. Data/state persistence and API readiness — already close, verify don't rebuild
+### C. Data/state persistence and API readiness — decided, closed
 
-- [ ] `Repository` → `StorageAdapter` → `localStorage` boundary
-  (`src/data/repository.ts`) already satisfies "decoupled component
-  boundaries" (API & Integration Readiness, 15 pts) and "reliable state
-  handling across refreshes" (Data & State Persistence, 20 pts). Confirm
-  test coverage for remount persistence, malformed storage, and
-  storage-write failure — don't add a new abstraction layer on top.
+`Repository` → `StorageAdapter` → `localStorage` (`src/data/repository.ts`,
+`src/data/localStorageAdapter.ts`, `src/kernel/useRepository.ts`) already
+satisfies "decoupled component boundaries" (API & Integration Readiness,
+15 pts) and "reliable state handling across refreshes" (Data & State
+Persistence, 20 pts). Reviewed against both rubric lines directly; these are
+the locked decisions, not left open for later:
+
+- [x] Single write boundary — every mutating call in `CollectionView.tsx`,
+  `LandingPage.tsx`, `PrototypeFlow.tsx` routes through `useRepository().run()`,
+  so a storage failure always surfaces as a UI message, never data loss with
+  no explanation or a blank screen.
+- [x] Corrupt/malformed stored JSON degrades to an empty collection, not a
+  crash; bad entries (missing `id`, duplicate `id`) are dropped on read.
+- [x] Persistence read is synchronous (`localStorage.getItem`), so first
+  paint after a refresh already has correct data — deliberately no loading
+  state for this.
+- [x] Derived values (`StatRow`) are computed live from the current record
+  set on every render, never stored redundantly — no denormalization drift
+  possible by construction.
+- [x] Cross-tab sync via the `storage` event, last-write-wins, cache
+  invalidated and reloaded on change. Previously wired but untested — closed
+  in `src/data/repository.test.ts` (`repository.test.ts`'s "localStorage
+  adapter" describe block: same-key notify, unsubscribe stops it, `key: null`
+  clear-all notifies, unrelated key doesn't, and one integration-level test
+  proving `Repository.list()` actually reflects another tab's write).
+- [x] Namespacing: `namespace:collection` per entity avoids in-app
+  collisions; `persistence.namespace` is already specified as an
+  idea-specific slug in `solution/skills/product-analyzer/SKILL.md:102` and
+  schema-validated as a slug, so separate runs on the same `localhost:3000`
+  origin don't bleed into each other.
+
+Explicit non-goals — decided against, not deferred, so they don't get
+re-opened mid-build:
+
+- No stored-record envelope, version field, or migration policy.
+  `parameters.json` is fixed at build time per run; nothing ever migrates a
+  persisted shape within a judged run. Same class of mistake as the cut
+  IAM/search-provider work — solving a problem the contract can't exercise.
+- No relational/normalized storage. One flat array per entity,
+  `{id, createdAt, ...fields}`. Matches the contract's own ban on
+  cross-entity ownership modeling without an explicit policy.
+- No conflict resolution beyond last-write-wins across tabs — a merge/CRDT
+  layer is unbuildable and untestable inside a single-user offline fixture
+  set.
+- No kernel-level `updatedAt`/audit trail. An idea that needs "last changed"
+  gets it as a normal field via `entities[].actions.sets`, not new kernel
+  surface.
+
 - [ ] No further action needed on auth/search beyond what's in `src/auth/`
   and `src/data/searchIndex.ts` unless a specific fixture run shows a gap.
 

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Alert } from "./Alert.js";
 
 interface Props {
   children: ReactNode;
@@ -30,11 +31,8 @@ export class ErrorBoundary extends Component<Props, State> {
     const { error } = this.state;
     if (!error) return this.props.children;
     return (
-      <div className="rounded-md border border-danger bg-danger-soft px-4 py-3" role="alert">
-        <p className="m-0 text-sm text-danger">
-          <strong>{this.props.label ?? "This section"} could not be displayed.</strong>
-        </p>
-        <p className="m-0 mt-1 text-sm text-ink-soft">{error.message}</p>
+      <Alert tone="danger" title={`${this.props.label ?? "This section"} could not be displayed.`}>
+        <p className="m-0 text-ink-soft">{error.message}</p>
         <button
           type="button"
           className="mt-2 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk"
@@ -42,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           Try again
         </button>
-      </div>
+      </Alert>
     );
   }
 }

@@ -3,6 +3,7 @@ import type { EntitySpec, ScreenSpec } from "../kernel/types.js";
 import { parameters } from "../kernel/config.js";
 import { useRepository } from "../kernel/useRepository.js";
 import { emptyDraft, toRecordInput, validateDraft, type Draft } from "../data/operations.js";
+import { Alert } from "./Alert.js";
 import { Field } from "./Field.js";
 
 /**
@@ -25,11 +26,7 @@ export function PrototypeFlow({ entity }: { entity: EntitySpec }) {
   }, [screen, entity]);
 
   if (!screen) {
-    return (
-      <p className="notice notice-error" role="alert">
-        This walkthrough has no screens configured.
-      </p>
-    );
+    return <Alert tone="danger" title="This walkthrough has no screens configured." />;
   }
 
   const isLast = index === screens.length - 1;
@@ -80,11 +77,7 @@ export function PrototypeFlow({ entity }: { entity: EntitySpec }) {
           </p>
         ) : null}
 
-        {storageError ? (
-          <p className="notice notice-error" role="alert">
-            {storageError}
-          </p>
-        ) : null}
+        {storageError ? <Alert tone="danger" title={storageError} /> : null}
 
         <div className="row">
           <button type="button" className="button" disabled={index === 0} onClick={() => setIndex(index - 1)}>

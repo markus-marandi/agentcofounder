@@ -102,4 +102,46 @@ describe("localStorage adapter", () => {
     } as unknown as Storage;
     expect(() => createLocalStorageAdapter("test", blocked).write("thing", [])).toThrow();
   });
+
+  it("notifies a subscriber when another tab writes the same key", () => {
+    const adapter = createLocalStorageAdapter("test");
+    const listener = vi.fn();
+    const stop = adapter.subscribe!("thing", listener);
+
+    window.dispatchEvent(new StorageEvent("storage", { key: "test:thing" }));
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    stop();
+    window.dispatchEvent(new StorageEvent("storage", { key: "test:thing" }));
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("notifies on a whole-storage clear (key: null) but not on an unrelated key", () => {
+    const adapter = createLocalStorageAdapter("test");
+    const listener = vi.fn();
+    adapter.subscribe!("thing", listener);
+
+    window.dispatchEvent(new StorageEvent("storage", { key: null }));
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    window.dispatchEvent(new StorageEvent("storage", { key: "test:other" }));
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("repository picks up a same-key change made by another tab", () => {
+    const repository = createRepository("thing", createLocalStorageAdapter("test"));
+    const listener = vi.fn();
+    repository.subscribe(listener);
+    expect(repository.list()).toHaveLength(0);
+
+    // Simulates another tab's write: same key, this tab's own storage event.
+    window.localStorage.setItem(
+      "test:thing",
+      JSON.stringify([{ id: "1", createdAt: "2026-01-01T00:00:00.000Z", label: "from another tab" }]),
+    );
+    window.dispatchEvent(new StorageEvent("storage", { key: "test:thing" }));
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(repository.list()).toEqual([{ id: "1", createdAt: "2026-01-01T00:00:00.000Z", label: "from another tab" }]);
+  });
 });

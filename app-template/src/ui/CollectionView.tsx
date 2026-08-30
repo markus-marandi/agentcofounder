@@ -14,6 +14,7 @@ import {
   type FieldValue,
 } from "../data/operations.js";
 import { searchRecords } from "../data/searchIndex.js";
+import { Alert } from "./Alert.js";
 import { EmptyState } from "./EmptyState.js";
 import { Field } from "./Field.js";
 import { RecordForm } from "./RecordForm.js";
@@ -148,16 +149,15 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   return (
     <div className="flex flex-col gap-6">
       {storageError ? (
-        <div className="rounded-md border border-danger bg-danger-soft px-4 py-3" role="alert">
-          <p className="m-0 text-sm text-danger">{storageError}</p>
+        <Alert tone="danger" title={storageError}>
           <button
             type="button"
-            className="mt-2 rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
+            className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
             onClick={dismissStorageError}
           >
             Dismiss
           </button>
-        </div>
+        </Alert>
       ) : null}
 
       <StatRow specs={entity.derived ?? []} records={visible} />
