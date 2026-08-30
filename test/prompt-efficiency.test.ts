@@ -27,7 +27,9 @@ describe("model context efficiency", () => {
     const [systemPrompt, publicJourneys, appContext] = await modelContext();
     const args = buildPiArguments("Build a lending library", systemPrompt, publicJourneys, appContext, "/tmp/run");
 
-    expect(systemPrompt).toContain("do not read `AGENTS.md` again");
+    expect(systemPrompt).toMatch(/already includes `AGENTS\.md`[\s\S]+do not read it again/iu);
+    expect(systemPrompt).toContain("do not read `parameters.schema.json`");
+    expect(systemPrompt).toMatch(/create `idea_spec\.json`/iu);
     expect(systemPrompt).not.toMatch(/load the .+ skill/iu);
     expect(args).not.toContain("--skill");
     expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["read", "edit", "write"]);
