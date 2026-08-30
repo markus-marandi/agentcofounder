@@ -10,6 +10,10 @@ import {
   RectangleStackIcon,
   SunIcon,
 } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon } from "@heroicons/react/20/solid";
+
+/** Visual only — vendored from Tailwind Plus's sticky search header, not wired to anything. */
+const placeholderTabs = ["Overview", "Activity", "Settings", "Collaborators", "Notifications"];
 
 type ColorMode = "light" | "dark";
 
@@ -180,9 +184,37 @@ export function AppShell({
         )}
       </header>
 
-      <main className="flex-1 flex flex-col gap-6 p-4 sm:p-6 max-w-6xl mx-auto w-full" id="main">
-        {children}
-      </main>
+      <div className="flex flex-1 flex-col">
+        <div className="sticky top-0 z-10 bg-surface border-b border-line">
+          <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+            <MagnifyingGlassIcon aria-hidden="true" className="size-5 shrink-0 text-ink-soft" />
+            <input
+              type="search"
+              placeholder="Search"
+              aria-label="Search (placeholder, not wired up)"
+              className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-soft outline-none"
+            />
+          </div>
+          <div aria-hidden="true" className="flex gap-6 overflow-x-auto px-4 pb-3 sm:px-6">
+            {placeholderTabs.map((label, index) => (
+              <span
+                key={label}
+                className={
+                  index === 0
+                    ? "text-sm font-semibold text-accent whitespace-nowrap"
+                    : "text-sm font-semibold text-ink-soft whitespace-nowrap"
+                }
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <main className="flex-1 flex flex-col gap-6 p-4 sm:p-6 max-w-6xl mx-auto w-full" id="main">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
