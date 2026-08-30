@@ -98,6 +98,10 @@ npm test && npm run build
 npm run report
 ```
 
+The app serves `API.md` rendered at `/api-docs`, linked from the bottom of the
+sidebar, and `npm run docs` serves the same page on port 3001. Keep `API.md`
+describing the boundary as built; it is read by people, not only graded.
+
 `npm run report` runs the suite and writes `report.partial.json` from the
 result it actually observed — status, one `tests_run` entry per journey, the
 feature list from `parameters.json`, and the assumptions from `idea_spec.json`.

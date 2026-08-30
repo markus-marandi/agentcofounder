@@ -9,6 +9,7 @@ import {
   ChartBarIcon,
   DocumentTextIcon,
   GlobeAltIcon,
+  CodeBracketIcon,
   ListBulletIcon,
   MoonIcon,
   RectangleStackIcon,
@@ -79,6 +80,14 @@ function NavList({
   );
 }
 
+/**
+ * The rendered API.md, served by the app's own dev server (see the api-docs
+ * plugin in vite.config.ts), so the link opens whenever the app is running.
+ * `npm run docs` serves the same page on port 3001 for reading it without the
+ * app.
+ */
+const docsUrl = "/api-docs";
+
 /** Everything inside the rail, shared by the fixed sidebar and the mobile drawer. */
 function SidebarBody({ current, onNavigate }: { current: string; onNavigate: (id: string) => void }) {
   return (
@@ -88,6 +97,21 @@ function SidebarBody({ current, onNavigate }: { current: string; onNavigate: (id
       </div>
       <nav className="flex flex-1 flex-col" aria-label="Sections">
         <NavList current={current} onNavigate={onNavigate} />
+
+        <div className="mt-auto -mx-6 border-t border-line px-6 pt-4">
+          <a
+            href={docsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="group -mx-2 flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold text-ink-soft hover:bg-surface-sunk hover:text-ink"
+          >
+            <CodeBracketIcon aria-hidden="true" className="size-6 shrink-0 text-ink-soft group-hover:text-ink" />
+            <span className="min-w-0">
+              <span className="block">API docs</span>
+              <span className="block truncate text-xs font-normal text-ink-soft">How to connect</span>
+            </span>
+          </a>
+        </div>
       </nav>
     </div>
   );

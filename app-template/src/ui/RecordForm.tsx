@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { EntitySpec, StoredRecord } from "../kernel/types.js";
 import {
+  actionOwnedFields,
   draftFromRecord,
   emptyDraft,
   knownValues,
@@ -29,6 +30,11 @@ interface Props {
 export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Props) {
   const [draft, setDraft] = useState<Draft>(() => (editing ? draftFromRecord(entity, editing) : emptyDraft(entity)));
   const [errors, setErrors] = useState<FieldErrors>({});
+
+  // Creating a record is not the place to set what an action exists to set.
+  // Correcting one is, so an edit still shows every field.
+  const owned = editing ? new Set<string>() : actionOwnedFields(entity);
+  const shown = entity.fields.filter((field) => !owned.has(field.name));
 
   useEffect(() => {
     setDraft(editing ? draftFromRecord(entity, editing) : emptyDraft(entity));
@@ -62,7 +68,7 @@ export function RecordForm({ entity, existing, editing, onSubmit, onCancel }: Pr
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {entity.fields.map((field) => (
+        {shown.map((field) => (
           <Field
             key={field.name}
             field={field}

@@ -30,7 +30,8 @@ fail, and the primitives are already covered by tests.
 5. At least one passing test; never `.skip` or `.todo`.
 6. Works on a narrow screen and a wide one.
 7. Limitations listed in `features.limitations`, which the report carries.
-8. `API.md` describes the data boundary.
+8. `API.md` describes the data boundary, and the app serves it rendered at
+   `/api-docs`, linked from the bottom of the sidebar.
 9. Runs at `http://localhost:3000` and leaves no process behind.
 
 A landing page and a walkthrough prototype meet this floor too: their capture
@@ -58,6 +59,7 @@ forms write real records. A form that discards what it collects is a mock.
 | The one search box | `src/ui/AppShell.tsx` owns it, views read it via `src/ui/shellSearch.ts` |
 | The journey suite | `npm run journeys`, from `parameters.json` |
 | `report.partial.json` | `npm run report`, from the suite it runs |
+| The API docs, rendered | `/api-docs` while the app runs; `npm run docs` serves the same page on port 3001 |
 | Offline comparison material | `src/content/positioning.json` |
 | Styling | Tailwind utilities over the theme tokens defined in `src/styles.css`; presets in `src/themes/presets.css` |
 
@@ -93,6 +95,11 @@ The look is fixed and is not a per-product decision:
 - **Do not create or edit `result.json`.** The runner owns it.
 - Keep tests in `src/**/*.test.ts` or `src/**/*.test.tsx`.
 - Test observable behaviour through the interface, not implementation details.
+- **A field an action owns is not offered when creating a record.** Lending
+  sets `borrower` and stamps `lentOn`, so the create form withholds both and
+  the action is the only way to reach that state — otherwise a record can be
+  out on loan with no date, having never been lent. An edit still shows every
+  field, because correcting a record is exactly when you need them.
 - **Do not hand-write the journey suite or edit `src/journeys.generated.test.tsx`.**
   Run `npm run journeys`. A missing journey is a missing field, filter, action,
   or derived value in `parameters.json` — fix it there and regenerate.
