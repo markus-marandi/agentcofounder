@@ -15,9 +15,17 @@ afterEach(cleanup);
  * Node version happens to be running, so an in-memory implementation is
  * installed whenever a working one is absent.
  */
-function installStorage(): void {
+function usableStorage(value: unknown): value is Storage {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<Storage>;
+  return [candidate.clear, candidate.getItem, candidate.key, candidate.removeItem, candidate.setItem].every(
+    (method) => typeof method === "function",
+  );
+}
+
+export function installStorage(): void {
   try {
-    if (window.localStorage) return;
+    if (usableStorage(window.localStorage)) return;
   } catch {
     // Fall through and install the stand-in.
   }
