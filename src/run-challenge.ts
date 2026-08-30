@@ -3,6 +3,7 @@ import { createWriteStream } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { prepareOutput } from "./prepare-output.js";
 import { auditAppPortAfterPi } from "./port-owner.js";
 import { signalProcessTree, terminateProcessTree, usesDetachedProcessGroup } from "./process-tree.js";
@@ -108,9 +109,28 @@ function commandName(name: string): string {
   return process.platform === "win32" ? `${name}.cmd` : name;
 }
 
+function directInvocation(command: string, args: string[]): { command: string; args: string[] } {
+  if (process.platform !== "win32") return { command, args };
+  const base = path.basename(command).toLowerCase();
+  if (base === "npm.cmd") {
+    return {
+      command: process.execPath,
+      args: [path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"), ...args],
+    };
+  }
+  if (base === "pi.cmd") {
+    return {
+      command: process.execPath,
+      args: [path.resolve(path.dirname(command), "..", "@earendil-works", "pi-coding-agent", "dist", "cli.js"), ...args],
+    };
+  }
+  return { command, args };
+}
+
 async function runInherited(command: string, args: string[], cwd: string): Promise<number> {
   return await new Promise<number>((resolve, reject) => {
-    const child = spawn(command, args, { cwd, stdio: "inherit", env: process.env, shell: false });
+    const invocation = directInvocation(command, args);
+    const child = spawn(invocation.command, invocation.args, { cwd, stdio: "inherit", env: process.env, shell: false });
     child.once("error", reject);
     child.once("close", (code) => resolve(code ?? 1));
   });
@@ -149,6 +169,21 @@ export async function runPi(
   let piChild: ReturnType<typeof spawn> | undefined;
 
   try {
+    const providerIndex = args.indexOf("--provider");
+    const modelIndex = args.indexOf("--model");
+    const provider = providerIndex >= 0 ? args[providerIndex + 1] : undefined;
+    const model = modelIndex >= 0 ? args[modelIndex + 1] : undefined;
+    if (provider) {
+      const runtime = await ModelRuntime.create();
+      if (!runtime.getProvider(provider)) {
+        errors.write(`Error: Unknown provider "${provider}". Use --list-models to see available providers/models.\n`);
+        return { exitCode: 1, timedOut: false };
+      }
+      if (model && !runtime.getModel(provider, model)) {
+        errors.write(`Error: Unknown model "${provider}/${model}". Use --list-models to see available providers/models.\n`);
+        return { exitCode: 1, timedOut: false };
+      }
+    }
     return await new Promise<CommandResult>((resolve, reject) => {
       const piBinary = path.join(
         REPOSITORY_ROOT,
@@ -156,7 +191,8 @@ export async function runPi(
         ".bin",
         process.platform === "win32" ? "pi.cmd" : "pi",
       );
-      const child = spawn(piBinary, args, {
+      const invocation = directInvocation(piBinary, args);
+      const child = spawn(invocation.command, invocation.args, {
         cwd,
         detached: usesDetachedProcessGroup(),
         env: { ...process.env, PI_OFFLINE: "1" },

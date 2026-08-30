@@ -11,7 +11,7 @@
     "challenge": "node --import tsx src/run-challenge.ts",
     "validate:result": "node --import tsx src/validate-result.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --no-file-parallelism",
     "app:test": "npm --prefix app-template test -- --passWithNoTests",
     "app:build": "npm --prefix app-template run build",
     "check": "npm run typecheck && npm run test && npm run lint:skills && npm run validate:parameters && npm run app:test && npm run app:build",

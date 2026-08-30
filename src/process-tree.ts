@@ -1,4 +1,4 @@
-import type { ChildProcess } from "node:child_process";
+import { spawnSync, type ChildProcess } from "node:child_process";
 
 export function usesDetachedProcessGroup(): boolean {
   return process.platform !== "win32";
@@ -6,6 +6,15 @@ export function usesDetachedProcessGroup(): boolean {
 
 export function signalProcessTree(child: ChildProcess, signal: NodeJS.Signals): boolean {
   if (child.pid === undefined) return false;
+
+  if (process.platform === "win32") {
+    const result = spawnSync("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    if (result.status === 0) return true;
+    if (child.exitCode !== null) return false;
+  }
 
   if (usesDetachedProcessGroup()) {
     try {

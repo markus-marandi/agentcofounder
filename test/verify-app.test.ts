@@ -57,7 +57,11 @@ async function createTestApp(testSource?: string): Promise<{ appDirectory: strin
     recursive: true,
     filter: (source) => !source.split(path.sep).includes("node_modules") && !source.endsWith(`${path.sep}dist`),
   });
-  await symlink(path.join(seedDirectory, "node_modules"), path.join(appDirectory, "node_modules"), "dir");
+  await symlink(
+    path.join(seedDirectory, "node_modules"),
+    path.join(appDirectory, "node_modules"),
+    process.platform === "win32" ? "junction" : "dir",
+  );
   await writeFile(
     path.join(appDirectory, "src", "generated.test.tsx"),
     testSource ?? [
@@ -134,14 +138,14 @@ describe("app verification", () => {
     temporaryDirectories.push(artifactDirectory);
 
     const result = await verifyGeneratedApp(path.resolve("app-template"), artifactDirectory, {
-      commandTimeoutMs: 60_000,
+      commandTimeoutMs: 120_000,
       serverTimeoutMs: 10_000,
       port: await getFreePort(),
     });
 
     expect(result.checks.map((entry) => entry.result)).toEqual(["passed", "passed", "passed"]);
     expect(result.passed).toBe(true);
-  }, 90_000);
+  }, 180_000);
 
   it("rejects an application that builds and serves but has no tests", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "agent-cofounder-untested-app-"));
@@ -159,7 +163,11 @@ describe("app verification", () => {
         return !segments.includes("node_modules") && !segments.includes("dist") && !/\.test\.tsx?$/u.test(source);
       },
     });
-    await symlink(path.join(seed, "node_modules"), path.join(appDirectory, "node_modules"), "dir");
+    await symlink(
+      path.join(seed, "node_modules"),
+      path.join(appDirectory, "node_modules"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
 
     const result = await verifyGeneratedApp(appDirectory, path.join(root, "artifacts"), {
       commandTimeoutMs: 60_000,

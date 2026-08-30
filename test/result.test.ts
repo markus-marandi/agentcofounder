@@ -288,14 +288,15 @@ describe("result contract", () => {
     );
     try {
       const command = rootStartCommand(repositoryRoot, appDirectory);
-      const execution = spawnSync("sh", ["-c", command], {
-        cwd: repositoryRoot,
-        encoding: "utf8",
-      });
-
       expect(command).toBe("npm --prefix 'output/my$app' run dev");
-      expect(execution.status, execution.stderr).toBe(0);
-      expect(execution.stdout).toContain(appDirectory);
+      if (process.platform !== "win32") {
+        const execution = spawnSync("sh", ["-c", command], {
+          cwd: repositoryRoot,
+          encoding: "utf8",
+        });
+        expect(execution.status, execution.stderr).toBe(0);
+        expect(execution.stdout).toContain(appDirectory);
+      }
     } finally {
       await rm(repositoryRoot, { recursive: true });
     }
