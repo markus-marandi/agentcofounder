@@ -165,6 +165,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
       // before judging the app: a configuration edited after the last
       // generation would otherwise be verified against a stale suite.
       const journeys = await runCommand(node, [path.join("tools", "generate-journeys.mjs")], appRoot);
+      const api = await runCommand(node, [path.join("tools", "write-api.mjs")], appRoot);
 
       const reportPath = path.join(appRoot, ".verify-loop-tests.json");
 
@@ -193,6 +194,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
           `\`npm run journeys\` failed, so the app has no journey suite:\n\n${condense(journeys.output)}`,
         );
       }
+      if (!api.ok) problems.push(`API generation failed:\n\n${condense(api.output)}`);
       if (!test.ok) problems.push(`\`npm test\` failed:\n\n${condense(test.output)}`);
       if (!build.ok) problems.push(`\`npm run build\` failed:\n\n${condense(build.output)}`);
 
@@ -203,7 +205,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
         );
       }
 
-      if (journeys.ok && test.ok && build.ok) {
+      if (journeys.ok && api.ok && test.ok && build.ok) {
         // The report is derived, not authored, so write it here rather than
         // asking the agent for a file it would only be retyping.
         const report = await runCommand(node, [path.join("tools", "write-report.mjs")], appRoot);

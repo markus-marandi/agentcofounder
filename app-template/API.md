@@ -48,16 +48,26 @@ Shipped: `createLocalStorageAdapter(namespace)` and `createMemoryAdapter()`.
 
 ## Entities
 
-Declared in `parameters.json` under `entities`. Every stored record carries
-`id: string` and `createdAt: string` (ISO 8601) alongside its declared fields.
+Generated from `parameters.json`; do not edit this section by hand.
 
-Row actions (`entities[].actions`) are not a second write path: each one is a
-`repository.update(id, changes)` call whose `changes` come from the action's
-`sets` block, with `@today` and `@now` resolved by
-`resolveActionValues` in `src/data/operations.ts`. A backend swap therefore
-covers them for free.
+### Records (`record`)
 
-<!-- The route skill replaces this section with the entities it actually built. -->
+Title field: `title`. Every stored record also carries `id` and `createdAt`.
+
+| Field | Type | Required |
+|---|---|---|
+| `title` (Title) | `text` | yes |
+| `category` (Category) | `combobox` | no |
+| `amount` (Amount) | `number` | no |
+| `done` (Done) | `boolean` | no |
+| `completedOn` (Completed on) | `date` | no |
+
+Filters: `Category (equals category)`, `Done only (truthy done)`.
+Derived values: `Records (count)`, `Not done (countWhere)`.
+Row actions: `Mark done (complete)`, `Reopen (reopen)`.
+
+Row actions use the same `repository.update(id, changes)` boundary as edits.
+`@today` and `@now` values are resolved in `src/data/operations.ts`.
 
 ## Authentication
 
