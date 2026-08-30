@@ -18,7 +18,10 @@ The kernel already implements this route. Most of the work is configuration.
    the menu out to at least four entries with `kind: "content"` sections named
    for what this product's owner would look for. A `content` entry renders the
    real content view, not a stub, so the menu is never a lie; a one-item rail
-   just reads as an unfinished app.
+   just reads as an unfinished app. Give every content entry its own `body` —
+   a sentence or two about that section, in this product's words. Without one
+   they all print the product description and the menu leads to four copies of
+   the same page.
 3. `features.search` is on in the shell whatever the configuration says — the
    header always carries the search field — so leave `search: true`.
 4. Set `features.auth` to `true` only when the idea distinguishes between kinds

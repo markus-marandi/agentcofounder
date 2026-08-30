@@ -108,6 +108,8 @@ export interface NavigationSpec {
   kind: "collection" | "dashboard" | "landing" | "screen" | "content";
   entity?: string;
   screen?: string;
+  /** Copy for a `content` entry. Without it every content view repeats the product description. */
+  body?: string;
 }
 
 export interface PlotSpec {

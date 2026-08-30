@@ -37,7 +37,9 @@ function View({ entry }: { entry: NavigationSpec }) {
       return (
         <Card as="section" className="p-6 flex flex-col gap-4">
           <h2 className="text-base font-semibold text-ink m-0">{entry.label}</h2>
-          <p className="text-ink-soft m-0">{parameters.product.description ?? parameters.product.tagline}</p>
+          <p className="text-ink-soft m-0">
+            {entry.body ?? parameters.product.description ?? parameters.product.tagline}
+          </p>
         </Card>
       );
     case "collection":

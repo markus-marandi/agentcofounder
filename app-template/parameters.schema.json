@@ -58,7 +58,12 @@
           "label": { "type": "string", "minLength": 1, "maxLength": 32 },
           "kind": { "enum": ["collection", "dashboard", "landing", "screen", "content"] },
           "entity": { "type": "string" },
-          "screen": { "type": "string" }
+          "screen": { "type": "string" },
+          "body": {
+            "description": "Copy for a content entry, in this product's own words. Without it every content view repeats the product description, so a full menu leads to identical pages.",
+            "type": "string",
+            "maxLength": 600
+          }
         }
       }
     },
