@@ -37,13 +37,6 @@ const APP_PORT = 3000;
 
 const EXTENSIONS = ["protected-paths.ts", "verify-loop.ts"];
 
-/**
- * Only names and descriptions enter the system prompt; a body is read on
- * demand. The analyzer is listed first because it runs first and hands off
- * to web-app, the only route.
- */
-const SKILLS = ["product-analyzer", "web-app"];
-
 export function runRequiresFailureExit(
   piExitCode: number,
   resultStatus: RunResult["status"],
@@ -261,9 +254,6 @@ export function buildPiArguments(
   ];
   for (const extension of EXTENSIONS) {
     args.push("--extension", path.join(REPOSITORY_ROOT, "solution", "extensions", extension));
-  }
-  for (const skill of SKILLS) {
-    args.push("--skill", path.join(REPOSITORY_ROOT, "solution", "skills", skill));
   }
   if (process.env.CHALLENGE_PROVIDER) args.push("--provider", process.env.CHALLENGE_PROVIDER);
   if (process.env.CHALLENGE_MODEL) args.push("--model", process.env.CHALLENGE_MODEL);

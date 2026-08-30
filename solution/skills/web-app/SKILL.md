@@ -56,7 +56,7 @@ The kernel already implements this route. Most of the work is configuration.
    click has nothing to repeat. Add `"confirm": true` to an action a person
    would not want to undo.
 6. Set `entities[].sort` when the idea implies an order. Omit it otherwise.
-7. Run the app. `src/ui/CollectionView.tsx` already provides add, edit, delete
+7. Use `src/ui/CollectionView.tsx`, which already provides add, edit, delete
    with confirmation, row actions, filters, search, derived totals, empty
    states, validation messages, and storage-failure recovery.
 8. Write only what is missing. A status that changes other fields is an
@@ -69,23 +69,15 @@ The kernel already implements this route. Most of the work is configuration.
 
 ## Tests
 
-Do not hand-write the journey suite. Run:
-
-```bash
-npm run journeys
-```
-
-It reads `parameters.json` and writes `src/journeys.generated.test.tsx` — one
-journey per capability the configuration declares: adding, rejecting a missing
-required field, editing, deleting through the confirmation, each action
-including that the opposite one is offered afterwards, each filter, each
-derived value, an unlisted `combobox` value and its canonicalisation, search
-when it is enabled, and data surviving a remount.
+The settle-time verifier derives `src/journeys.generated.test.tsx` from
+`parameters.json`: add, required-field rejection, edit, confirmed delete,
+actions and their opposite states, filters, derived values, open combobox
+values, search, and persistence.
 
 That makes the suite a consequence of the configuration. A journey you expected
 and did not get is a configuration gap: the field, filter, action, or derived
-value is missing from `parameters.json`. Add it there and regenerate. Never
-edit the generated file — the next run overwrites it.
+value is missing from `parameters.json`. Add it there. Never edit the generated
+file.
 
 Write a test by hand only for a rule the kernel cannot express, and put it
 beside the pure function that implements it. `src/ui/CollectionView.test.tsx`
@@ -93,13 +85,7 @@ and `src/ui/CollectionView.actions.test.tsx` are the kernel's own examples.
 
 ## Finish
 
-```bash
-npm test && npm run build
-npm run report
-```
-
-`npm run report` runs the suite and writes `report.partial.json` from the
-result it actually observed — status, one `tests_run` entry per journey, the
-feature list from `parameters.json`, and the assumptions from `idea_spec.json`.
-If it reports anything but `success`, repair the app and run it again rather
-than editing what it wrote.
+Settle after the configuration, API description, and any necessary code are
+ready. Do not run `npm run journeys`, `npm test`, `npm run build`, or
+`npm run report`; the verifier does so once, writes the derived report, and
+returns condensed failures. Repair the cause and settle again when asked.

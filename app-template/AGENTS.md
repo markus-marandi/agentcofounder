@@ -14,10 +14,8 @@ fail, and the primitives are already covered by tests.
    narrow screens), a sticky header with the one search field, and day/night.
    It is not configurable and does not depend on how many menu entries there
    are — `navigation` decides what is *in* the rail, never whether there is one.
-5. `npm run journeys` writes `src/journeys.generated.test.tsx` from the same
-   file — one journey per capability the configuration declares.
-6. `npm run report` runs that suite and writes `report.partial.json` from what
-   it observed.
+5. On settle, the verifier regenerates `src/journeys.generated.test.tsx` from
+   the same file, runs tests and the build, and derives `report.partial.json`.
 
 ## Delivery floor — every route, no exceptions
 
@@ -56,8 +54,7 @@ forms write real records. A form that discards what it collects is a mock.
 | Failure containment | `src/ui/ErrorBoundary.tsx` |
 | Brand mark and wordmark | `src/ui/Logo.tsx`; the same art as `public/logo.svg` / `public/favicon.svg` |
 | The one search box | `src/ui/AppShell.tsx` owns it, views read it via `src/ui/shellSearch.ts` |
-| The journey suite | `npm run journeys`, from `parameters.json` |
-| `report.partial.json` | `npm run report`, from the suite it runs |
+| Journey suite and report | settle-time verifier, derived from `parameters.json` and real test results |
 | Offline comparison material | `src/content/positioning.json` |
 | Styling | Tailwind utilities over the theme tokens defined in `src/styles.css`; presets in `src/themes/presets.css` |
 
@@ -94,24 +91,14 @@ The look is fixed and is not a per-product decision:
 - Keep tests in `src/**/*.test.ts` or `src/**/*.test.tsx`.
 - Test observable behaviour through the interface, not implementation details.
 - **Do not hand-write the journey suite or edit `src/journeys.generated.test.tsx`.**
-  Run `npm run journeys`. A missing journey is a missing field, filter, action,
-  or derived value in `parameters.json` — fix it there and regenerate.
+  A missing journey is a missing field, filter, action, or derived value in
+  `parameters.json` — fix it there.
+- **Do not run `npm run journeys`, `npm test`, `npm run build`, or
+  `npm run report`.** Settle when the work is ready; the verifier owns those
+  deterministic steps and returns condensed failures for repair.
 
 ## Reporting
 
-`npm run report` writes `report.partial.json`. Do not write it by hand.
-
-It contains only `status`, `app_url`, `start_command`, `summary`,
-`implemented_features`, `assumptions`, and `tests_run` — the first five derived
-from `parameters.json` and `idea_spec.json`, `tests_run` from the suite it just
-ran.
-
-Each `tests_run` entry is `{"command": string, "journey": string, "result": "passed" | "failed"}` — no other field names. An entry with any other shape is discarded and does not count.
-
-A `success` report needs at least one `tests_run` entry and every entry's
-`result` must be `"passed"`. `npm run report` applies that rule to the run it
-observed, so a status below `success` means the app needs repairing, not the
-report.
-
-The runner owns the final `app_url`, the location-aware `start_command`,
-`harness_checks`, and all telemetry.
+The verifier writes `report.partial.json` from configuration and actual test
+results; do not create or edit it. A non-success result means repair the app.
+The outer runner owns final URLs, commands, harness checks, and telemetry.
