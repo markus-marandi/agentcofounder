@@ -20,7 +20,7 @@ async function modelContext(): Promise<[string, string, string]> {
 describe("model context efficiency", () => {
   it("keeps the repository-authored initial prompt within its character budget", async () => {
     const context = await modelContext();
-    expect(context.reduce((total, text) => total + text.length, 0)).toBeLessThanOrEqual(9_000);
+    expect(context.reduce((total, text) => total + text.length, 0)).toBeLessThanOrEqual(7_000);
   });
 
   it("does not ask the model to reload context already present in its prompt", async () => {

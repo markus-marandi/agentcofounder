@@ -29,15 +29,15 @@ ordinary file inspection.
 
 After this change:
 
-- the self-contained initial prompt is 8,987 characters;
+- the self-contained initial prompt is 6,894 characters;
 - the runner injects no skill metadata or mandatory skill-body reads;
 - the prompt explicitly prevents the duplicate `AGENTS.md` read;
 - the model does not run journeys, tests, build, or report commands;
 - the existing settle-time verifier still regenerates journeys, tests, builds,
   reports, and returns condensed failures for repair.
 
-That is 1,731 fewer initial-prompt characters (16.1%) and 18,818 fewer
-repository-authored characters in the intended context trajectory (67.7%).
+That is 3,824 fewer initial-prompt characters (35.7%) and 20,911 fewer
+repository-authored characters in the intended context trajectory (75.2%).
 These are character counts, not native provider tokens. The native-token claim
 must wait for an authenticated A/B run.
 
