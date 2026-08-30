@@ -21,15 +21,13 @@ flowchart TD
 
     subgraph pi["Pi — one run, offline, cwd = output/app"]
         direction TB
-        prompt["system-prompt.md<br/>+ journeys.md<br/>+ app AGENTS.md<br/>+ skill descriptions"]
-        analyzer["product-analyzer skill<br/>extract the idea"]
+        prompt["system-prompt.md<br/>+ journeys.md<br/>+ compact app contract"]
+        decisions["product decisions only<br/>no shell or skill reads"]
         spec["idea_spec.json<br/>parameters.json"]
-        route["web-app skill"]
-        build["wire the kernel<br/>write journey tests"]
         loop{"verify-loop<br/>tests + build pass?"}
 
-        prompt --> analyzer --> spec --> route --> build --> loop
-        loop -- "no, repair" --> build
+        prompt --> decisions --> spec --> loop
+        loop -- "no, repair" --> decisions
     end
 
     loop -- yes --> report["report.partial.json"]
@@ -71,17 +69,17 @@ and the kernel refuses to start on an invalid file.
 {
   "route": "web-app",                       // always this value now
   "product": { "name": "...", "tagline": "..." },
-  "theme": { "preset": "ocean-depths" },     // 10 presets, colour only
-  "navigation": [ /* menu count picks the layout */ ],
+  "theme": { "preset": "ocean-depths" },     // validated compatibility value; palette is fixed
+  "navigation": [ /* collection plus real product-specific views */ ],
   "entities": [ /* fields, filters, derived values, row actions, sort */ ],
   "features": { "search": true, "auth": false, "limitations": ["..."] },
   "persistence": { "adapter": "localStorage", "namespace": "..." }
 }
 ```
 
-Navigation count decides the chrome: one entry means no navigation at all, two
-to four a bar, five or more a sidebar that wraps on narrow screens. The agent
-never picks a layout by hand.
+The responsive sidebar/drawer, header, search, palette, and day/night mode are
+prebuilt and fixed. `navigation` supplies real destinations and their copy; the
+model never chooses or rebuilds the chrome.
 
 ### Verbs, not domains
 
@@ -124,7 +122,7 @@ In `app-template/src`, shipped tested and building green with zero model edits.
 | `ui/PrototypeFlow.tsx` | Multi-screen walkthrough that carries state and stores a record |
 | `auth/mockAuth.ts` | Demonstration roles behind the interface a real provider would satisfy |
 | `mock/generators.ts` | Seeded sample data — identical on every run, so it can be asserted |
-| `styles.css`, `themes/` | Tailwind CSS, styled on Tailwind Plus's Application UI patterns; ten colour presets bridged into Tailwind's theme tokens |
+| `styles.css`, `themes/` | Fixed neutral/indigo Tailwind surface with reusable theme tokens |
 
 No charting library, no backend SDK — those would be a real install and
 output-token cost, paid on every run. Tailwind is different: the kernel
@@ -197,7 +195,7 @@ npm run challenge -- --idea-file docs/fixtures/skeleton.txt
 | Path | Owner | Purpose |
 |---|---|---|
 | `solution/system-prompt.md` | Us | What the agent is told |
-| `solution/skills/` | Us | product-analyzer and the web-app route |
+| `solution/skills/` | Us | Optional development references; challenge runs do not inject them |
 | `solution/extensions/` | Us | Write guard and the verify-repair loop |
 | `app-template/` | Us | The prebuilt kernel, copied into a fresh workspace each run |
 | `src/` | Organizer | Runner, verification, telemetry, scoring |

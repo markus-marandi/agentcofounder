@@ -247,6 +247,8 @@ export function buildPiArguments(
     "--no-prompt-templates",
     "--no-themes",
     "--no-context-files",
+    "--tools",
+    "read,edit,write",
     "--append-system-prompt",
     `${systemPrompt.trim()}\n\n${publicJourneys.trim()}\n\n${appContext.trim()}`,
     "--session-dir",

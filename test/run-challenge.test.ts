@@ -41,6 +41,7 @@ describe("Pi launch", () => {
       );
       expect(args).toContain("--offline");
       expect(args).toContain("--no-context-files");
+      expect(args[args.indexOf("--tools") + 1]).toBe("read,edit,write");
       expect(args).not.toContain("--skill");
       expect(args).not.toContain("--print");
       expect(args).not.toContain("--approve");

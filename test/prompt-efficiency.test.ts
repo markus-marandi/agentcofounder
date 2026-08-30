@@ -30,6 +30,7 @@ describe("model context efficiency", () => {
     expect(systemPrompt).toContain("do not read `AGENTS.md` again");
     expect(systemPrompt).not.toMatch(/load the .+ skill/iu);
     expect(args).not.toContain("--skill");
+    expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["read", "edit", "write"]);
   });
 
   it("leaves deterministic execution with the verifier", async () => {

@@ -19,6 +19,11 @@ for native input, output, cache-read, cache-write, cost, and quality evidence.
 GitHub Actions variables, repository secrets, PR reviews, comments, and draft
 status are not prerequisites for a local run.
 
+A second `skeleton.txt` probe exercised the restricted `read,edit,write` tool
+allowlist through the real challenge command. Pi accepted the launch arguments
+and stopped only at the same missing-authentication boundary, again with zero
+model calls and an audited event/session record.
+
 ## Deterministic handoff
 
 Before this change, the repository-authored initial prompt was 10,718
@@ -32,6 +37,9 @@ After this change:
 - the self-contained initial prompt is 6,894 characters;
 - the runner injects no skill metadata or mandatory skill-body reads;
 - the prompt explicitly prevents the duplicate `AGENTS.md` read;
+- Pi exposes only `read`, `edit`, and `write`; removing Bash drops 511
+  serialized tool-definition characters plus its system guidance and prevents
+  command output from entering the model context;
 - the model does not run journeys, tests, build, or report commands;
 - the existing settle-time verifier still regenerates journeys, tests, builds,
   reports, and returns condensed failures for repair.
