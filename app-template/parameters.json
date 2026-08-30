@@ -15,7 +15,11 @@
       "label": "All records",
       "kind": "collection",
       "entity": "record"
-    }
+    },
+    { "id": "dashboard-preview", "label": "Dashboard", "kind": "content" },
+    { "id": "calendar-preview", "label": "Calendar", "kind": "content" },
+    { "id": "documents-preview", "label": "Documents", "kind": "content" },
+    { "id": "reports-preview", "label": "Reports", "kind": "content" }
   ],
   "entities": [
     {
@@ -122,10 +126,7 @@
   "features": {
     "search": true,
     "auth": false,
-    "limitations": [
-      "Data is stored in this browser only. It does not sync between devices or people.",
-      "Clearing browser storage for this site permanently removes every record."
-    ]
+    "limitations": []
   },
   "persistence": {
     "adapter": "localStorage",

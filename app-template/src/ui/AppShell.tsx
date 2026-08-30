@@ -58,7 +58,7 @@ export function AppShell({
       <header
         className={
           isSidebar
-            ? "bg-surface border-b border-line px-4 py-3 sm:px-6 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:flex lg:flex-col"
+            ? "bg-surface-sunk border-b border-line px-4 py-3 sm:px-6 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r-0 lg:ring-1 lg:ring-line lg:flex lg:flex-col"
             : "bg-surface border-b border-line px-4 py-3 sm:px-6"
         }
       >
