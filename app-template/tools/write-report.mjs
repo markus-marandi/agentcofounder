@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Writes `report.partial.json` from `parameters.json`, `idea_spec.json`, and a
- * real Vitest run.
+ * Writes `report.partial.json` from `parameters.json`, the two-field
+ * `idea_spec.json`, and a real Vitest run.
  *
  * The report is a description of what was built, and what was built is what
  * `parameters.json` declares — so the feature list and the journey list are
@@ -31,8 +31,13 @@ async function readJson(relative, fallback = null) {
 function runVitest() {
   return new Promise((resolve, reject) => {
     const child = spawn(
-      process.platform === "win32" ? "npx.cmd" : "npx",
-      ["vitest", "run", "--reporter=json", `--outputFile=${RESULTS_FILE}`],
+      process.execPath,
+      [
+        path.join(appRoot, "node_modules", "vitest", "vitest.mjs"),
+        "run",
+        "--reporter=json",
+        `--outputFile=${RESULTS_FILE}`,
+      ],
       { cwd: appRoot, stdio: ["ignore", "inherit", "inherit"], shell: false },
     );
     child.once("error", reject);
@@ -168,7 +173,7 @@ async function main() {
     implemented_features: featureList(parameters, entity),
     assumptions: Array.isArray(ideaSpec?.assumptions) ? ideaSpec.assumptions : [],
     tests_run: journeys.map((journey) => ({
-      command: `npx vitest run ${JOURNEY_FILE.split(path.sep).join("/")}`,
+      command: `npm test -- ${JOURNEY_FILE.split(path.sep).join("/")}`,
       journey: journey.title,
       result: journey.status === "passed" ? "passed" : "failed",
     })),
