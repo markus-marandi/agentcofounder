@@ -62,17 +62,18 @@ function describeConfirm(
 }
 
 /**
- * Only the action a row is *for* is drawn as a button. Everything else in the
- * actions cell is a text link, the way the Tailwind Plus tables do it — three
- * filled buttons per row turns a list into a wall of chrome and stops the one
- * that matters from standing out.
+ * Three weights, so a row reads at a glance: the state change the row is *for*
+ * is a button, and edit/remove are text links. Three filled buttons per row
+ * turns a list into a wall of chrome and stops the one that matters from
+ * standing out; three text links lose the action among the housekeeping.
  */
 function actionClasses(style: ActionSpec["style"]): string {
-  if (style === "primary") {
-    return "rounded-md bg-accent px-2.5 py-1.5 text-sm font-semibold text-accent-ink hover:brightness-110";
+  const button = "rounded-md px-2.5 py-1.5 text-sm font-semibold";
+  if (style === "primary") return `${button} bg-accent text-accent-ink hover:brightness-110`;
+  if (style === "danger") {
+    return `${button} bg-surface text-danger outline outline-danger/40 hover:bg-danger-soft`;
   }
-  if (style === "danger") return "text-sm font-semibold text-danger hover:brightness-110";
-  return "text-sm font-semibold text-accent hover:brightness-110";
+  return `${button} bg-surface text-ink outline outline-line hover:bg-surface-sunk`;
 }
 
 function displayValue(value: unknown): string {
@@ -244,7 +245,9 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
             const id = `filter-${spec.field}`;
             if (mode === "truthy" || mode === "falsy") {
               return (
-                <div className="flex items-center gap-3" key={spec.field}>
+                // `py-2` matches the select control's box height, so a checkbox filter
+                // sits on the same line as a dropdown one in the bottom-aligned toolbar.
+                <div className="flex items-center gap-3 py-2" key={spec.field}>
                   <input
                     id={id}
                     type="checkbox"

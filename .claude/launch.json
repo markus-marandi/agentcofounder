@@ -25,6 +25,17 @@
         "3100"
       ],
       "port": 3100
+    },
+    {
+      "name": "output-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "output/app",
+        "run",
+        "dev"
+      ],
+      "port": 3000
     }
   ]
 }

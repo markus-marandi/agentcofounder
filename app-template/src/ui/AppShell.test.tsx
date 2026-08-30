@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShell } from "./AppShell.js";
-import { parameters } from "../kernel/config.js";
+import { layout, parameters } from "../kernel/config.js";
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -21,8 +21,12 @@ describe("app shell", () => {
   it("offers every navigation entry the configuration declares, and nothing else", () => {
     shell();
     const labels = parameters.navigation.map((entry) => entry.label);
-    for (const label of labels) {
-      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+    // A single entry is a single view: the shell draws no menu at all, so
+    // there is no nav button to find — only the guard below still applies.
+    if (layout !== "single") {
+      for (const label of labels) {
+        expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+      }
     }
     // The chrome used to carry a row of decorative tabs that navigated nowhere.
     const named = screen
