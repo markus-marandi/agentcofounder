@@ -64,29 +64,37 @@ The kernel already implements this route. Most of the work is configuration.
 
 ## Tests
 
-Write one test per journey in `idea_spec.json`, through the interface. Query by
-accessible name — `getByRole("button", { name: "Remove Hamlet" })` — never by
-class name or DOM position.
+Do not hand-write the journey suite. Run:
 
-Cover, at minimum:
+```bash
+npm run journeys
+```
 
-- adding a record and seeing it listed;
-- rejecting a submission with a missing required field, and the record not appearing;
-- editing an existing record;
-- deleting, including the confirmation step;
-- filtering, and that a derived value tracks the filtered set;
-- data surviving a remount, which stands in for a page refresh;
-- each configured action, including that the record ends up in the state the
-  action names and that the opposite action is offered afterwards.
+It reads `parameters.json` and writes `src/journeys.generated.test.tsx` — one
+journey per capability the configuration declares: adding, rejecting a missing
+required field, editing, deleting through the confirmation, each action
+including that the opposite one is offered afterwards, each filter, each
+derived value, an unlisted `combobox` value and its canonicalisation, search
+when it is enabled, and data surviving a remount.
 
-An action button's accessible name is `"<label>: <record title>"`, and its
-confirm or submit button is `"Confirm <label lowercased>: <record title>"` —
-`getByRole("button", { name: "Mark returned: Hamlet" })`.
+That makes the suite a consequence of the configuration. A journey you expected
+and did not get is a configuration gap: the field, filter, action, or derived
+value is missing from `parameters.json`. Add it there and regenerate. Never
+edit the generated file — the next run overwrites it.
 
-`src/ui/CollectionView.test.tsx` is a working example of the first six, and
-`src/ui/CollectionView.actions.test.tsx` of the action journeys.
+Write a test by hand only for a rule the kernel cannot express, and put it
+beside the pure function that implements it. `src/ui/CollectionView.test.tsx`
+and `src/ui/CollectionView.actions.test.tsx` are the kernel's own examples.
 
 ## Finish
 
-Run `npm test` and `npm run build`. Then write `report.partial.json`, listing
-each journey from `idea_spec.json` in `tests_run`.
+```bash
+npm test && npm run build
+npm run report
+```
+
+`npm run report` runs the suite and writes `report.partial.json` from the
+result it actually observed — status, one `tests_run` entry per journey, the
+feature list from `parameters.json`, and the assumptions from `idea_spec.json`.
+If it reports anything but `success`, repair the app and run it again rather
+than editing what it wrote.

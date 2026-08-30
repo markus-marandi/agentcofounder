@@ -13,4 +13,6 @@ output/*
 
 app-template/node_modules/
 app-template/dist/
+# Written by `npm run journeys` on every run; never authored, never committed.
+app-template/src/journeys.generated.test.tsx
 coverage/

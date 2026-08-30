@@ -12,6 +12,10 @@ fail, and the primitives are already covered by tests.
 3. `src/App.tsx` renders a view per `navigation` entry.
 4. Chrome follows the menu count: one entry means no navigation, two to four a
    bar, five or more a sidebar. Do not hand-pick a layout.
+5. `npm run journeys` writes `src/journeys.generated.test.tsx` from the same
+   file — one journey per capability the configuration declares.
+6. `npm run report` runs that suite and writes `report.partial.json` from what
+   it observed.
 
 ## Delivery floor — every route, no exceptions
 
@@ -48,6 +52,8 @@ forms write real records. A form that discards what it collects is a mock.
 | Marketing page | `src/ui/LandingPage.tsx` |
 | Clickable walkthrough | `src/ui/PrototypeFlow.tsx` |
 | Failure containment | `src/ui/ErrorBoundary.tsx` |
+| The journey suite | `npm run journeys`, from `parameters.json` |
+| `report.partial.json` | `npm run report`, from the suite it runs |
 | Offline comparison material | `src/content/positioning.json` |
 | Styling | Tailwind utilities over the theme tokens defined in `src/styles.css`; presets in `src/themes/presets.css` |
 
@@ -65,18 +71,25 @@ genuinely new.
 - **Do not create or edit `result.json`.** The runner owns it.
 - Keep tests in `src/**/*.test.ts` or `src/**/*.test.tsx`.
 - Test observable behaviour through the interface, not implementation details.
+- **Do not hand-write the journey suite or edit `src/journeys.generated.test.tsx`.**
+  Run `npm run journeys`. A missing journey is a missing field, filter, action,
+  or derived value in `parameters.json` — fix it there and regenerate.
 
 ## Reporting
 
-`report.partial.json` contains only `status`, `app_url`, `start_command`,
-`summary`, `implemented_features`, `assumptions`, and `tests_run`.
+`npm run report` writes `report.partial.json`. Do not write it by hand.
+
+It contains only `status`, `app_url`, `start_command`, `summary`,
+`implemented_features`, `assumptions`, and `tests_run` — the first five derived
+from `parameters.json` and `idea_spec.json`, `tests_run` from the suite it just
+ran.
 
 Each `tests_run` entry is `{"command": string, "journey": string, "result": "passed" | "failed"}` — no other field names. An entry with any other shape is discarded and does not count.
 
 A `success` report needs at least one `tests_run` entry and every entry's
-`result` must be `"passed"`. If a journey failed or was not run, record it as
-`"failed"`, say why in `journey`, and use `partial` — or `failed` when the app
-cannot run.
+`result` must be `"passed"`. `npm run report` applies that rule to the run it
+observed, so a status below `success` means the app needs repairing, not the
+report.
 
 The runner owns the final `app_url`, the location-aware `start_command`,
 `harness_checks`, and all telemetry.

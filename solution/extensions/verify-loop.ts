@@ -129,6 +129,13 @@ export default function verifyLoop(pi: ExtensionAPI) {
 
     checking = true;
     try {
+      const node = process.execPath;
+
+      // The journey suite is a function of `parameters.json`, so regenerate it
+      // before judging the app: a configuration edited after the last
+      // generation would otherwise be verified against a stale suite.
+      const journeys = await runCommand(node, [path.join("tools", "generate-journeys.mjs")], appRoot);
+
       const vitest = path.join(
         appRoot,
         "node_modules",
@@ -150,8 +157,12 @@ export default function verifyLoop(pi: ExtensionAPI) {
         appRoot,
       );
 
-      const claimed = await reportedSuccess(appRoot);
       const problems: string[] = [];
+      if (!journeys.ok) {
+        problems.push(
+          `\`npm run journeys\` failed, so the app has no journey suite:\n\n${condense(journeys.output)}`,
+        );
+      }
       if (!test.ok) problems.push(`\`npm test\` failed:\n\n${condense(test.output)}`);
       if (!build.ok) problems.push(`\`npm run build\` failed:\n\n${condense(build.output)}`);
 
@@ -162,10 +173,15 @@ export default function verifyLoop(pi: ExtensionAPI) {
         );
       }
 
-      if (test.ok && build.ok && !claimed) {
-        problems.push(
-          "Tests and build pass, but `report.partial.json` is missing or does not report `success`. Write it with the shape described in AGENTS.md, listing every user journey you tested in `tests_run`.",
-        );
+      if (journeys.ok && test.ok && build.ok) {
+        // The report is derived, not authored, so write it here rather than
+        // asking the agent for a file it would only be retyping.
+        const report = await runCommand(node, [path.join("tools", "write-report.mjs")], appRoot);
+        if (!(await reportedSuccess(appRoot))) {
+          problems.push(
+            `\`npm run report\` did not report success:\n\n${condense(report.output)}`,
+          );
+        }
       }
 
       try {

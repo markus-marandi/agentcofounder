@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000 --strictPort",
+    "journeys": "node tools/generate-journeys.mjs",
+    "report": "node tools/write-report.mjs",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "preview": "vite preview --host 0.0.0.0 --port 3000 --strictPort"

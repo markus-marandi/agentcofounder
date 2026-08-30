@@ -8,8 +8,12 @@ Work autonomously in the current directory. Do not ask clarifying questions. Res
 
 1. Load the `product-analyzer` skill. It extracts the idea into `idea_spec.json` and `parameters.json` for the web-app route.
 2. Load the `web-app` skill and follow it.
-3. Run `npm test` and `npm run build`, repairing any failure.
-4. Write `report.partial.json`, with `tests_run` as an array of `{"command": string, "journey": string, "result": "passed" | "failed"}` — one entry per user journey. Any other shape is discarded and counts as zero journeys delivered.
+3. Run `npm run journeys`. It writes the journey suite from `parameters.json`:
+   one test per capability the configuration declares, through the interface.
+4. Run `npm test` and `npm run build`, repairing any failure. A failing journey
+   means the configuration is wrong, not the test — fix `parameters.json`.
+5. Run `npm run report`. It runs the suite and writes `report.partial.json` from
+   the real result. Never hand-write that file.
 
 ## Required outcome
 
@@ -19,7 +23,7 @@ Work autonomously in the current directory. Do not ask clarifying questions. Res
 - Handles empty and invalid input, duplicate or repeated actions, boundary values, malformed stored data, and recoverable storage failures.
 - Boundaries a user can actually reach are listed in `features.limitations` so the interface shows them.
 - `API.md` describes the data boundary as built.
-- Tests every observable user journey the idea details or implies, using the included Vitest, jsdom, and Testing Library setup, in `src/**/*.test.ts` or `src/**/*.test.tsx`. Never omit an implied journey merely to simplify the application, and never leave a skipped or todo test.
+- Every observable user journey the idea details or implies is covered. `npm run journeys` derives that suite from `parameters.json`, so a missing journey means a missing field, filter, action, or derived value — add it to the configuration rather than writing the test. Never omit an implied journey merely to simplify the application. Write a test by hand only for a rule the kernel genuinely cannot express, in `src/**/*.test.ts` or `src/**/*.test.tsx`, and never leave a skipped or todo test.
 
 ## Constraints
 
@@ -29,4 +33,6 @@ Work autonomously in the current directory. Do not ask clarifying questions. Res
 - Do not leave a development server or any background process running.
 - Do not write `result.json`; the runner owns its audited telemetry.
 
-Report `success` only when `tests_run` contains at least one entry shaped `{"command", "journey", "result"}` and every entry's `result` is `"passed"`. Use `partial` when any journey failed, was not run, or you are unsure of the required shape.
+`npm run report` decides the status from the suite it just ran: `success` only
+when every journey passed. If it reports anything else, repair the app and run
+it again — do not edit the file it wrote.
