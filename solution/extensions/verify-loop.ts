@@ -35,6 +35,35 @@ interface CommandOutcome {
   output: string;
 }
 
+interface CommandInvocation {
+  command: string;
+  argsPrefix: string[];
+}
+
+export function verificationInvocations(
+  appRoot: string,
+  platform: NodeJS.Platform = process.platform,
+  execPath = process.execPath,
+): { vitest: CommandInvocation; npm: CommandInvocation } {
+  if (platform !== "win32") {
+    return {
+      vitest: { command: path.join(appRoot, "node_modules", ".bin", "vitest"), argsPrefix: [] },
+      npm: { command: "npm", argsPrefix: [] },
+    };
+  }
+
+  return {
+    vitest: {
+      command: execPath,
+      argsPrefix: [path.join(appRoot, "node_modules", "vitest", "vitest.mjs")],
+    },
+    npm: {
+      command: execPath,
+      argsPrefix: [path.join(path.dirname(execPath), "node_modules", "npm", "bin", "npm-cli.js")],
+    },
+  };
+}
+
 function runCommand(command: string, args: string[], cwd: string): Promise<CommandOutcome> {
   return new Promise((resolve) => {
     let child: ReturnType<typeof spawn>;
@@ -130,30 +159,31 @@ export default function verifyLoop(pi: ExtensionAPI) {
     checking = true;
     try {
       const node = process.execPath;
+      const commands = verificationInvocations(appRoot);
 
       // The journey suite is a function of `parameters.json`, so regenerate it
       // before judging the app: a configuration edited after the last
       // generation would otherwise be verified against a stale suite.
       const journeys = await runCommand(node, [path.join("tools", "generate-journeys.mjs")], appRoot);
 
-      const vitest = path.join(
-        appRoot,
-        "node_modules",
-        ".bin",
-        process.platform === "win32" ? "vitest.cmd" : "vitest",
-      );
       const reportPath = path.join(appRoot, ".verify-loop-tests.json");
 
       const test = await runCommand(
-        vitest,
-        ["run", "--reporter=json", `--outputFile=${reportPath}`, "--passWithNoTests=false"],
+        commands.vitest.command,
+        [
+          ...commands.vitest.argsPrefix,
+          "run",
+          "--reporter=json",
+          `--outputFile=${reportPath}`,
+          "--passWithNoTests=false",
+        ],
         appRoot,
       );
       await rm(reportPath, { force: true });
 
       const build = await runCommand(
-        process.platform === "win32" ? "npm.cmd" : "npm",
-        ["run", "build"],
+        commands.npm.command,
+        [...commands.npm.argsPrefix, "run", "build"],
         appRoot,
       );
 

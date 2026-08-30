@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { frontmatterOf, lintSkills } from "../src/lint-skills.js";
-import { condense } from "../solution/extensions/verify-loop.js";
+import { condense, verificationInvocations } from "../solution/extensions/verify-loop.js";
 
 const temporaryDirectories: string[] = [];
 
@@ -108,5 +108,16 @@ describe("verify-loop output condensing", () => {
     expect(condensed).toContain("ghost");
     expect(condensed).toContain("does nothing");
     expect(condensed).not.toContain("loadConfig");
+  });
+});
+
+describe("verify-loop command portability", () => {
+  it("invokes JavaScript entry points directly on Windows", () => {
+    const commands = verificationInvocations("C:\\app", "win32", "C:\\node\\node.exe");
+
+    expect(commands.vitest.command).toBe("C:\\node\\node.exe");
+    expect(commands.vitest.argsPrefix[0]).toContain("vitest.mjs");
+    expect(commands.npm.command).toBe("C:\\node\\node.exe");
+    expect(commands.npm.argsPrefix[0]).toContain("npm-cli.js");
   });
 });
