@@ -70,11 +70,11 @@ describe("row actions", () => {
     await addBook(user, "Hamlet");
 
     await user.click(screen.getByRole("button", { name: "Lend: Hamlet" }));
-    const list = within(screen.getByRole("list"));
-    await user.type(list.getByLabelText("Borrower"), "Ada");
+    const table = within(screen.getByRole("table"));
+    await user.type(table.getByLabelText("Borrower"), "Ada");
     await user.click(screen.getByRole("button", { name: "Confirm lend: Hamlet" }));
 
-    expect(screen.getByRole("list")).toHaveTextContent("Ada");
+    expect(screen.getByRole("table")).toHaveTextContent("Ada");
     expect(screen.getByLabelText("On loan")).toHaveTextContent("1");
   });
 
@@ -86,7 +86,7 @@ describe("row actions", () => {
     expect(screen.queryByRole("button", { name: "Mark returned: Hamlet" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Lend: Hamlet" }));
-    await user.type(within(screen.getByRole("list")).getByLabelText("Borrower"), "Ada");
+    await user.type(within(screen.getByRole("table")).getByLabelText("Borrower"), "Ada");
     await user.click(screen.getByRole("button", { name: "Confirm lend: Hamlet" }));
 
     expect(screen.queryByRole("button", { name: "Lend: Hamlet" })).not.toBeInTheDocument();
@@ -98,12 +98,12 @@ describe("row actions", () => {
     render(<CollectionView entity={entity} />);
     await addBook(user, "Hamlet");
     await user.click(screen.getByRole("button", { name: "Lend: Hamlet" }));
-    await user.type(within(screen.getByRole("list")).getByLabelText("Borrower"), "Ada");
+    await user.type(within(screen.getByRole("table")).getByLabelText("Borrower"), "Ada");
     await user.click(screen.getByRole("button", { name: "Confirm lend: Hamlet" }));
 
     await user.click(screen.getByRole("button", { name: "Mark returned: Hamlet" }));
 
-    expect(screen.getByRole("list")).not.toHaveTextContent("Ada");
+    expect(screen.getByRole("table")).not.toHaveTextContent("Ada");
     expect(screen.getByLabelText("On loan")).toHaveTextContent("0");
     // The button is gone rather than merely harmless, so there is no second click to make.
     expect(screen.queryByRole("button", { name: "Mark returned: Hamlet" })).not.toBeInTheDocument();
@@ -115,7 +115,7 @@ describe("row actions", () => {
     await addBook(user, "Hamlet");
 
     await user.click(screen.getByRole("button", { name: "Lend: Hamlet" }));
-    await user.click(within(screen.getByRole("list")).getByLabelText("Borrower"));
+    await user.click(within(screen.getByRole("table")).getByLabelText("Borrower"));
     await user.paste("x".repeat(201));
     await user.click(screen.getByRole("button", { name: "Confirm lend: Hamlet" }));
 
@@ -130,10 +130,10 @@ describe("row actions", () => {
     await addBook(user, "Hamlet");
 
     await user.click(screen.getByRole("button", { name: "Lend: Hamlet" }));
-    await user.type(within(screen.getByRole("list")).getByLabelText("Borrower"), "Ada");
-    await user.click(within(screen.getByRole("list")).getByRole("button", { name: "Cancel" }));
+    await user.type(within(screen.getByRole("table")).getByLabelText("Borrower"), "Ada");
+    await user.click(within(screen.getByRole("table")).getByRole("button", { name: "Cancel" }));
 
-    expect(screen.getByRole("list")).not.toHaveTextContent("Ada");
+    expect(screen.getByRole("table")).not.toHaveTextContent("Ada");
     expect(screen.getByRole("button", { name: "Lend: Hamlet" })).toBeInTheDocument();
   });
 });
@@ -147,9 +147,9 @@ describe("free-text categories", () => {
 
     await user.selectOptions(screen.getByLabelText("Kind", { selector: "#filter-kind" }), "Encyclopaedia");
 
-    const list = within(screen.getByRole("list"));
-    expect(list.getByText("Larousse")).toBeInTheDocument();
-    expect(list.queryByText("Hamlet")).not.toBeInTheDocument();
+    const table = within(screen.getByRole("table"));
+    expect(table.getByText("Larousse")).toBeInTheDocument();
+    expect(table.queryByText("Hamlet")).not.toBeInTheDocument();
   });
 
   it("does not split one category into two spellings", async () => {
@@ -170,7 +170,7 @@ describe("resting order", () => {
     await addBook(user, "Zeno");
     await addBook(user, "Aeneid");
 
-    const shown = screen.getByRole("list").textContent ?? "";
+    const shown = screen.getByRole("table").textContent ?? "";
     expect(shown.indexOf("Aeneid")).toBeLessThan(shown.indexOf("Zeno"));
   });
 });

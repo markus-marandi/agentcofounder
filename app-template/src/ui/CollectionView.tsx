@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { ActionSpec, EntitySpec, StoredRecord } from "../kernel/types.js";
 import { titleOf } from "../kernel/config.js";
 import { useRepository } from "../kernel/useRepository.js";
@@ -306,112 +306,132 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
             }
           />
         ) : (
-          <ul className="divide-y divide-line rounded-lg border border-line bg-surface overflow-hidden">
-            {visible.map((record: StoredRecord) => {
-              const offered = actions.filter((action) => actionApplies(action, record));
-              const open = pending?.recordId === record.id
-                ? offered.find((action) => action.id === pending.actionId)
-                : undefined;
-              const promptField = fieldNamed(open?.prompt);
+          <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+            <table className="w-full text-left">
+              <thead className="border-b border-line">
+                <tr>
+                  {entity.fields.map((field) => (
+                    <th key={field.name} scope="col" className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-ink">
+                      {field.label}
+                    </th>
+                  ))}
+                  {canEdit ? (
+                    <th scope="col" className="px-4 py-3">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {visible.map((record: StoredRecord) => {
+                  const offered = actions.filter((action) => actionApplies(action, record));
+                  const open = pending?.recordId === record.id
+                    ? offered.find((action) => action.id === pending.actionId)
+                    : undefined;
+                  const promptField = fieldNamed(open?.prompt);
+                  const titleField = entity.titleField ?? entity.fields[0]?.name;
 
-              return (
-              <li className="flex flex-col gap-3 p-4" key={record.id}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex flex-col gap-2">
-                  <span className="font-semibold text-ink">{titleOf(entity, record)}</span>
-                  <dl className="flex flex-col gap-1">
-                    {entity.fields
-                      .filter((field) => field.name !== (entity.titleField ?? entity.fields[0]?.name))
-                      .map((field) => (
-                        <div key={field.name} className="flex flex-wrap gap-2">
-                          <dt className="text-sm text-ink-soft m-0">{field.label}</dt>
-                          <dd className="text-sm text-ink m-0">{displayValue(record[field.name])}</dd>
-                        </div>
-                      ))}
-                  </dl>
-                </div>
+                  return (
+                    <Fragment key={record.id}>
+                      <tr>
+                        {entity.fields.map((field) => (
+                          <td key={field.name} className="whitespace-nowrap px-4 py-3 text-sm text-ink">
+                            {field.name === titleField ? (
+                              <span className="font-semibold">{titleOf(entity, record)}</span>
+                            ) : (
+                              displayValue(record[field.name])
+                            )}
+                          </td>
+                        ))}
+                        {canEdit ? (
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap items-center justify-end gap-3">
+                              {offered.map((action) =>
+                                open?.id === action.id && action.prompt ? null : (
+                                  <button
+                                    key={action.id}
+                                    type="button"
+                                    className={actionClasses(action.style)}
+                                    onClick={() => startAction(action, record)}
+                                    aria-label={`${action.label}: ${titleOf(entity, record)}`}
+                                  >
+                                    {action.label}
+                                  </button>
+                                ),
+                              )}
 
-                {canEdit ? (
-                  <div className="flex flex-wrap items-center gap-3">
-                    {offered.map((action) =>
-                      open?.id === action.id && action.prompt ? null : (
-                        <button
-                          key={action.id}
-                          type="button"
-                          className={actionClasses(action.style)}
-                          onClick={() => startAction(action, record)}
-                          aria-label={`${action.label}: ${titleOf(entity, record)}`}
-                        >
-                          {action.label}
-                        </button>
-                      ),
-                    )}
+                              <button
+                                type="button"
+                                className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk"
+                                onClick={() => setEditingId(record.id)}
+                                aria-label={`Edit ${titleOf(entity, record)}`}
+                              >
+                                Edit
+                              </button>
 
-                    <button
-                      type="button"
-                      className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-sunk"
-                      onClick={() => setEditingId(record.id)}
-                      aria-label={`Edit ${titleOf(entity, record)}`}
-                    >
-                      Edit
-                    </button>
+                              <button
+                                type="button"
+                                className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
+                                onClick={() => setConfirming({ kind: "delete", record })}
+                                aria-label={`Remove ${titleOf(entity, record)}`}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </td>
+                        ) : null}
+                      </tr>
 
-                    <button
-                      type="button"
-                      className="rounded-md border border-danger px-3 py-1.5 text-sm font-semibold text-danger hover:bg-danger-soft"
-                      onClick={() => setConfirming({ kind: "delete", record })}
-                      aria-label={`Remove ${titleOf(entity, record)}`}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : null}
-                </div>
-
-                {canEdit && open && open.prompt && promptField ? (
-                  <form
-                    className="flex flex-col gap-3 rounded-md border border-line bg-surface-sunk p-4 sm:flex-row sm:items-end"
-                    noValidate
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      submitAction(open, record);
-                    }}
-                  >
-                    <div className="flex-1">
-                      <Field
-                        field={promptField}
-                        value={pending?.value ?? null}
-                        error={pending?.error}
-                        suggestions={
-                          promptField.type === "combobox" ? knownValues(promptField, records) : undefined
-                        }
-                        onChange={(value) =>
-                          setPending((current) => (current ? { ...current, value, error: undefined } : current))
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="submit"
-                        className={actionClasses(open.style ?? "primary")}
-                        aria-label={`Confirm ${open.label.toLowerCase()}: ${titleOf(entity, record)}`}
-                      >
-                        {open.label}
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
-                        onClick={() => setPending(null)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : null}
-              </li>
-              );
-            })}
-          </ul>
+                      {canEdit && open && open.prompt && promptField ? (
+                        <tr>
+                          <td colSpan={entity.fields.length + 1} className="bg-surface-sunk px-4 py-4">
+                            <form
+                              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+                              noValidate
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                submitAction(open, record);
+                              }}
+                            >
+                              <div className="flex-1">
+                                <Field
+                                  field={promptField}
+                                  value={pending?.value ?? null}
+                                  error={pending?.error}
+                                  suggestions={
+                                    promptField.type === "combobox" ? knownValues(promptField, records) : undefined
+                                  }
+                                  onChange={(value) =>
+                                    setPending((current) => (current ? { ...current, value, error: undefined } : current))
+                                  }
+                                />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="submit"
+                                  className={actionClasses(open.style ?? "primary")}
+                                  aria-label={`Confirm ${open.label.toLowerCase()}: ${titleOf(entity, record)}`}
+                                >
+                                  {open.label}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
+                                  onClick={() => setPending(null)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

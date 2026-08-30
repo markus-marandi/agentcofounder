@@ -104,9 +104,9 @@ describe("collection view", () => {
 
     await user.selectOptions(screen.getByLabelText("Kind", { selector: "#filter-kind" }), "A");
 
-    const list = screen.getByRole("list");
-    expect(within(list).getByText("Alpha")).toBeInTheDocument();
-    expect(within(list).queryByText("Beta")).not.toBeInTheDocument();
+    const table = screen.getByRole("table");
+    expect(within(table).getByText("Alpha")).toBeInTheDocument();
+    expect(within(table).queryByText("Beta")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Items")).toHaveTextContent("1");
   });
 
@@ -130,9 +130,9 @@ describe("collection view", () => {
 
     await user.type(screen.getByLabelText("Search"), "alph");
 
-    const list = screen.getByRole("list");
-    expect(within(list).getByText("Alpha")).toBeInTheDocument();
-    expect(within(list).queryByText("Beta")).not.toBeInTheDocument();
+    const table = screen.getByRole("table");
+    expect(within(table).getByText("Alpha")).toBeInTheDocument();
+    expect(within(table).queryByText("Beta")).not.toBeInTheDocument();
   });
 
   it("keeps records across a remount, standing in for a page refresh", async () => {
