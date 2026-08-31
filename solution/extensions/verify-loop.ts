@@ -218,7 +218,11 @@ export default function verifyLoop(pi: ExtensionAPI) {
 
       try {
         if (problems.length === 0) {
-          context.ui?.setStatus?.("verify-loop", "tests and build pass");
+          // The runner uses JSON mode, where this cosmetic status is not
+          // visible. More importantly, the just-settled turn may already have
+          // replaced its session by the time the deterministic checks finish,
+          // which makes the captured UI context stale and produces a false
+          // repair-delivery warning after an otherwise successful run.
           attempts = MAX_ATTEMPTS;
           return;
         }

@@ -238,6 +238,10 @@ export function buildPiArguments(
   appContext: string,
   artifactDirectory: string,
 ): string[] {
+  const normalizedIdea = normalizePromptText(idea);
+  const normalizedSystemPrompt = normalizePromptText(systemPrompt);
+  const normalizedPublicJourneys = normalizePromptText(publicJourneys);
+  const normalizedAppContext = normalizePromptText(appContext);
   const args = [
     "--mode",
     "json",
@@ -250,7 +254,7 @@ export function buildPiArguments(
     "--tools",
     "read,edit,write",
     "--append-system-prompt",
-    `${systemPrompt.trim()}\n\n${publicJourneys.trim()}\n\n${appContext.trim()}`,
+    `${normalizedSystemPrompt.trim()}\n\n${normalizedPublicJourneys.trim()}\n\n${normalizedAppContext.trim()}`,
     "--session-dir",
     path.join(artifactDirectory, "sessions"),
   ];
@@ -260,8 +264,12 @@ export function buildPiArguments(
   if (process.env.CHALLENGE_PROVIDER) args.push("--provider", process.env.CHALLENGE_PROVIDER);
   if (process.env.CHALLENGE_MODEL) args.push("--model", process.env.CHALLENGE_MODEL);
   args.push("--thinking", process.env.CHALLENGE_THINKING ?? "off");
-  args.push(`## Product idea\n\n${idea.trim()}\n`);
+  args.push(`## Product idea\n\n${normalizedIdea.trim()}\n`);
   return args;
+}
+
+export function normalizePromptText(text: string): string {
+  return text.replace(/\r\n?/gu, "\n");
 }
 
 function timeoutFromEnvironment(): number {

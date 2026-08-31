@@ -3,7 +3,7 @@
 This note separates measured evidence from expected savings so prompt changes
 remain easy to review.
 
-## Fixture baseline
+## Pre-authentication probe
 
 The local probe used `docs/fixtures/skeleton.txt` with a 30-second runner
 budget. Pi exited before a model call because no model was authenticated:
@@ -14,10 +14,9 @@ budget. Pi exited before a model call because no model was authenticated:
 - Pi exit code: `1`
 - error: `No API key found for the selected model.`
 
-Zero tokens is not an efficiency result. A credentialed run is still required
-for native input, output, cache-read, cache-write, cost, and quality evidence.
-GitHub Actions variables, repository secrets, PR reviews, comments, and draft
-status are not prerequisites for a local run.
+Zero tokens was not an efficiency result. GitHub Actions variables, repository
+secrets, PR reviews, comments, and draft status were not prerequisites for the
+later local credentialed run.
 
 A second `skeleton.txt` probe exercised the restricted `read,edit,write` tool
 allowlist through the real challenge command. Pi accepted the launch arguments
@@ -57,19 +56,53 @@ After this change:
 
 That is 3,732 fewer initial-prompt characters (34.8%) and 20,819 fewer
 repository-authored characters in the intended context trajectory (74.9%).
-These are character counts, not native provider tokens. The native-token claim
-must wait for an authenticated A/B run.
+These are character counts, not native provider tokens. The credentialed A/B
+below measures the resulting provider categories directly.
 
 ## Credentialed A/B
 
-Run the same fixture, provider, model, thinking setting, timeout, and clean
-output state against the base and candidate commits. Compare verified success
-first, then native total tokens and cost. Start with:
+On 2026-08-31, the same `docs/fixtures/skeleton.txt` input ran from clean output
+directories against PR #12 at `04b6f27e` and PR #13 at `9f2d84d2`. Both runs
+used Node 22.19.0, `openai-codex/gpt-5.6-sol`, thinking off, the same installed
+dependencies, and the runner-owned deterministic quality gates.
 
-1. `docs/fixtures/skeleton.txt`
-2. `docs/fixtures/web-app.txt`
-3. ambiguity fixtures 01, 04, and 11
+| Measure | PR #12 baseline | PR #13 candidate | Observed change |
+|---|---:|---:|---:|
+| Final status | success | success | quality floor preserved |
+| Model calls | 13 | 4 | -69.2% |
+| Input tokens | 26,590 | 10,604 | -60.1% |
+| Output tokens | 3,362 | 2,024 | -39.8% |
+| Cache-read tokens | 172,032 | 10,752 | -93.8% |
+| Reported total tokens | 201,984 | 23,380 | -88.4% |
+| Reasoning tokens | 372 | 402 | +8.1% |
+| Pi telemetry cost estimate | $0.319826 | $0.119116 | -62.8% |
+| Generated-app tests | 104/104 passed | 106/106 passed | two additional passing tests |
+| Product journeys in the report | 16 passed | 17 passed | one additional verified journey |
+| Build and HTTP startup | passed | passed | preserved |
+
+The reported total is the runner's sum of input, output, cache-read, and
+cache-write categories. The cost value is Pi telemetry, not evidence of a
+separate charge against the ChatGPT subscription.
+
+The execution traces explain the reduction. The baseline used 13 calls, seven
+reads, five Bash executions, two writes, and two edits. The candidate used four
+calls, two reads, two writes, and no Bash. The candidate also added an
+`On loan only` filter and its verified journey, so the lower-token run did not
+buy efficiency by dropping Markus's surface or the fixture's behavior.
+
+This is one paired fixture observation, not a universal or statistically stable
+claim. Repeat the same controlled comparison with:
+
+1. `docs/fixtures/web-app.txt`
+2. ambiguity fixtures 01, 04, and 11
 
 If those interpretations are stable, run all ambiguity fixtures. Keep each
 runner-owned `result.json`, artifact directory, and generated app; do not infer
 token usage from prompt character counts.
+
+The measured candidate emitted one post-verification warning because a
+session-bound cosmetic success-status update ran after Pi had replaced the
+settled session. The final result remained `success`, all 106 tests passed, and
+build/startup passed. The candidate now omits that invisible JSON-mode status
+update, so it cannot be mislabeled as a repair-delivery failure. A live failing
+run is still required before claiming the repair path itself is verified.

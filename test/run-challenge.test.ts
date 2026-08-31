@@ -7,7 +7,13 @@ import {
   PI_DOCUMENTATION_HEADING,
   stripPiDocumentationBlock,
 } from "../solution/extensions/protected-paths.js";
-import { buildPiArguments, parseArguments, runPi, runRequiresFailureExit } from "../src/run-challenge.js";
+import {
+  buildPiArguments,
+  normalizePromptText,
+  parseArguments,
+  runPi,
+  runRequiresFailureExit,
+} from "../src/run-challenge.js";
 
 const temporaryDirectories: string[] = [];
 
@@ -58,6 +64,19 @@ describe("Pi launch", () => {
     }
   });
 
+  it("normalizes Windows line endings before sending model context", () => {
+    const args = buildPiArguments(
+      "Build\r\na tool",
+      "Stable\r\nsystem prompt",
+      "Public\rjourneys",
+      "App\r\ncontract",
+      "/tmp/run",
+    );
+
+    expect(args[args.indexOf("--append-system-prompt") + 1]).not.toContain("\r");
+    expect(args.at(-1)).not.toContain("\r");
+  });
+
   it("appends structurally consistent public journey guidance to Pi's built-in system prompt", async () => {
     const [systemPrompt, publicJourneys, appContext] = await Promise.all([
       readFile(path.resolve("solution/system-prompt.md"), "utf8"),
@@ -66,16 +85,19 @@ describe("Pi launch", () => {
     ]);
     const args = buildPiArguments("Build a tool", systemPrompt, publicJourneys, appContext, "/tmp/run");
     const suppliedSystemPrompt = args[args.indexOf("--append-system-prompt") + 1] ?? "";
+    const normalizedPublicJourneys = normalizePromptText(publicJourneys);
     const behaviorSection = /## Behaviors to implement and test when implied\s+([\s\S]*?)\n## /u.exec(
-      publicJourneys,
+      normalizedPublicJourneys,
     )?.[1];
-    const requirementSection = /## Run and reporting requirements\s+([\s\S]*)$/u.exec(publicJourneys)?.[1];
+    const requirementSection = /## Run and reporting requirements\s+([\s\S]*)$/u.exec(
+      normalizedPublicJourneys,
+    )?.[1];
     const behaviorItems = [...(behaviorSection ?? "").matchAll(/^\d+\.\s+(.+)$/gmu)].map((match) => match[1]);
     const requirementItems = [...(requirementSection ?? "").matchAll(/^-\s+(.+)$/gmu)].map(
       (match) => match[1],
     );
 
-    expect(suppliedSystemPrompt).toContain(publicJourneys.trim());
+    expect(suppliedSystemPrompt).toContain(normalizedPublicJourneys.trim());
     expect(behaviorItems.length).toBeGreaterThan(0);
     expect(requirementItems.length).toBeGreaterThan(0);
     for (const contractItem of [...behaviorItems, ...requirementItems]) {

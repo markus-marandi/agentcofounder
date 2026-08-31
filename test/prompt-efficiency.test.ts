@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildPiArguments } from "../src/run-challenge.js";
+import { buildPiArguments, normalizePromptText } from "../src/run-challenge.js";
 
 const MODEL_CONTEXT_FILES = [
   "solution/system-prompt.md",
@@ -10,11 +10,12 @@ const MODEL_CONTEXT_FILES = [
 ] as const;
 
 async function modelContext(): Promise<[string, string, string]> {
-  return await Promise.all([
+  const context = await Promise.all([
     readFile(path.resolve(MODEL_CONTEXT_FILES[0]), "utf8"),
     readFile(path.resolve(MODEL_CONTEXT_FILES[1]), "utf8"),
     readFile(path.resolve(MODEL_CONTEXT_FILES[2]), "utf8"),
   ]);
+  return context.map(normalizePromptText) as [string, string, string];
 }
 
 describe("model context efficiency", () => {
