@@ -43,12 +43,11 @@ suites, zero failed/skipped/todo tests, a production build, a successful startup
 probe, complete telemetry/session/log artifacts, and clean port-3000 ownership
 after verification.
 
-`Weighted` below is the provisional planning formula
-`input + output*3 + cache_read*0.1`. It is not described as an official score:
-the organizer checklist still leaves cache-write weighting and the authoritative
-cost formula unresolved.
+`Efficiency score` below uses the confirmed judging formula:
+`input + output*3 + cache_read*0.1`. Cache-write tokens are preserved in the
+raw telemetry but are not a term in the stated score.
 
-| Fixture | Calls | Input | Output | Total | Weighted | Pi cost | Journeys | Tests |
+| Fixture | Calls | Input | Output | Total | Efficiency score | Pi cost | Journeys | Tests |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | skeleton | 2 | 4,703 | 1,665 | 6,368 | 9,698 | 0.073465 | 18 | 135 |
 | web-app | 2 | 5,194 | 2,038 | 7,232 | 11,308 | 0.087110 | 20 | 140 |
@@ -65,12 +64,12 @@ cost formula unresolved.
 | ambiguity 11 — theater props | 3 | 6,385 | 2,726 | 11,671 | 14,819 | 0.114985 | 19 | 139 |
 
 Summary: 13/13 qualified; median 5,490 reported total tokens and 7,822
-provisional weighted tokens. Twelve runs passed their first candidate in two
+Efficiency Score. Twelve runs passed their first candidate in two
 model calls. Theater props used one bounded repair and qualified in three.
 
 ### Qualified comparisons
 
-| Variant | Total | Provisional weighted | Calls | Tests | Journeys |
+| Variant | Total | Efficiency score | Calls | Tests | Journeys |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | PR #13 skeleton baseline | 23,380 | 17,751.2 | 4 | 106 | 17 |
 | Integrated skeleton | 6,368 | 9,698 | 2 | 135 | 18 |
@@ -78,12 +77,12 @@ model calls. Theater props used one bounded repair and qualified in three.
 | Integrated 13-run median | 5,490 | 7,822 | 2 | 138 | 18 |
 
 Against the PR #13 skeleton baseline, the integrated skeleton used 72.8% fewer
-reported total tokens and 45.4% fewer provisional weighted tokens, while
+reported total tokens and 45.4% less Efficiency Score, while
 qualifying with more generated tests and journeys. The 13-run median used 76.5%
-fewer total and 55.9% fewer provisional weighted tokens.
+fewer total tokens and 55.9% less Efficiency Score.
 
-The earlier ICM-only skeleton trial used 5,504 total / 7,958 provisional
-weighted tokens with 106 tests and 17 journeys. Integrating Markus main costs
+The earlier ICM-only skeleton trial used 5,504 total / 7,958 Efficiency Score
+with 106 tests and 17 journeys. Integrating Markus main costs
 more on that one fixture (6,368 / 9,698), but it retains the newer product/API
 surface and qualifies 135 tests and 18 journeys. This is a measured quality and
 coverage trade, not an assertion that the smallest token number is automatically
@@ -109,7 +108,7 @@ efficiency comparison.
 | Robustness | Configuration and modes fail closed; generated tests cover validation, state transitions, deletion, filtering, derived values, API contracts, and startup. | One of 13 fixtures needed a model repair; unfamiliar prompt shapes remain risk. |
 | API and integration | Each product generates `API.md` and `openapi.json`; the linked `/api-docs` route renders the product-specific API document. | The boundary is backend-capable but no external service is available in offline judging. |
 | Maintainability | Product decisions remain data; materialization, journeys, docs, tests, and runtime are deterministic and separately testable. Root `npm run check` passes. | Rollup retains its non-fatal chunk-size advisory. |
-| Efficiency | Native telemetry is preserved per run; only qualified runs are compared. | Official formula/cache-write treatment is still an organizer decision. |
+| Efficiency | Native telemetry is preserved per run; only qualified runs are compared with the confirmed formula. | Model sampling still causes run-to-run variance; the matrix is evidence, not a guaranteed future token count. |
 
 ## One-line run and product commands
 

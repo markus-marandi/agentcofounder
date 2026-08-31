@@ -7,9 +7,10 @@
 > and serves the real linked `/api-docs` page. It does not delete those surfaces.
 > Current qualified evidence and remaining judging limits are in
 > [`docs/icm-markus-integration-evidence.md`](docs/icm-markus-integration-evidence.md).
-> The weighted formula below is retained as a provisional planning formula;
-> `docs/organizer-checklist.md` still leaves its official authority and
-> cache-write treatment unresolved.
+> The confirmed judging formula for this submission is
+> `input_tokens + output_tokens*3 + cache_read_tokens*0.1`; cache-write tokens
+> remain in raw telemetry but are not a term in that score. The generic template
+> publication TODO in `docs/organizer-checklist.md` remains organizer-owned.
 
 Status: supersedes the previous version of this document in full. The prior
 plan (comprehensive IAM/RBAC, a pluggable search-provider boundary, a
@@ -238,7 +239,7 @@ re-opened mid-build:
 - [x] `npm run challenge` against the dev prompt and all 11 ambiguity
   fixtures produces a `status: "success"` result with the five `journeys.md`
   behaviors present in `tests_run`, none failed.
-- [x] Measured provisional token efficiency (input + output×3 + cache_read×0.1) recorded
+- [x] Measured official Efficiency Score (input + output×3 + cache_read×0.1) recorded
   as a baseline, with at least one attempted reduction (prompt length, model
   choice, or caching) measured against it.
 - [ ] No dead surface in `app-template/`: every schema property, kernel
