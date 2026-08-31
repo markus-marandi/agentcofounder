@@ -85,7 +85,11 @@ and `src/ui/CollectionView.actions.test.tsx` are the kernel's own examples.
 
 ## Finish
 
+The app serves `API.md` rendered at `/api-docs`, linked from the bottom of the
+sidebar, and `npm run docs` serves the same page on port 3001.
+
 Settle after the configuration and any necessary code are ready. Do not run
-`npm run api`, `npm run journeys`, `npm test`, `npm run build`, or
-`npm run report`; the verifier does so once, writes the derived report, and
+`npm run api`, `npm run contract`, `npm run journeys`, `npm test`,
+`npm run build`, or `npm run report`; the verifier derives the API entity
+section, OpenAPI contract, journeys, and report, runs the gates once, and
 returns condensed failures. Repair the cause and settle again when asked.

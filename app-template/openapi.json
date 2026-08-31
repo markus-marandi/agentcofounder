@@ -1,0 +1,122 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Records — data boundary",
+    "version": "1.0.0",
+    "summary": "Keep track of the things that matter to you.",
+    "description": "The contract between this app's repository and any store behind it. The app ships with a localStorage adapter and makes no network calls; `src/data/httpAdapter.ts` speaks exactly this contract, and passes the same adapter conformance suite as the local adapters."
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Wherever createHttpAdapter is pointed."
+    }
+  ],
+  "paths": {
+    "/record": {
+      "get": {
+        "summary": "All records",
+        "operationId": "listRecord",
+        "responses": {
+          "200": {
+            "description": "The collection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/record"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace all records",
+        "description": "The repository owns the whole collection and sends it whole. Any 2xx is accepted; any other status is a rejection, and the app rolls the change back and tells the user.",
+        "operationId": "replaceRecord",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/record"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Stored."
+          },
+          "409": {
+            "description": "Rejected; the app restores what it showed before."
+          },
+          "503": {
+            "description": "Store unavailable; same handling as 409."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "record": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "#/components/schemas/record",
+        "title": "Record",
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "createdAt",
+          "title"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Assigned by the store. Immutable."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Assigned by the store. Immutable."
+          },
+          "title": {
+            "type": "string",
+            "description": "Free text."
+          },
+          "category": {
+            "type": "string",
+            "description": "Pick one of the suggestions or type your own."
+          },
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Null when left blank.",
+            "minimum": 0
+          },
+          "done": {
+            "type": "boolean",
+            "description": "Always present; defaults to false."
+          },
+          "completedOn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "ISO 8601 calendar date."
+          }
+        }
+      }
+    }
+  }
+}

@@ -14,6 +14,7 @@ import {
   type FieldValue,
 } from "../data/operations.js";
 import { searchRecords } from "../data/searchIndex.js";
+import { exportCollections, importCollections, readExport } from "../data/portability.js";
 import { Alert } from "./Alert.js";
 import { EmptyState } from "./EmptyState.js";
 import { Field } from "./Field.js";
@@ -99,6 +100,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   const ownsSearch = searchEnabled && shellSearch === null;
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [transferNote, setTransferNote] = useState<string | null>(null);
 
   const editing = editingId ? records.find((record) => record.id === editingId) : undefined;
   const filterSpecs = entity.filters ?? [];
@@ -178,6 +180,32 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
       }
     }
     applyAction(action, record, typed);
+  };
+
+  /**
+   * Getting the records out, and back in, through the repository — the first
+   * step of moving this collection to a database or another service. The file
+   * matches the schema in `openapi.json`; see API.md.
+   */
+  const exportRecords = (): void => {
+    const data = exportCollections({ [entity.name]: repository });
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${entity.name}-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setTransferNote(`Exported ${records.length} ${entity.labelPlural.toLowerCase()}.`);
+  };
+
+  const importRecords = async (file: File): Promise<void> => {
+    try {
+      const applied = importCollections(readExport(await file.text()), { [entity.name]: repository });
+      const count = applied[entity.name] ?? 0;
+      setTransferNote(`Imported ${count} ${entity.labelPlural.toLowerCase()}, replacing what was here.`);
+    } catch (error) {
+      setTransferNote(error instanceof Error ? error.message : "That file could not be read.");
+    }
   };
 
   const submit = (values: Record<string, FieldValue>): void => {
@@ -288,13 +316,46 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
       ) : null}
 
       <section aria-labelledby="collection-title" className="flex flex-col gap-4">
-        <h2 id="collection-title" className="text-base font-semibold text-ink m-0">
-          {entity.labelPlural}{" "}
-          <span className="font-normal text-base text-ink-soft">
-            ({visible.length}
-            {visible.length === records.length ? "" : ` of ${records.length}`})
-          </span>
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="collection-title" className="text-base font-semibold text-ink m-0">
+            {entity.labelPlural}{" "}
+            <span className="font-normal text-base text-ink-soft">
+              ({visible.length}
+              {visible.length === records.length ? "" : ` of ${records.length}`})
+            </span>
+          </h2>
+
+          {canEdit ? (
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                className="text-sm font-semibold text-ink-soft hover:text-ink"
+                onClick={exportRecords}
+              >
+                Export JSON
+              </button>
+              <label className="cursor-pointer text-sm font-semibold text-ink-soft hover:text-ink">
+                Import JSON
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) void importRecords(file);
+                  }}
+                />
+              </label>
+            </div>
+          ) : null}
+        </div>
+
+        {transferNote ? (
+          <p className="m-0 text-sm text-ink-soft" role="status">
+            {transferNote}
+          </p>
+        ) : null}
 
         {records.length === 0 ? (
           <EmptyState

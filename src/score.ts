@@ -136,6 +136,24 @@ export async function staticChecks(appDirectory: string): Promise<Check[]> {
       "API.md describes the data boundary.",
     ),
     check(
+      "async-capable-boundary",
+      "integration",
+      /MaybePromise<StoredRecord\[\]>|Promise<StoredRecord\[\]>/u.test(everything),
+      "The adapter may answer asynchronously, so a database or a service can back the app without changing anything above it.",
+    ),
+    check(
+      "adapter-contract-suite",
+      "integration",
+      /adapterContract/u.test(everything),
+      "One conformance suite defines what an adapter must do, so a new backend is verifiable rather than merely plausible.",
+    ),
+    check(
+      "machine-readable-contract",
+      "integration",
+      (await readFileSafely("openapi.json"))?.includes("openapi") === true,
+      "openapi.json describes the wire contract, generated from parameters.json.",
+    ),
+    check(
       "entities-declared",
       "persistence",
       entities.length > 0,

@@ -40,7 +40,7 @@ describe("repository", () => {
     expect(new Set(ids).size).toBe(50);
   });
 
-  it("surfaces a failed write and keeps the last good state", () => {
+  it("rolls a rejected write back and reports it, rather than keeping a change that was not stored", async () => {
     const failing: StorageAdapter = {
       read: () => [],
       write: () => {
@@ -48,9 +48,56 @@ describe("repository", () => {
       },
     };
     const repository = createRepository("thing", failing);
+    const failures: StorageUnavailableError[] = [];
+    repository.onError((error) => failures.push(error));
 
-    expect(() => repository.create({ label: "doomed" })).toThrow(StorageUnavailableError);
+    // The change is shown first: a store that answers over a network answers late.
+    repository.create({ label: "doomed" });
+    expect(repository.list()).toHaveLength(1);
+
+    await repository.settled();
+
     expect(repository.list()).toHaveLength(0);
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toBeInstanceOf(StorageUnavailableError);
+  });
+
+  it("reads from a store that answers later, and shows it once it does", async () => {
+    const remote: StorageAdapter = {
+      read: async () => [{ id: "a", createdAt: "2026-01-01T00:00:00.000Z", label: "from the server" }],
+      write: async () => {},
+    };
+    const repository = createRepository("thing", remote);
+
+    // Nothing to show yet, and no crash for asking.
+    expect(repository.list()).toEqual([]);
+
+    await repository.settled();
+
+    expect(repository.list()).toHaveLength(1);
+    expect(repository.list()[0].label).toBe("from the server");
+  });
+
+  it("keeps queued writes in order when the store answers out of order", async () => {
+    const written: string[][] = [];
+    let delay = 30;
+    const remote: StorageAdapter = {
+      read: () => [],
+      write: async (_collection, records) => {
+        // Each write resolves faster than the one before it.
+        delay = Math.max(0, delay - 15);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        written.push(records.map((record) => String(record.label)));
+      },
+    };
+    const repository = createRepository("thing", remote);
+
+    repository.create({ label: "first" });
+    repository.create({ label: "second" });
+    repository.create({ label: "third" });
+    await repository.settled();
+
+    expect(written).toEqual([["first"], ["first", "second"], ["first", "second", "third"]]);
   });
 
   it("notifies subscribers on every change", () => {
@@ -83,12 +130,13 @@ describe("localStorage adapter", () => {
     expect(createLocalStorageAdapter("test").read("thing")).toEqual([]);
   });
 
-  it("drops entries that are not usable records and de-duplicates ids", () => {
+  it("drops entries that are not usable records and de-duplicates ids", async () => {
     window.localStorage.setItem(
       "test:thing",
       JSON.stringify([{ id: "1" }, "nonsense", null, { noId: true }, { id: "1", label: "duplicate" }]),
     );
-    const records = createLocalStorageAdapter("test").read("thing");
+    // `read` may answer later; awaiting is how a caller treats every adapter.
+    const records = await createLocalStorageAdapter("test").read("thing");
     expect(records).toHaveLength(1);
     expect(records[0].id).toBe("1");
   });

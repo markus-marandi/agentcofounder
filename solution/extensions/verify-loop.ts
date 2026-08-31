@@ -169,6 +169,9 @@ export default function verifyLoop(pi: ExtensionAPI) {
       const journeys = await runCommand(node, [path.join("tools", "generate-journeys.mjs")], appRoot);
       const api = await runCommand(node, [path.join("tools", "write-api.mjs")], appRoot);
 
+      // The integration contract is derived from the same parameters.json, so
+      // it is regenerated here too rather than left to drift.
+      const contract = await runCommand(node, [path.join("tools", "write-contract.mjs")], appRoot);
       const reportPath = path.join(appRoot, ".verify-loop-tests.json");
 
       const test = await runCommand(
@@ -200,6 +203,11 @@ export default function verifyLoop(pi: ExtensionAPI) {
         );
       }
       if (!api.ok) problems.push(`API generation failed:\n\n${condense(api.output)}`);
+      if (!contract.ok) {
+        problems.push(
+          `\`npm run contract\` failed, so the app has no openapi.json:\n\n${condense(contract.output)}`,
+        );
+      }
       if (!test.ok) problems.push(`\`npm test\` failed:\n\n${condense(test.output)}`);
       if (!build.ok) problems.push(`\`npm run build\` failed:\n\n${condense(build.output)}`);
 
@@ -210,7 +218,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
         );
       }
 
-      if (materialize.ok && journeys.ok && api.ok && test.ok && build.ok) {
+      if (materialize.ok && journeys.ok && api.ok && contract.ok && test.ok && build.ok) {
         // The report is derived, not authored, so write it here rather than
         // asking the agent for a file it would only be retyping.
         const report = await runCommand(node, [path.join("tools", "write-report.mjs")], appRoot);

@@ -22,9 +22,12 @@ This app is already built. `parameters.json` assembles tested primitives in
 3. At least one meaningful filter and one derived value.
 4. Data survives a page refresh.
 5. At least one passing test; never `.skip` or `.todo`.
-6. Works on narrow and wide screens.
-7. Reachable boundaries appear in `features.limitations`.
-8. Generated `API.md` describes the configured data boundary.
+6. Works on a narrow screen and a wide one.
+7. Reachable boundaries appear in `features.limitations`, which the report
+   carries.
+8. Generated `API.md` describes the configured entities and data boundary;
+   generated `openapi.json` describes the wire contract. The app renders both
+   at `/api-docs`, linked from the bottom of the sidebar.
 9. Runs at `http://localhost:3000` and leaves no process behind.
 
 Landing pages and walkthroughs meet the same floor: their forms persist real
@@ -34,15 +37,32 @@ records. A form that discards input is a mock.
 
 | Need | Existing boundary |
 |---|---|
-| Records and browser persistence | `src/data/repository.ts`, `src/kernel/useRepository.ts`, `src/data/localStorageAdapter.ts` |
-| Validation, filters, totals, sorting | `src/data/operations.ts` |
-| Moment-like state changes | `entities[].actions` with `prompt`, `sets`, and `when` |
-| Open suggested category | `combobox` field |
-| Search and responsive chrome | `src/data/searchIndex.ts`, `src/ui/AppShell.tsx` |
-| CRUD, forms, row actions, recovery | `src/ui/CollectionView.tsx`, `src/ui/RecordForm.tsx` |
-| Dashboard, marketing, walkthrough | `src/ui/DashboardGrid.tsx`, `src/ui/LandingPage.tsx`, `src/ui/PrototypeFlow.tsx` |
-| API, journey suite, report | settle-time verifier, derived from configuration and real results |
-| Styling | existing components and the tokens in `src/styles.css` |
+| Read or write records | `src/data/repository.ts` via `src/kernel/useRepository.ts` |
+| Browser persistence | `src/data/localStorageAdapter.ts` (recovers from corrupt data) |
+| A remote store | `src/data/httpAdapter.ts` — implemented and tested, wired to nothing |
+| Proving a new adapter works | `src/data/adapterContract.ts`, run against every adapter |
+| Getting data out and back in | `src/data/portability.ts`; the buttons above the collection |
+| Validation, filters, derived values, sorting | `src/data/operations.ts` |
+| One-click record changes (mark returned, lend to, mark paid) | `entities[].actions` in `parameters.json` |
+| A category that is suggested but not closed | a `combobox` field |
+| Local search | `src/data/searchIndex.ts` |
+| Full CRUD screen | `src/ui/CollectionView.tsx` |
+| Form controls | `src/ui/Field.tsx`, `src/ui/RecordForm.tsx` |
+| Charts (SVG, no dependency) | `src/ui/Chart.tsx`, `src/ui/DashboardGrid.tsx` |
+| Seeded sample data | `src/mock/generators.ts` |
+| Demonstration roles | `src/auth/mockAuth.ts`, `src/auth/seed-users.ts` |
+| Marketing page | `src/ui/LandingPage.tsx` |
+| Clickable walkthrough | `src/ui/PrototypeFlow.tsx` |
+| Failure containment | `src/ui/ErrorBoundary.tsx` |
+| Brand mark and wordmark | `src/ui/Logo.tsx`; the same art as `public/logo.svg` / `public/favicon.svg` |
+| The one search box | `src/ui/AppShell.tsx` owns it, views read it via `src/ui/shellSearch.ts` |
+| The journey suite | `npm run journeys`, from `parameters.json` |
+| `report.partial.json` | `npm run report`, from the suite it runs |
+| The API docs, rendered | `/api-docs` while the app runs; `npm run docs` serves the same page on port 3001 |
+| The API entity section | `npm run api` derives `API.md` from `parameters.json` |
+| The wire contract | `npm run contract` writes `openapi.json` from `parameters.json`; `/api-docs` renders it with the record schemas and the table mapping |
+| Offline comparison material | `src/content/positioning.json` |
+| Styling | Tailwind utilities over the theme tokens defined in `src/styles.css`; presets in `src/themes/presets.css` |
 
 Write a new pure function in `src/data/operations.ts` only for a rule this map
 cannot express, and test it beside the function. Keep domain logic out of UI
@@ -61,16 +81,30 @@ components.
 
 ## Rules
 
-- No network, CDN, external service, dependency installation, or `.env` file.
-- Do not create or edit `API.md`, `result.json`, `report.partial.json`, or
-  `src/journeys.generated.test.tsx`.
+- **No network.** No fetch, no CDN, no external service. This machine is offline.
+- **No new dependencies** and no install commands. Use what the lockfile has.
+- **Do not write `.env` files.** Fixtures belong in committed source.
+- **Do not create or edit `API.md`, `openapi.json`, `result.json`,
+  `report.partial.json`, or `src/journeys.generated.test.tsx`.** The verifier
+  and outer runner own them.
+- Keep tests in `src/**/*.test.ts` or `src/**/*.test.tsx`.
+- Test observable behaviour through the interface, not implementation details.
+- **Nothing above `src/data/repository.ts` may touch a store.** The adapter may
+  answer asynchronously; the repository absorbs that, so views stay synchronous
+  and a database or a service is one more adapter, not a rewrite. A new adapter
+  is finished when it passes `src/data/adapterContract.ts`.
+- **A field an action owns is not offered when creating a record.** Lending
+  sets `borrower` and stamps `lentOn`, so the create form withholds both and
+  the action is the only way to reach that state — otherwise a record can be
+  out on loan with no date, having never been lent. An edit still shows every
+  field, because correcting a record is exactly when you need them.
 - A missing journey is a missing field, filter, action, or derived value in
   `parameters.json`; fix the configuration.
-- Hand-write a test only for a kernel-inexpressible rule, in
-  `src/**/*.test.ts` or `src/**/*.test.tsx`, through observable behavior.
-- Do not run `npm run journeys`, `npm test`, `npm run build`, or
-  `npm run report`. Settle when ready; the verifier owns those steps and
-  returns condensed failures for repair.
+- Hand-write a test only for a kernel-inexpressible rule, through observable
+  behavior.
+- Do not run `npm run api`, `npm run contract`, `npm run journeys`, `npm test`,
+  `npm run build`, or `npm run report`. Settle when ready; the verifier owns
+  those steps and returns condensed failures for repair.
 
 The verifier owns `report.partial.json`; the outer runner owns final URLs,
 commands, harness checks, and telemetry.

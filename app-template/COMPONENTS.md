@@ -33,6 +33,8 @@ Not product content — always compiled in, never independently toggled:
 | `AppShell.tsx` | Chrome, identical in every app: sidebar rail with a mobile drawer, sticky header with the one search box, density and day-night wiring. Not configurable |
 | `Logo.tsx` | Brand mark (`LogoMark`) and mark-plus-`product.name` wordmark (`Logo`), drawn inline so the mark takes the accent; same art as `public/logo.svg` and the `public/favicon.svg` the tab uses |
 | `shellSearch.ts` | Carries the header's query to whichever view is on screen. Outside a shell the context is null and the view falls back to its own search box |
+| `tools/api-contract.mjs` | Derives the HTTP contract, the JSON Schema per entity, and the Postgres table sketch from `parameters.json`. `npm run contract` writes `openapi.json`; the docs page appends the rest |
+| `tools/docs-page.mjs` | Renders `API.md` as a page. Served at `/api-docs` by the `api-docs` plugin in `vite.config.ts`, and on port 3001 by `tools/serve-docs.mjs` (`npm run docs`). The sidebar's bottom link points at the first |
 | `ErrorBoundary.tsx` | Wraps every routed view and every dashboard plot so one bad record can't blank the page |
 
 ## `components` tracking block

@@ -24,6 +24,7 @@ export function repositoryFor(collection: string): Repository {
 
 /** Test seam: drops cached repositories so each test starts clean. */
 export function resetRepositories(): void {
+  for (const repository of repositories.values()) repository.dispose();
   repositories.clear();
 }
 
@@ -47,7 +48,14 @@ export function useRepository(collection: string): RepositoryState {
 
   useEffect(() => {
     setRecords(repository.list());
-    return repository.subscribe(() => setRecords(repository.list()));
+    const stopWatching = repository.subscribe(() => setRecords(repository.list()));
+    // A write is shown before the store has accepted it, so a rejection arrives
+    // here rather than as a throw from the call that made the change.
+    const stopListeningForErrors = repository.onError((error) => setStorageError(error.message));
+    return () => {
+      stopWatching();
+      stopListeningForErrors();
+    };
   }, [repository]);
 
   const run = useCallback(<T,>(operation: () => T): T | undefined => {

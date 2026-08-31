@@ -67,6 +67,60 @@ function baseFields(entity) {
   );
 }
 
+/**
+ * The action that fills `name` with something truthy — the one the create form
+ * no longer offers, because setting it is the action's job. A fixture that
+ * needs the field set has to reach it the way a person does: add the record,
+ * then run the action.
+ */
+function actionFilling(entity, name) {
+  return (entity.actions ?? []).find((action) => {
+    if (action.prompt === name) return true;
+    const written = (action.sets ?? {})[name];
+    return written !== undefined && written !== null && written !== false && written !== "";
+  });
+}
+
+/**
+ * The lines that put one record on screen in the state `values` describes.
+ * Plain fields go through the add form; a field an action owns goes through
+ * that action, prompt and confirmation included.
+ */
+function addRecordLines(entity, values) {
+  const owned = actionOwnedFields(entity);
+  const plain = {};
+  const viaAction = [];
+  for (const [name, value] of Object.entries(values)) {
+    if (owned.has(name)) viaAction.push([name, value]);
+    else plain[name] = value;
+  }
+
+  const lines = [`await addRecord(user, ${json(plain)});`];
+  const title = titleValue(entity, plain, 1);
+  const done = new Set();
+  for (const [name, value] of viaAction) {
+    const action = actionFilling(entity, name);
+    if (!action || done.has(action.id)) continue;
+    done.add(action.id);
+    const prompt = action.prompt ? json([action.prompt, String(value)]) : "undefined";
+    lines.push(`await rowAction(user, ${json(action.label)}, ${json(title)}, ${prompt}, ${Boolean(action.confirm)});`);
+  }
+  return lines;
+}
+
+/** Mirrors src/data/operations.ts: the create form withholds what an action owns. */
+function actionOwnedFields(entity) {
+  const owned = new Set();
+  for (const action of entity.actions ?? []) {
+    if (action.prompt) owned.add(action.prompt);
+    for (const name of Object.keys(action.sets ?? {})) owned.add(name);
+  }
+  for (const field of entity.fields) {
+    if (field.required) owned.delete(field.name);
+  }
+  return owned;
+}
+
 function sampleRecord(entity, n, overrides = {}) {
   const values = {};
   for (const field of baseFields(entity)) values[field.name] = sampleValue(field, n);
@@ -191,7 +245,7 @@ function buildJourneys(parameters, entity) {
     const lines = [
       "const user = userEvent.setup();",
       "render(<App />);",
-      `await addRecord(user, ${json(record)});`,
+      ...addRecordLines(entity, record),
       `await user.click(screen.getByRole("button", { name: ${json(`${action.label}: ${title}`)} }));`,
     ];
 
@@ -260,7 +314,7 @@ function buildJourneys(parameters, entity) {
         journey(`narrows the collection with the ${json(filter.label).slice(1, -1)} filter`, [
           "const user = userEvent.setup();",
           "render(<App />);",
-          `await addRecord(user, ${json(filled)});`,
+          ...addRecordLines(entity, filled),
           `await addRecord(user, ${json(blank)});`,
           `await user.click(screen.getByLabelText(${json(filter.label)}));`,
           `expect(table().getByText(${json(matching)})).toBeInTheDocument();`,
@@ -366,7 +420,7 @@ function buildJourneys(parameters, entity) {
         journey(`${lower(derived.label)} counts only the ${plural} it describes`, [
           "const user = userEvent.setup();",
           "render(<App />);",
-          `await addRecord(user, ${json(filled)});`,
+          ...addRecordLines(entity, filled),
           `await addRecord(user, ${json(blank)});`,
           `expect(stat(${json(derived.label)})).toHaveTextContent("1");`,
         ]),
@@ -465,6 +519,21 @@ function renderTestFile(parameters, entity, journeys) {
     "  }",
     "  await user.clear(input);",
     "  await user.type(input, String(value));",
+    "}",
+    "",
+    "/** One row action, including its inline prompt or its confirmation dialog. */",
+    "async function rowAction(",
+    "  user: User,",
+    "  label: string,",
+    "  title: string,",
+    "  prompt?: [string, string],",
+    "  confirm = false,",
+    "): Promise<void> {",
+    '  await user.click(screen.getByRole("button", { name: label + ": " + title }));',
+    "  if (prompt) await setValue(user, table(), prompt[0], prompt[1]);",
+    "  if (prompt || confirm) {",
+    '    await user.click(screen.getByRole("button", { name: "Confirm " + label.toLowerCase() + ": " + title }));',
+    "  }",
     "}",
     "",
     "async function addRecord(user: User, values: Draft): Promise<void> {",

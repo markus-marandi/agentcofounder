@@ -18,6 +18,26 @@ export type Draft = Record<string, FieldValue>;
 
 export type FieldErrors = Record<string, string>;
 
+/**
+ * Fields an action owns end to end — it prompts for them, or writes them, or
+ * both. Lending is the example: `borrower` is what the Lend action collects
+ * and `lentOn` is what it stamps, so offering either in the *create* form lets
+ * someone record a borrower with no date, and a record that is out on loan
+ * without ever having been lent. A required field is never withheld: the form
+ * has to be able to produce a valid record.
+ */
+export function actionOwnedFields(entity: EntitySpec): Set<string> {
+  const owned = new Set<string>();
+  for (const action of entity.actions ?? []) {
+    if (action.prompt) owned.add(action.prompt);
+    for (const name of Object.keys(action.sets ?? {})) owned.add(name);
+  }
+  for (const field of entity.fields) {
+    if (field.required) owned.delete(field.name);
+  }
+  return owned;
+}
+
 export function emptyDraft(entity: EntitySpec): Draft {
   const draft: Draft = {};
   for (const field of entity.fields) {
