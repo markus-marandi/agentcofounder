@@ -30,6 +30,7 @@ describe("model context efficiency", () => {
     expect(context).toContain("single compiled stage");
     expect(context).toContain("write only\n`candidate.json`");
     expect(context).toContain('"route":"web-app"');
+    expect(context).toContain("Condition modes are `equals`, `truthy`, `falsy`, `contains`, or `beforeToday`");
     expect(context).not.toContain("parameters.schema.json");
     expect(args).not.toContain("--skill");
     expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["write"]);
@@ -37,6 +38,8 @@ describe("model context efficiency", () => {
 
   it("leaves deterministic execution with the verifier", async () => {
     const verifier = await readFile(path.resolve("solution/extensions/verify-loop.ts"), "utf8");
+    expect(verifier).toContain('pi.on("tool_result"');
+    expect(verifier).not.toContain('pi.on("agent_settled"');
     for (const requiredStep of [
       "generate-journeys.mjs",
       "materialize-candidate.mjs",

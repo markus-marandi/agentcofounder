@@ -23,10 +23,10 @@ flowchart TD
         direction TB
         prompt["system-prompt.md<br/>+ journeys.md<br/>+ compact app contract"]
         decisions["product decisions only<br/>no shell or skill reads"]
-        spec["idea_spec.json<br/>parameters.json"]
+        candidate["candidate.json<br/>idea_spec + parameters"]
         loop{"verify-loop<br/>tests + build pass?"}
 
-        prompt --> decisions --> spec --> loop
+        prompt --> decisions --> candidate --> loop
         loop -- "no, repair" --> decisions
     end
 
@@ -127,7 +127,8 @@ In `app-template/src`, shipped tested and building green with zero model edits.
 No charting library, no backend SDK — those would be a real install and
 output-token cost, paid on every run. Tailwind is different: the kernel
 components that use it are prebuilt and committed, never written by the
-model. The model only ever configures `parameters.json`; restyling the
+model. The model only ever configures the `idea_spec` and `parameters` values
+inside `candidate.json`; restyling the
 kernel is a one-time cost paid once, in committed code, exactly like the
 rest of this strategy.
 
@@ -142,12 +143,13 @@ and nothing above it changes.
 
 ## The agentic loop
 
-`solution/extensions/verify-loop.ts` listens for `agent_settled` — the moment the
-model believes it is finished — then runs the tests and the production build. On
-failure it hands the shortest decisive output back through `pi.sendMessage()` so
-the agent repairs it inside the same run, bounded by three attempts and a
-wall-clock budget. It never starts a development server: the runner owns port
-3000.
+`solution/extensions/verify-loop.ts` intercepts the `write` result for
+`candidate.json`, materializes the two kernel inputs, generates journeys and API
+artifacts, then runs the tests, production build, and report. On failure it turns
+that same tool result into concise repair guidance, so the still-valid compiled
+stage can rewrite only `candidate.json`. The loop is bounded by three attempts
+and a wall-clock budget. It never starts a development server: the runner owns
+port 3000.
 
 Without it, a failure is discovered after the run is over, when it can only be
 recorded.

@@ -52,6 +52,21 @@ describe("parameters validation", () => {
     }
   });
 
+  it("accepts the overdue mode but rejects invented condition modes", () => {
+    const accepted = {
+      ...valid.entities[0],
+      fields: [...valid.entities[0].fields, { name: "dueBack", label: "Due back", type: "date" }],
+      filters: [{ field: "dueBack", label: "Overdue", mode: "beforeToday" }],
+    };
+    expect(validateParameters({ ...valid, entities: [accepted] })).toEqual([]);
+
+    const rejected = {
+      ...accepted,
+      filters: [{ field: "dueBack", label: "Soon", mode: "beforeTomorrow" }],
+    };
+    expect(validateParameters({ ...valid, entities: [rejected] }).join(" ")).toContain("beforeTomorrow");
+  });
+
   it("accepts a field name the kernel supplies rather than the entity", () => {
     const entity = {
       ...valid.entities[0],

@@ -48,6 +48,24 @@ describe("parameters schema", () => {
     expect(problems.join(" ")).toContain("/route");
   });
 
+  it("accepts the kernel's overdue condition mode", async () => {
+    const baseEntity = valid.entities[0]!;
+    const entity = {
+      ...baseEntity,
+      fields: [...baseEntity.fields, { name: "dueBack", label: "Due back", type: "date" }],
+      filters: [{ field: "dueBack", label: "Overdue", mode: "beforeToday" }],
+      derived: [
+        {
+          id: "overdue",
+          label: "Overdue",
+          kind: "countWhere",
+          where: { field: "dueBack", mode: "beforeToday" },
+        },
+      ],
+    };
+    expect(await validateParametersFile(await write({ ...valid, entities: [entity] }), schemaPath)).toEqual([]);
+  });
+
   it("rejects a dashboard that does not have exactly four supporting plots", async () => {
     const plot = { id: "p", title: "P", kind: "bar", source: { kind: "entityCount" } };
     const problems = await validateParametersFile(

@@ -33,7 +33,9 @@ export function actionOwnedFields(entity: EntitySpec): Set<string> {
     for (const name of Object.keys(action.sets ?? {})) owned.add(name);
   }
   for (const field of entity.fields) {
-    if (field.required) owned.delete(field.name);
+    // A boolean always has a complete false/true value, so `required` cannot
+    // make it missing and must not expose action-owned state during creation.
+    if (field.required && field.type !== "boolean") owned.delete(field.name);
   }
   return owned;
 }
@@ -184,6 +186,10 @@ export function matches(record: StoredRecord, field: string, mode: FilterMode, v
       return !actual;
     case "contains":
       return String(actual ?? "").toLowerCase().includes(String(value ?? "").toLowerCase());
+    case "beforeToday": {
+      if (typeof actual !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(actual)) return false;
+      return actual < new Date().toISOString().slice(0, 10);
+    }
     case "equals":
     default:
       return String(actual ?? "") === String(value ?? "");

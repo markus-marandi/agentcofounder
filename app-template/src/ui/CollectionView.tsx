@@ -111,7 +111,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
       .filter((spec) => (choices[spec.field] ?? "") !== "")
       .map((spec) => {
         const mode = spec.mode ?? "equals";
-        return mode === "truthy" || mode === "falsy"
+        return mode === "truthy" || mode === "falsy" || mode === "beforeToday"
           ? { field: spec.field, mode }
           : { field: spec.field, mode, value: choices[spec.field] };
       });
@@ -271,7 +271,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
           {filterSpecs.map((spec) => {
             const mode = spec.mode ?? "equals";
             const id = `filter-${spec.field}`;
-            if (mode === "truthy" || mode === "falsy") {
+            if (mode === "truthy" || mode === "falsy" || mode === "beforeToday") {
               return (
                 // `py-2` matches the select control's box height, so a checkbox filter
                 // sits on the same line as a dropdown one in the bottom-aligned toolbar.

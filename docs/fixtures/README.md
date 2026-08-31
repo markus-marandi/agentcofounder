@@ -23,3 +23,9 @@ resolves the combobox ambiguity the same way regardless of domain wording.
 
 These are development inputs, not judging material. The official idea will be
 different, so never tune a skill to the specific words below.
+
+The single-stage ICM + Markus-main integration has a committed reviewer index
+for qualified runs across both hand-written fixtures and all 11 ambiguity
+reskins: [`../icm-markus-integration-evidence.md`](../icm-markus-integration-evidence.md).
+Generated results and raw telemetry remain runner-owned artifacts rather than
+committed fixtures.

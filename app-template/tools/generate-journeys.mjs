@@ -73,11 +73,58 @@ function baseFields(entity) {
  * needs the field set has to reach it the way a person does: add the record,
  * then run the action.
  */
-function actionFilling(entity, name) {
+function actionFilling(entity, name, value) {
   return (entity.actions ?? []).find((action) => {
     if (action.prompt === name) return true;
     const written = (action.sets ?? {})[name];
-    return written !== undefined && written !== null && written !== false && written !== "";
+    return value === undefined
+      ? written !== undefined && written !== null && written !== false && written !== ""
+      : written === value;
+  });
+}
+
+function conditionMatches(value, condition) {
+  switch (condition?.mode) {
+    case "truthy":
+      return Boolean(value);
+    case "falsy":
+      return !value;
+    case "contains":
+      return String(value ?? "").toLowerCase().includes(String(condition.value ?? "").toLowerCase());
+    case "beforeToday":
+      return (
+        typeof value === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/u.test(value) &&
+        value < new Date().toISOString().slice(0, 10)
+      );
+    case "equals":
+    default:
+      return String(value ?? "") === String(condition?.value ?? "");
+  }
+}
+
+function valueForCondition(entity, condition) {
+  const field = fieldNamed(entity, condition.field);
+  switch (condition.mode) {
+    case "truthy":
+      return field?.type === "boolean" ? true : sampleValue(field, 1);
+    case "falsy":
+      return field?.type === "boolean" ? false : "";
+    case "contains":
+    case "equals":
+      return condition.value;
+    case "beforeToday":
+      return "2000-01-01";
+    default:
+      return sampleValue(field, 1);
+  }
+}
+
+function actionSatisfying(entity, condition) {
+  const wanted = valueForCondition(entity, condition);
+  return (entity.actions ?? []).find((action) => {
+    if (action.prompt === condition.field) return conditionMatches(wanted, condition);
+    return conditionMatches((action.sets ?? {})[condition.field], condition);
   });
 }
 
@@ -89,21 +136,65 @@ function actionFilling(entity, name) {
 function addRecordLines(entity, values) {
   const owned = actionOwnedFields(entity);
   const plain = {};
-  const viaAction = [];
+  const viaAction = {};
   for (const [name, value] of Object.entries(values)) {
-    if (owned.has(name)) viaAction.push([name, value]);
+    if (owned.has(name)) viaAction[name] = value;
     else plain[name] = value;
   }
 
   const lines = [`await addRecord(user, ${json(plain)});`];
   const title = titleValue(entity, plain, 1);
-  const done = new Set();
-  for (const [name, value] of viaAction) {
-    const action = actionFilling(entity, name);
-    if (!action || done.has(action.id)) continue;
-    done.add(action.id);
-    const prompt = action.prompt ? json([action.prompt, String(value)]) : "undefined";
-    lines.push(`await rowAction(user, ${json(action.label)}, ${json(title)}, ${prompt}, ${Boolean(action.confirm)});`);
+  const state = Object.fromEntries(
+    entity.fields.map((field) => [field.name, field.type === "boolean" ? false : null]),
+  );
+  Object.assign(state, plain);
+  const executing = new Set();
+
+  const runAction = (action) => {
+    if (executing.has(action.id)) {
+      throw new Error(`Action prerequisite cycle while preparing ${action.label}`);
+    }
+    executing.add(action.id);
+    try {
+      if (action.when && !conditionMatches(state[action.when.field], action.when)) {
+        const prerequisite = actionSatisfying(entity, action.when);
+        if (!prerequisite) {
+          throw new Error(
+            `No action can satisfy ${action.label}'s ${action.when.field} ${action.when.mode} prerequisite`,
+          );
+        }
+        runAction(prerequisite);
+      }
+      if (action.when && !conditionMatches(state[action.when.field], action.when)) {
+        throw new Error(`Action ${action.label} is still unavailable after preparing its prerequisite`);
+      }
+
+      let prompt = "undefined";
+      if (action.prompt) {
+        const promptField = fieldNamed(entity, action.prompt);
+        const promptValue = Object.hasOwn(viaAction, action.prompt)
+          ? viaAction[action.prompt]
+          : sampleValue(promptField, 1);
+        prompt = json([action.prompt, String(promptValue)]);
+        state[action.prompt] = promptValue;
+      }
+      lines.push(
+        `await rowAction(user, ${json(action.label)}, ${json(title)}, ${prompt}, ${Boolean(action.confirm)});`,
+      );
+      Object.assign(state, action.sets ?? {});
+    } finally {
+      executing.delete(action.id);
+    }
+  };
+
+  for (const [name, value] of Object.entries(viaAction)) {
+    if (state[name] === value) continue;
+    const action = actionFilling(entity, name, value);
+    if (!action) throw new Error(`No action can prepare ${name}=${json(value)} for a generated journey`);
+    runAction(action);
+    if (state[name] !== value) {
+      throw new Error(`Action ${action.label} did not prepare ${name}=${json(value)} for a generated journey`);
+    }
   }
   return lines;
 }
@@ -116,7 +207,7 @@ function actionOwnedFields(entity) {
     for (const name of Object.keys(action.sets ?? {})) owned.add(name);
   }
   for (const field of entity.fields) {
-    if (field.required) owned.delete(field.name);
+    if (field.required && field.type !== "boolean") owned.delete(field.name);
   }
   return owned;
 }
@@ -194,7 +285,7 @@ function buildJourneys(parameters, entity) {
     ]),
   );
 
-  for (const field of entity.fields.filter((candidate) => candidate.required)) {
+  for (const field of entity.fields.filter((candidate) => candidate.required && candidate.type !== "boolean")) {
     const withoutField = { ...first };
     delete withoutField[field.name];
     journeys.push(
@@ -305,18 +396,26 @@ function buildJourneys(parameters, entity) {
     if (!field) continue;
     const mode = filter.mode ?? "equals";
 
-    if (mode === "truthy" || mode === "falsy") {
-      const filled = sampleRecord(entity, 1, { [field.name]: sampleValue(field, 1) });
-      const blank = sampleRecord(entity, 2);
-      const matching = mode === "truthy" ? titleValue(entity, filled, 1) : titleValue(entity, blank, 2);
-      const excluded = mode === "truthy" ? titleValue(entity, blank, 2) : titleValue(entity, filled, 1);
+    if (mode === "truthy" || mode === "falsy" || mode === "beforeToday") {
+      const filled = sampleRecord(entity, 1, {
+        [field.name]: mode === "beforeToday" ? "2000-01-01" : sampleValue(field, 1),
+      });
+      const blank = sampleRecord(
+        entity,
+        2,
+        mode === "beforeToday" ? { [field.name]: "2999-01-01" } : {},
+      );
+      const matching =
+        mode === "falsy" ? titleValue(entity, blank, 2) : titleValue(entity, filled, 1);
+      const excluded =
+        mode === "falsy" ? titleValue(entity, filled, 1) : titleValue(entity, blank, 2);
       journeys.push(
         journey(`narrows the collection with the ${json(filter.label).slice(1, -1)} filter`, [
           "const user = userEvent.setup();",
           "render(<App />);",
           ...addRecordLines(entity, filled),
-          `await addRecord(user, ${json(blank)});`,
-          `await user.click(screen.getByLabelText(${json(filter.label)}));`,
+          ...addRecordLines(entity, blank),
+          `await user.click(filterControl(${json(filter.label)}, ${json(field.name)}));`,
           `expect(table().getByText(${json(matching)})).toBeInTheDocument();`,
           `expect(table().queryByText(${json(excluded)})).not.toBeInTheDocument();`,
         ]),
@@ -333,8 +432,8 @@ function buildJourneys(parameters, entity) {
       journey(`narrows the collection by ${lower(field.label)}`, [
         "const user = userEvent.setup();",
         "render(<App />);",
-        `await addRecord(user, ${json(recordOne)});`,
-        `await addRecord(user, ${json(recordTwo)});`,
+        ...addRecordLines(entity, recordOne),
+        ...addRecordLines(entity, recordTwo),
         `await user.selectOptions(filterControl(${json(filter.label)}, ${json(field.name)}), ${json(two)});`,
         `expect(table().getByText(${json(titleValue(entity, recordTwo, 2))})).toBeInTheDocument();`,
         `expect(table().queryByText(${json(titleValue(entity, recordOne, 1))})).not.toBeInTheDocument();`,
@@ -453,9 +552,12 @@ function renderTestFile(parameters, entity, journeys) {
           : field.type === "date" || field.type === "number"
             ? "typed"
             : "text";
-    // `Field` appends an asterisk to a required field's <label>, and that
-    // asterisk is part of the text the label query matches on.
-    controls[field.name] = { label: field.required ? `${field.label} *` : field.label, kind };
+    // A boolean always has a false/true value and its toggle label has no
+    // required marker; other required fields render the visible asterisk.
+    controls[field.name] = {
+      label: field.required && field.type !== "boolean" ? `${field.label} *` : field.label,
+      kind,
+    };
   }
 
   const header = [

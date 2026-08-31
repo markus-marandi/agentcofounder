@@ -28,6 +28,14 @@ async function readJson(relative, fallback = null) {
   }
 }
 
+async function readJsonPath(file, fallback = null) {
+  try {
+    return JSON.parse(await readFile(file, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
 function runVitest() {
   return new Promise((resolve, reject) => {
     const child = spawn(
@@ -148,9 +156,11 @@ async function main() {
   if (!entity) throw new Error("parameters.json declares no entity to report on");
   const ideaSpec = await readJson("idea_spec.json", {});
 
-  const exitCode = await runVitest();
-  const report = await readJson(path.relative(appRoot, RESULTS_FILE), null);
-  await rm(RESULTS_FILE, { force: true });
+  const [suppliedResults] = process.argv.slice(2);
+  const resultsPath = suppliedResults ? path.resolve(appRoot, suppliedResults) : RESULTS_FILE;
+  const exitCode = suppliedResults ? 0 : await runVitest();
+  const report = await readJsonPath(resultsPath, null);
+  if (!suppliedResults) await rm(RESULTS_FILE, { force: true });
   if (!report) throw new Error("Vitest produced no JSON report — run npm test and fix the suite first");
 
   const assertions = collectAssertions(report);

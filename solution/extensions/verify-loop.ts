@@ -9,9 +9,10 @@ import { portHasListener } from "../../src/verify-app.js";
  * Closes the loop on "the model said it was done".
  *
  * The outer runner already verifies the finished app, but by then the run is
- * over and a failure can only be recorded, not fixed. This extension runs the
- * same two checks the moment the agent settles and, when one fails, hands the
- * failure back so the agent can repair it inside the same run.
+ * over and a failure can only be recorded, not fixed. This extension verifies
+ * `candidate.json` inside the write tool result, before the normal follow-up
+ * model call. A failure therefore reaches the still-valid compiled stage and
+ * can be repaired without a new challenge run or a second discovery stage.
  *
  * It deliberately does not start a development server: the runner owns port
  * 3000, and a listener left behind degrades the result. It does, however,
@@ -152,10 +153,33 @@ export default function verifyLoop(pi: ExtensionAPI) {
   let attempts = 0;
   let checking = false;
 
-  pi.on("agent_settled", async (_event, context) => {
-    if (checking || attempts >= MAX_ATTEMPTS) return;
-    if (Date.now() - startedAt > TIME_BUDGET_MS) return;
+  pi.on("tool_result", async (event) => {
+    const written = String((event.input as Record<string, unknown>).path ?? "");
+    const relative = path.relative(appRoot, path.resolve(appRoot, written));
+    if (event.toolName !== "write" || relative !== "candidate.json" || event.isError) return undefined;
+    if (checking) {
+      return {
+        content: [
+          ...event.content,
+          { type: "text" as const, text: "Candidate verification is already running; wait for its result." },
+        ],
+        isError: true,
+      };
+    }
+    if (attempts >= MAX_ATTEMPTS || Date.now() - startedAt > TIME_BUDGET_MS) {
+      return {
+        content: [
+          ...event.content,
+          {
+            type: "text" as const,
+            text: "Candidate verification budget is exhausted. Reply only `done`; the outer runner will record this run as failed.",
+          },
+        ],
+        isError: true,
+      };
+    }
 
+    attempts += 1;
     checking = true;
     try {
       const node = process.execPath;
@@ -174,24 +198,27 @@ export default function verifyLoop(pi: ExtensionAPI) {
       const contract = await runCommand(node, [path.join("tools", "write-contract.mjs")], appRoot);
       const reportPath = path.join(appRoot, ".verify-loop-tests.json");
 
-      const test = await runCommand(
-        commands.vitest.command,
-        [
-          ...commands.vitest.argsPrefix,
-          "run",
-          "--reporter=json",
-          `--outputFile=${reportPath}`,
-          "--passWithNoTests=false",
-        ],
-        appRoot,
-      );
-      await rm(reportPath, { force: true });
-
-      const build = await runCommand(
-        commands.npm.command,
-        [...commands.npm.argsPrefix, "run", "build"],
-        appRoot,
-      );
+      const generated = materialize.ok && journeys.ok && api.ok && contract.ok;
+      const test = generated
+        ? await runCommand(
+            commands.vitest.command,
+            [
+              ...commands.vitest.argsPrefix,
+              "run",
+              "--reporter=json",
+              `--outputFile=${reportPath}`,
+              "--passWithNoTests=false",
+            ],
+            appRoot,
+          )
+        : { ok: false, output: "Skipped because deterministic generation failed." };
+      const build = test.ok
+        ? await runCommand(
+            commands.npm.command,
+            [...commands.npm.argsPrefix, "run", "build"],
+            appRoot,
+          )
+        : { ok: false, output: "Skipped because the test suite failed." };
 
       const problems: string[] = [];
       if (!materialize.ok) {
@@ -221,56 +248,47 @@ export default function verifyLoop(pi: ExtensionAPI) {
       if (materialize.ok && journeys.ok && api.ok && contract.ok && test.ok && build.ok) {
         // The report is derived, not authored, so write it here rather than
         // asking the agent for a file it would only be retyping.
-        const report = await runCommand(node, [path.join("tools", "write-report.mjs")], appRoot);
+        const report = await runCommand(node, [path.join("tools", "write-report.mjs"), reportPath], appRoot);
         if (!(await reportedSuccess(appRoot))) {
           problems.push(
             `\`npm run report\` did not report success:\n\n${condense(report.output)}`,
           );
         }
       }
+      await rm(reportPath, { force: true });
 
-      try {
-        if (problems.length === 0) {
-          // The runner uses JSON mode, where this cosmetic status is not
-          // visible. More importantly, the just-settled turn may already have
-          // replaced its session by the time the deterministic checks finish,
-          // which makes the captured UI context stale and produces a false
-          // repair-delivery warning after an otherwise successful run.
-          attempts = MAX_ATTEMPTS;
-          return;
-        }
+      if (problems.length === 0) {
+        return {
+          content: [
+            ...event.content,
+            {
+              type: "text" as const,
+              text: "Deterministic materialization, journeys, API contracts, tests, build, and report all passed. Reply only `done`.",
+            },
+          ],
+          isError: false,
+        };
+      }
 
-        attempts += 1;
-        const remaining = MAX_ATTEMPTS - attempts;
-        pi.sendMessage(
+      const remaining = MAX_ATTEMPTS - attempts;
+      return {
+        content: [
+          ...event.content,
           {
-            customType: "verify-loop",
-            content: [
-              `The run is not finished. Verification found ${problems.length === 1 ? "a problem" : `${problems.length} problems`}:`,
+            type: "text" as const,
+            text: [
+              `The candidate is not finished. Verification found ${problems.length === 1 ? "a problem" : `${problems.length} problems`}:`,
               "",
               problems.join("\n\n"),
               "",
               remaining > 0
-                ? "Fix the cause rather than the symptom, then say you are done again. Do not delete or skip a failing test to make it pass."
-                : "This is the final repair attempt. Fix what you can, then make sure `report.partial.json` reports the outcome honestly — record any journey that still fails as `failed`.",
+                ? "Rewrite candidate.json with the cause fixed. Do not delete or skip a failing test."
+                : "This was the final verification attempt. Reply only `done`; the outer runner will record any remaining failure.",
             ].join("\n"),
-            display: true,
           },
-          { deliverAs: "followUp", triggerTurn: true },
-        );
-      } catch (error) {
-        // The turn that just settled can itself trigger session replacement
-        // (Pi discarding a malformed response and starting over) between our
-        // check running and this call landing. The captured `context`/`pi`
-        // are stale by then and every session-bound call throws; there is no
-        // event-handler-safe way to await settlement first (`ctx.waitForIdle`
-        // is command-only and would deadlock here). Losing this one repair
-        // nudge is safe: the outer runner verifies the app again after Pi
-        // exits regardless.
-        console.warn(
-          `[verify-loop] Could not deliver repair guidance: the session was replaced before this check finished (${String(error)}).`,
-        );
-      }
+        ],
+        isError: true,
+      };
     } finally {
       checking = false;
     }

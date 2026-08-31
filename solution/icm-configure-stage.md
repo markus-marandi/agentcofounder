@@ -30,6 +30,8 @@ After the write, answer only `done`. Do not create or modify another file.
 - Include meaningful filters, derived values, title sorting, and paired
   state-changing actions with opposite `when` conditions whenever the idea
   describes a moment such as lend/return, complete/reopen, or pay/unpay.
+- Condition modes are `equals`, `truthy`, `falsy`, `contains`, or `beforeToday`;
+  use `beforeToday` for overdue dates and do not invent another mode.
 - When an action needs an associated value, collect it in the action by setting
   `"prompt": "<fieldName>"`; clear that field in the opposite action. Do not
   make the user edit the record before performing the action.

@@ -7,7 +7,7 @@ export type Route = "landing-page" | "web-app" | "prototype" | "mock-dashboard" 
 
 export type FieldType = "text" | "longtext" | "number" | "date" | "select" | "combobox" | "boolean";
 
-export type FilterMode = "equals" | "truthy" | "falsy" | "contains";
+export type FilterMode = "equals" | "truthy" | "falsy" | "contains" | "beforeToday";
 
 export type DerivedKind = "count" | "countWhere" | "sum" | "average" | "min" | "max" | "distinct";
 

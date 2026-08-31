@@ -1,5 +1,16 @@
 # Scope, rewritten against the actual contract
 
+> **Current integration correction (2026-08-31):** this file records an earlier
+> scope pass and contains implementation claims that Markus main has superseded.
+> The ICM integration preserves Markus's prebuilt UI/navigation and current
+> backend-capable repository boundary, generates `API.md` plus `openapi.json`,
+> and serves the real linked `/api-docs` page. It does not delete those surfaces.
+> Current qualified evidence and remaining judging limits are in
+> [`docs/icm-markus-integration-evidence.md`](docs/icm-markus-integration-evidence.md).
+> The weighted formula below is retained as a provisional planning formula;
+> `docs/organizer-checklist.md` still leaves its official authority and
+> cache-write treatment unresolved.
+
 Status: supersedes the previous version of this document in full. The prior
 plan (comprehensive IAM/RBAC, a pluggable search-provider boundary, a
 config-driven settings/users module, auto-generated API docs, and a vendored
@@ -109,7 +120,7 @@ This is `solution/` and `src/`, not `app-template/`. It's the only axis that
 ranks qualifying entries against each other, so it's the highest-leverage
 place to spend remaining time.
 
-- [ ] Measure current token cost per run (`npm run challenge` against
+- [x] Measure current token cost per run (`npm run challenge` against
   `docs/fixtures/skeleton.txt` and a few of the 11 ambiguity fixtures) and
   record a baseline in `input_tokens`/`output_tokens`/`cache_read_tokens`
   from the resulting `result.json`, so later changes can be compared.
@@ -140,7 +151,7 @@ buried-ambiguity category field, a lend/return action pair, a derived value,
 single user. This is what "Robustness" (20 pts) and "Usability & UX" (30
 pts) actually get measured against.
 
-- [ ] Run the harness against all 11 `ambiguity-*.txt` fixtures (not just
+- [x] Run the harness against all 11 `ambiguity-*.txt` fixtures (not just
   `skeleton.txt`) and confirm the combobox ambiguity resolves the same way
   regardless of domain wording, per the fixture README's own stated purpose.
 - [ ] Confirm validation/error states in `CollectionView.tsx`/`Field.tsx`
@@ -148,7 +159,7 @@ pts) actually get measured against.
   empty states, filter-with-zero-results — since "validation feedback" and
   "clean error messages" are named explicitly under the UX rubric line.
   This should be a self-service check when the app itself is run.
-- [ ] Run `docs/fixtures/web-app.txt` (the broader stress test: extra field,
+- [x] Run `docs/fixtures/web-app.txt` (the broader stress test: extra field,
   extra filter, a date field) to catch what the tight skeleton shape alone
   wouldn't.
 - [ ] Keep growing `entities[].actions`/`combobox`/`sort` coverage (2a in the
@@ -222,15 +233,15 @@ re-opened mid-build:
 
 ## Definition of done (rewritten)
 
-- [ ] `result.json` at repo root and `output/app/result.json` both validate
+- [x] `result.json` at repo root and the generated app `result.json` both validate
   against `contract-public/result.schema.json` on a clean run.
-- [ ] `npm run challenge` against the dev prompt and all 11 ambiguity
+- [x] `npm run challenge` against the dev prompt and all 11 ambiguity
   fixtures produces a `status: "success"` result with the five `journeys.md`
   behaviors present in `tests_run`, none failed.
-- [ ] Measured token efficiency (input + output×3 + cache_read×0.1) recorded
+- [x] Measured provisional token efficiency (input + output×3 + cache_read×0.1) recorded
   as a baseline, with at least one attempted reduction (prompt length, model
   choice, or caching) measured against it.
 - [ ] No dead surface in `app-template/`: every schema property, kernel
   type, and committed component either is reachable from `parameters.json`
   today or is removed.
-- [ ] `npm run check` is green at the repository root.
+- [x] `npm run check` is green at the repository root.

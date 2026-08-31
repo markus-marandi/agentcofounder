@@ -3,6 +3,11 @@
 Status: experimental branch based on PR #13 commit
 `981def68a5c4cafb7ddea445d29b46c1de3f908e`. PR #13 is unchanged.
 
+This page preserves the original PR #13 experiment record. The later branch
+that integrates Markus main and qualifies skeleton, web-app, and all 11
+ambiguity fixtures is documented in
+[`icm-markus-integration-evidence.md`](icm-markus-integration-evidence.md).
+
 ## Question
 
 Can the configurable product route preserve PR #13's generated-product quality

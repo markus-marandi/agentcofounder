@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  actionOwnedFields,
   actionApplies,
   applyFilters,
   canonicalize,
@@ -76,6 +77,18 @@ describe("filters", () => {
     expect(applyFilters(records, [{ field: "kind", mode: "equals", value: "A" }])).toHaveLength(2);
     expect(applyFilters(records, [{ field: "done", mode: "truthy" }])).toHaveLength(1);
     expect(applyFilters(records, [{ field: "done", mode: "falsy" }])).toHaveLength(2);
+  });
+
+  it("treats only valid calendar dates before today as overdue", () => {
+    const dated: StoredRecord[] = [
+      { id: "past", createdAt: "", dueBack: "2000-01-01" },
+      { id: "future", createdAt: "", dueBack: "2999-01-01" },
+      { id: "blank", createdAt: "", dueBack: null },
+      { id: "invalid", createdAt: "", dueBack: "soon" },
+    ];
+    expect(applyFilters(dated, [{ field: "dueBack", mode: "beforeToday" }]).map((record) => record.id)).toEqual([
+      "past",
+    ]);
   });
 
   it("combines filters as an intersection", () => {
@@ -193,5 +206,17 @@ describe("row actions", () => {
 
   it("writes nothing when it only prompts", () => {
     expect(resolveActionValues({ id: "note", label: "Note", prompt: "borrower" })).toEqual({});
+  });
+
+  it("keeps an action-owned boolean out of creation even when it is marked required", () => {
+    const configured: EntitySpec = {
+      ...entity,
+      fields: [
+        ...entity.fields.filter((field) => field.name !== "done"),
+        { name: "done", label: "Done", type: "boolean", required: true },
+      ],
+      actions: [{ id: "complete", label: "Complete", sets: { done: true } }],
+    };
+    expect(actionOwnedFields(configured)).toContain("done");
   });
 });

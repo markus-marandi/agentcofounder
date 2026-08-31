@@ -7,5 +7,7 @@ it("runs the pinned Vitest JavaScript entry point without a platform shell shim"
 
   expect(source).toContain("process.execPath");
   expect(source).toContain('"vitest.mjs"');
+  expect(source).toContain("process.argv.slice(2)");
+  expect(source).toContain("suppliedResults");
   expect(source).not.toContain("npx.cmd");
 });

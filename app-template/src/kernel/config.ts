@@ -24,6 +24,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const KERNEL_FIELDS = ["id", "createdAt"];
 
 const FIELD_TYPES = ["text", "longtext", "number", "date", "select", "combobox", "boolean"];
+const FILTER_MODES = ["equals", "truthy", "falsy", "contains", "beforeToday"];
 
 /**
  * Every place a configuration names a field. A typo here is the most common way
@@ -42,6 +43,12 @@ function checkEntityReferences(entity: Record<string, unknown>, index: number, p
     }
   };
 
+  const requireMode = (mode: unknown, at: string): void => {
+    if (mode !== undefined && !FILTER_MODES.includes(String(mode))) {
+      problems.push(`${at} mode "${String(mode)}" must be one of: ${FILTER_MODES.join(", ")}`);
+    }
+  };
+
   for (const [position, field] of fields.entries()) {
     const type = String(field.type);
     if (!FIELD_TYPES.includes(type)) {
@@ -56,7 +63,10 @@ function checkEntityReferences(entity: Record<string, unknown>, index: number, p
 
   if (Array.isArray(entity.filters)) {
     for (const [position, filter] of entity.filters.entries()) {
-      if (isRecord(filter)) requireField(filter.field, `${where}.filters[${position}]`);
+      if (isRecord(filter)) {
+        requireField(filter.field, `${where}.filters[${position}]`);
+        requireMode(filter.mode, `${where}.filters[${position}]`);
+      }
     }
   }
 
@@ -64,7 +74,10 @@ function checkEntityReferences(entity: Record<string, unknown>, index: number, p
     for (const [position, derived] of entity.derived.entries()) {
       if (!isRecord(derived)) continue;
       requireField(derived.field, `${where}.derived[${position}]`);
-      if (isRecord(derived.where)) requireField(derived.where.field, `${where}.derived[${position}].where`);
+      if (isRecord(derived.where)) {
+        requireField(derived.where.field, `${where}.derived[${position}].where`);
+        requireMode(derived.where.mode, `${where}.derived[${position}].where`);
+      }
       if (derived.kind === "countWhere" && !isRecord(derived.where)) {
         problems.push(`${where}.derived[${position}] is a countWhere and needs a where clause`);
       }
@@ -83,7 +96,10 @@ function checkEntityReferences(entity: Record<string, unknown>, index: number, p
         problems.push(`${at} does nothing: give it a prompt, a sets block, or both`);
       }
       requireField(action.prompt, `${at}.prompt`);
-      if (isRecord(action.when)) requireField(action.when.field, `${at}.when`);
+      if (isRecord(action.when)) {
+        requireField(action.when.field, `${at}.when`);
+        requireMode(action.when.mode, `${at}.when`);
+      }
       if (isRecord(action.sets)) {
         for (const name of Object.keys(action.sets)) requireField(name, `${at}.sets`);
       }
