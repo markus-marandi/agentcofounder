@@ -136,6 +136,10 @@ export default function verifyLoop(pi: ExtensionAPI) {
       // generation would otherwise be verified against a stale suite.
       const journeys = await runCommand(node, [path.join("tools", "generate-journeys.mjs")], appRoot);
 
+      // The integration contract is derived from the same parameters.json, so
+      // it is regenerated here too rather than left to drift.
+      const contract = await runCommand(node, [path.join("tools", "write-contract.mjs")], appRoot);
+
       const vitest = path.join(
         appRoot,
         "node_modules",
@@ -161,6 +165,11 @@ export default function verifyLoop(pi: ExtensionAPI) {
       if (!journeys.ok) {
         problems.push(
           `\`npm run journeys\` failed, so the app has no journey suite:\n\n${condense(journeys.output)}`,
+        );
+      }
+      if (!contract.ok) {
+        problems.push(
+          `\`npm run contract\` failed, so the app has no openapi.json:\n\n${condense(contract.output)}`,
         );
       }
       if (!test.ok) problems.push(`\`npm test\` failed:\n\n${condense(test.output)}`);

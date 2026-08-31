@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000 --strictPort",
     "docs": "node tools/serve-docs.mjs",
+    "contract": "node tools/write-contract.mjs",
     "journeys": "node tools/generate-journeys.mjs",
     "report": "node tools/write-report.mjs",
     "build": "tsc --noEmit && vite build",

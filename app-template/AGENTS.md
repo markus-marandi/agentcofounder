@@ -31,7 +31,9 @@ fail, and the primitives are already covered by tests.
 6. Works on a narrow screen and a wide one.
 7. Limitations listed in `features.limitations`, which the report carries.
 8. `API.md` describes the data boundary, and the app serves it rendered at
-   `/api-docs`, linked from the bottom of the sidebar.
+   `/api-docs`, linked from the bottom of the sidebar. Add a section naming the
+   entities this app actually built; leave the boundary sections alone, and do
+   not restate the wire contract — it is generated and appended.
 9. Runs at `http://localhost:3000` and leaves no process behind.
 
 A landing page and a walkthrough prototype meet this floor too: their capture
@@ -43,6 +45,9 @@ forms write real records. A form that discards what it collects is a mock.
 |---|---|
 | Read or write records | `src/data/repository.ts` via `src/kernel/useRepository.ts` |
 | Browser persistence | `src/data/localStorageAdapter.ts` (recovers from corrupt data) |
+| A remote store | `src/data/httpAdapter.ts` — implemented and tested, wired to nothing |
+| Proving a new adapter works | `src/data/adapterContract.ts`, run against every adapter |
+| Getting data out and back in | `src/data/portability.ts`; the buttons above the collection |
 | Validation, filters, derived values, sorting | `src/data/operations.ts` |
 | One-click record changes (mark returned, lend to, mark paid) | `entities[].actions` in `parameters.json` |
 | A category that is suggested but not closed | a `combobox` field |
@@ -60,6 +65,7 @@ forms write real records. A form that discards what it collects is a mock.
 | The journey suite | `npm run journeys`, from `parameters.json` |
 | `report.partial.json` | `npm run report`, from the suite it runs |
 | The API docs, rendered | `/api-docs` while the app runs; `npm run docs` serves the same page on port 3001 |
+| The wire contract | `npm run contract` writes `openapi.json` from `parameters.json`; `/api-docs` renders it with the record schemas and the table mapping |
 | Offline comparison material | `src/content/positioning.json` |
 | Styling | Tailwind utilities over the theme tokens defined in `src/styles.css`; presets in `src/themes/presets.css` |
 
@@ -95,6 +101,10 @@ The look is fixed and is not a per-product decision:
 - **Do not create or edit `result.json`.** The runner owns it.
 - Keep tests in `src/**/*.test.ts` or `src/**/*.test.tsx`.
 - Test observable behaviour through the interface, not implementation details.
+- **Nothing above `src/data/repository.ts` may touch a store.** The adapter may
+  answer asynchronously; the repository absorbs that, so views stay synchronous
+  and a database or a service is one more adapter, not a rewrite. A new adapter
+  is finished when it passes `src/data/adapterContract.ts`.
 - **A field an action owns is not offered when creating a record.** Lending
   sets `borrower` and stamps `lentOn`, so the create form withholds both and
   the action is the only way to reach that state — otherwise a record can be

@@ -99,8 +99,14 @@ npm run report
 ```
 
 The app serves `API.md` rendered at `/api-docs`, linked from the bottom of the
-sidebar, and `npm run docs` serves the same page on port 3001. Keep `API.md`
-describing the boundary as built; it is read by people, not only graded.
+sidebar, and `npm run docs` serves the same page on port 3001.
+
+Add one section to `API.md` naming the entities you built — a table of fields
+with what each means, and what each row action does. Leave the boundary
+sections as they are: they describe a seam you did not change. Do not write out
+endpoints, schemas, or SQL; `npm run contract` derives all three from
+`parameters.json` and the docs page appends them, so anything you type by hand
+is a second copy that will be wrong.
 
 `npm run report` runs the suite and writes `report.partial.json` from the
 result it actually observed — status, one `tests_run` entry per journey, the

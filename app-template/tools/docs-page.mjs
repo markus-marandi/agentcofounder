@@ -9,6 +9,7 @@
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { contractMarkdown } from "./api-contract.mjs";
 
 const CODE_OPEN = "@@code";
 const CODE_CLOSE = "@@";
@@ -60,7 +61,8 @@ function renderTable(rows) {
 }
 
 function markdownToHtml(markdown) {
-  const lines = markdown.split(/\r?\n/u);
+  // Editorial notes to whoever writes API.md are not for the reader.
+  const lines = markdown.replace(/<!--[\s\S]*?-->/gu, "").split(/\r?\n/u);
   const html = [];
   let index = 0;
 
@@ -190,16 +192,22 @@ ${body}
 `;
 }
 
-async function productName(appRoot) {
+async function readParameters(appRoot) {
   try {
-    const parameters = JSON.parse(await readFile(path.join(appRoot, "parameters.json"), "utf8"));
-    return String(parameters.product?.name ?? "This app");
+    return JSON.parse(await readFile(path.join(appRoot, "parameters.json"), "utf8"));
   } catch {
-    return "This app";
+    return null;
   }
 }
 
-/** The finished HTML for an app root, or null when it has no API.md. */
+/**
+ * The finished HTML for an app root, or null when it has no API.md.
+ *
+ * The prose comes from API.md; the wire contract, record schemas and table
+ * mapping are generated from `parameters.json` and appended, so the page always
+ * describes the entities this app actually has rather than an example someone
+ * forgot to update.
+ */
 export async function renderApiDocs(appRoot) {
   let markdown;
   try {
@@ -207,5 +215,17 @@ export async function renderApiDocs(appRoot) {
   } catch {
     return null;
   }
-  return page(await productName(appRoot), markdownToHtml(markdown));
+
+  const parameters = await readParameters(appRoot);
+  const title = String(parameters?.product?.name ?? "This app");
+
+  // API.md marks where the generated contract belongs, so the sections it is
+  // meant to sit between stay in the order their author intended.
+  const marker = "<!-- generated:contract -->";
+  let body = markdown;
+  if (parameters) {
+    const contract = contractMarkdown(parameters);
+    body = markdown.includes(marker) ? markdown.replace(marker, contract) : `${markdown}\n\n${contract}`;
+  }
+  return page(title, markdownToHtml(body));
 }
