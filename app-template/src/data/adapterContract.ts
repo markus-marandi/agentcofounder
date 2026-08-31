@@ -103,7 +103,9 @@ export function adapterContract({ create, skipRejection = false }: AdapterUnderT
       },
     };
     const repository = createRepository("contract", rejecting);
-    repository.onError((error) => failures.push(error));
+    repository.onError((error) => {
+      if (error) failures.push(error);
+    });
     await repository.settled();
 
     repository.create(sample("doomed"));

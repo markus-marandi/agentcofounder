@@ -49,7 +49,9 @@ describe("repository", () => {
     };
     const repository = createRepository("thing", failing);
     const failures: StorageUnavailableError[] = [];
-    repository.onError((error) => failures.push(error));
+    repository.onError((error) => {
+      if (error) failures.push(error);
+    });
 
     // The change is shown first: a store that answers over a network answers late.
     repository.create({ label: "doomed" });
@@ -60,6 +62,97 @@ describe("repository", () => {
     expect(repository.list()).toHaveLength(0);
     expect(failures).toHaveLength(1);
     expect(failures[0]).toBeInstanceOf(StorageUnavailableError);
+  });
+
+  it("rolls multiple rejected queued writes back to the last stored snapshot", async () => {
+    const failing: StorageAdapter = {
+      read: () => [],
+      write: async () => {
+        throw new Error("offline");
+      },
+    };
+    const repository = createRepository("thing", failing);
+    const failures: StorageUnavailableError[] = [];
+    repository.onError((error) => {
+      if (error) failures.push(error);
+    });
+
+    repository.create({ label: "first" });
+    repository.create({ label: "second" });
+    expect(repository.list()).toHaveLength(2);
+
+    await repository.settled();
+
+    expect(repository.list()).toEqual([]);
+    expect(failures).toHaveLength(2);
+  });
+
+  it("keeps the last successful write when a later queued write is rejected", async () => {
+    let writes = 0;
+    const partlyFailing: StorageAdapter = {
+      read: () => [],
+      write: async () => {
+        writes += 1;
+        if (writes === 2) throw new Error("offline");
+      },
+    };
+    const repository = createRepository("thing", partlyFailing);
+
+    repository.create({ label: "stored" });
+    repository.create({ label: "rejected" });
+    await repository.settled();
+
+    expect(repository.list().map((record) => record.label)).toEqual(["stored"]);
+  });
+
+  it("replays an initial read failure to a subscriber that attaches after construction", async () => {
+    const failing: StorageAdapter = {
+      read: async () => {
+        throw new Error("offline");
+      },
+      write: async () => {},
+    };
+    const repository = createRepository("thing", failing);
+    await repository.settled();
+    const failures: StorageUnavailableError[] = [];
+
+    repository.onError((error) => {
+      if (error) failures.push(error);
+    });
+
+    expect(failures).toHaveLength(1);
+    expect(failures[0].operation).toBe("read");
+    expect(failures[0].message).toMatch(/could not be loaded/u);
+  });
+
+  it("preserves confirmed data across a transient refresh failure and clears the recovered status", () => {
+    const stored = [{ id: "a", createdAt: "2026-01-01T00:00:00.000Z", label: "kept" }];
+    let failRead = false;
+    let refresh = (): void => {};
+    const adapter: StorageAdapter = {
+      read: () => {
+        if (failRead) throw new Error("offline");
+        return stored;
+      },
+      write: () => {},
+      subscribe: (_collection, listener) => {
+        refresh = listener;
+        return () => {};
+      },
+    };
+    const repository = createRepository("thing", adapter);
+    const statuses: Array<StorageUnavailableError | null> = [];
+    repository.onError((error) => statuses.push(error));
+
+    failRead = true;
+    refresh();
+    expect(repository.list().map((record) => record.label)).toEqual(["kept"]);
+    expect(statuses.at(-1)).toBeInstanceOf(StorageUnavailableError);
+
+    failRead = false;
+    refresh();
+    expect(repository.list().map((record) => record.label)).toEqual(["kept"]);
+    expect(statuses.at(-1)).toBeNull();
   });
 
   it("reads from a store that answers later, and shows it once it does", async () => {
@@ -149,6 +242,16 @@ describe("localStorage adapter", () => {
       },
     } as unknown as Storage;
     expect(() => createLocalStorageAdapter("test", blocked).write("thing", [])).toThrow();
+  });
+
+  it("reports an unavailable store read", () => {
+    const blocked = {
+      getItem: () => {
+        throw new Error("denied");
+      },
+      setItem: () => {},
+    } as unknown as Storage;
+    expect(() => createLocalStorageAdapter("test", blocked).read("thing")).toThrow(/could not be read/u);
   });
 
   it("notifies a subscriber when another tab writes the same key", () => {

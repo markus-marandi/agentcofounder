@@ -39,6 +39,8 @@ describe("model context efficiency", () => {
   it("leaves deterministic execution with the verifier", async () => {
     const verifier = await readFile(path.resolve("solution/extensions/verify-loop.ts"), "utf8");
     expect(verifier).toContain('pi.on("tool_result"');
+    expect(verifier).toContain("context.abort()");
+    expect(verifier).not.toContain("Reply only `done`");
     expect(verifier).not.toContain('pi.on("agent_settled"');
     for (const requiredStep of [
       "generate-journeys.mjs",

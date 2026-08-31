@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { CollectionView } from "./CollectionView.js";
 import { resetRepositories } from "../kernel/useRepository.js";
 import type { EntitySpec } from "../kernel/types.js";
+import { createRepository, type StorageAdapter } from "../data/repository.js";
 
 const entity: EntitySpec = {
   name: "kernelDemo",
@@ -145,5 +146,104 @@ describe("collection view", () => {
     render(<CollectionView entity={entity} />);
 
     expect(screen.getByText("Persisted")).toBeInTheDocument();
+  });
+
+  it("confirms a destructive import and reports success only after it is persisted", async () => {
+    const user = userEvent.setup();
+    render(<CollectionView entity={entity} />);
+    await addItem(user, "Existing");
+    const file = new File(["ignored"], "items.json", { type: "application/json" });
+    Object.defineProperty(file, "text", {
+      value: async () =>
+        JSON.stringify({
+          format: "agent-cofounder-app/export",
+          version: 1,
+          exportedAt: "2026-01-01T00:00:00.000Z",
+          collections: {
+            kernelDemo: [{ id: "imported", createdAt: "2026-01-01T00:00:00.000Z", title: "Imported" }],
+          },
+        }),
+    });
+
+    await user.upload(screen.getByLabelText("Import JSON"), file);
+
+    expect(screen.getByText("Existing")).toBeInTheDocument();
+    expect(screen.queryByText("Imported")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm replacing all items" }));
+
+    expect(await screen.findByText("Imported")).toBeInTheDocument();
+    expect(screen.queryByText("Existing")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/Imported 1 item/u);
+  });
+
+  it("shows a read failure instead of silently presenting an empty collection", async () => {
+    const blocked: StorageAdapter = {
+      read: () => {
+        throw new Error("blocked");
+      },
+      write: () => {},
+    };
+    const repository = createRepository("kernelDemo", blocked);
+
+    render(<CollectionView entity={entity} repositoryOverride={repository} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Saved data could not be loaded/u);
+  });
+
+  it("rejects an import that does not contain this collection without replacing data", async () => {
+    const user = userEvent.setup();
+    render(<CollectionView entity={entity} />);
+    await addItem(user, "Existing");
+    const file = new File(["ignored"], "other.json", { type: "application/json" });
+    Object.defineProperty(file, "text", {
+      value: async () =>
+        JSON.stringify({
+          format: "agent-cofounder-app/export",
+          version: 1,
+          exportedAt: "2026-01-01T00:00:00.000Z",
+          collections: { anotherEntity: [] },
+        }),
+    });
+
+    await user.upload(screen.getByLabelText("Import JSON"), file);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/does not contain the items collection/u);
+    expect(screen.getByText("Existing")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows one user-safe error and restores data when an import cannot be stored", async () => {
+    const user = userEvent.setup();
+    const existing = [{ id: "kept", createdAt: "2026-01-01T00:00:00.000Z", title: "Existing" }];
+    const failing: StorageAdapter = {
+      read: () => existing,
+      write: async () => {
+        throw new Error("private adapter detail");
+      },
+    };
+    const repository = createRepository("kernelDemo", failing);
+    render(<CollectionView entity={entity} repositoryOverride={repository} />);
+    const file = new File(["ignored"], "items.json", { type: "application/json" });
+    Object.defineProperty(file, "text", {
+      value: async () =>
+        JSON.stringify({
+          format: "agent-cofounder-app/export",
+          version: 1,
+          exportedAt: "2026-01-01T00:00:00.000Z",
+          collections: {
+            kernelDemo: [{ id: "new", createdAt: "2026-01-01T00:00:00.000Z", title: "Imported" }],
+          },
+        }),
+    });
+
+    await user.upload(screen.getByLabelText("Import JSON"), file);
+    await user.click(screen.getByRole("button", { name: "Confirm replacing all items" }));
+
+    const alerts = await screen.findAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent(/Changes could not be saved/u);
+    expect(alerts[0]).not.toHaveTextContent(/private adapter detail/u);
+    expect(screen.getByText("Existing")).toBeInTheDocument();
+    expect(screen.queryByText("Imported")).not.toBeInTheDocument();
   });
 });

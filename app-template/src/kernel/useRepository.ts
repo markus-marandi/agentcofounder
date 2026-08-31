@@ -30,7 +30,7 @@ export function resetRepositories(): void {
 
 export interface RepositoryState {
   records: StoredRecord[];
-  /** Set when a write was rejected, so a view can tell the user it did not save. */
+  /** Set when storage cannot be read or a write is rejected. */
   storageError: string | null;
   dismissStorageError: () => void;
   run: <T>(operation: () => T) => T | undefined;
@@ -41,8 +41,11 @@ export interface RepositoryState {
  * Subscribes a component to a collection and funnels every write through `run`,
  * which converts a storage failure into a message instead of a blank screen.
  */
-export function useRepository(collection: string): RepositoryState {
-  const repository = useMemo(() => repositoryFor(collection), [collection]);
+export function useRepository(collection: string, providedRepository?: Repository): RepositoryState {
+  const repository = useMemo(
+    () => providedRepository ?? repositoryFor(collection),
+    [collection, providedRepository],
+  );
   const [records, setRecords] = useState<StoredRecord[]>(() => repository.list());
   const [storageError, setStorageError] = useState<string | null>(null);
 
@@ -51,7 +54,7 @@ export function useRepository(collection: string): RepositoryState {
     const stopWatching = repository.subscribe(() => setRecords(repository.list()));
     // A write is shown before the store has accepted it, so a rejection arrives
     // here rather than as a throw from the call that made the change.
-    const stopListeningForErrors = repository.onError((error) => setStorageError(error.message));
+    const stopListeningForErrors = repository.onError((error) => setStorageError(error?.message ?? null));
     return () => {
       stopWatching();
       stopListeningForErrors();

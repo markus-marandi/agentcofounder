@@ -30,6 +30,22 @@ product tests and API artifacts, and independently qualifies the result.
 | Resolve filter controls by label and field | A filter label can collide with another accessible label; tests now target the intended control. |
 | Verify on the `candidate.json` write result | The earlier settle-time follow-up could target a replaced Pi session. Repair guidance now stays inside the valid compiled stage and is limited to three candidate writes. |
 | Reuse the verifier's Vitest JSON in report generation | Running the entire suite again added no qualification evidence and caused a correct candidate to time out during reporting. |
+| Emit submission artifacts at every required surface | The runner now copies the raw Pi stream byte-for-byte to `trace.jsonl` and deterministically renders `summary.md` beside both result files and in the timestamped audit directory. |
+| Calculate the confirmed formula in `npm run score` | The scorecard reports `input + output*3 + cache_read*0.1`; raw native categories remain visible. |
+| Render configured limitations and require rendered evidence | The product shows the actual configured constraints. The static check no longer passes for a limitations array that never reaches the UI. |
+| Make optimistic persistence concurrency-safe | Multiple rejected queued writes roll back to the last successfully stored snapshot. Imports require confirmation, await persistence, and report success only after storage accepts the replacement. |
+| Surface unavailable reads | Local and HTTP access failures reach the existing visible error banner instead of impersonating a genuinely empty collection. Corrupt local JSON still recovers safely. |
+| Add real browser acceptance | A dependency-free CDP harness launches installed Chrome at 1440x900 and 390x844, checks the responsive shell/drawer and limitations, and verifies the rendered `/api-docs` contract. |
+| Stop after deterministic success | `ctx.abort()` removes the final acknowledgment inference. Zero-token abort markers stay in `trace.jsonl` but are not counted as metered model calls. A timed-out build is retried once before spending a repair turn. |
+
+The strengthened browser gate was also run against a fresh generated Game Shelf
+product on 2026-08-31, not only the seed. `output/browser-current` passed 152/152
+tests, a production build, and Chrome 151.0.7922.175 at 1440x900 and 390x844.
+The checks cover the wide shell, closed narrow product, drawer, top-visible
+limitations, document-width overflow, and product/entity-specific `/api-docs`.
+The ignored machine report and screenshots live under
+`artifacts/browser-acceptance/`; this paragraph is their committed reviewer
+index.
 
 The candidate still makes the domain decisions. The fixes above are generic
 kernel, validation, or verifier behavior; none contains fixture-specific product
@@ -88,6 +104,25 @@ surface and qualifies 135 tests and 18 journeys. This is a measured quality and
 coverage trade, not an assertion that the smallest token number is automatically
 best.
 
+### Deterministic-termination experiment
+
+The 2026-08-31 skeleton experiment at
+`artifacts/runs/2026-08-31T19-04-50-299Z/` qualified successfully and proved
+that completion no longer causes a paid acknowledgment response. Its raw trace
+contains two metered candidate responses (1,545/964 and 2,666/953 input/output)
+followed by Pi's zero-input, zero-output abort marker. It contains no assistant
+text response and no `done` response. `events.jsonl` and `trace.jsonl` are
+byte-identical.
+
+This run scored 9,962 from 4,211 input and 1,917 output tokens. It is not a
+clean one-generation comparison: the first candidate's tests passed, but its
+production build hit the verifier's 120-second process timeout, causing a
+second candidate write; the outer build later completed in 9.57 seconds. The
+branch now retries only that timeout once deterministically before requesting a
+model repair. That retry is covered by code/tests but has not yet been measured
+in another live model run. The removed acknowledgment itself is live-proven by
+the absence of any nonzero terminal response.
+
 ## What failed before the qualified matrix
 
 Five broader-fixture attempts were deliberately excluded. They exposed, in
@@ -103,9 +138,9 @@ efficiency comparison.
 | Area | Current evidence | Remaining limit |
 | --- | --- | --- |
 | Qualification | 13/13 live fixtures produced schema-valid results and independently passed tests, build, startup, and cleanup. | The organizer's hidden prompt has not run. |
-| Usability and UX | Markus's responsive shell/navigation/theme stays intact. Generated accessible journeys exercise CRUD, confirmation, filters, actions, empty/error states, and narrow/wide CSS. | No organizer or independent human visual score has been performed. |
-| Data and persistence | `Repository`/`StorageAdapter`/`localStorage` remains the only app data boundary; refresh and corrupt-data recovery are tested. | The submitted adapter is local and offline, not a live backend. |
-| Robustness | Configuration and modes fail closed; generated tests cover validation, state transitions, deletion, filtering, derived values, API contracts, and startup. | One of 13 fixtures needed a model repair; unfamiliar prompt shapes remain risk. |
+| Usability and UX | Markus's responsive shell/navigation/theme stays intact. Generated accessible journeys exercise CRUD, confirmation, filters, actions, empty/error states, and narrow/wide CSS. A real Chrome pass verifies wide shell, narrow drawer, rendered limitations, and `/api-docs`. | No organizer or independent human visual score has been performed. |
+| Data and persistence | `Repository`/`StorageAdapter`/`localStorage` remains the only app data boundary; refresh, unavailable reads, corrupt-data recovery, confirmed imports, and concurrent rejected writes are tested. | The submitted adapter is local and offline, not a live backend. |
+| Robustness | Configuration and modes fail closed; generated tests cover validation, state transitions, deletion, filtering, derived values, API contracts, startup, multi-write rollback, and visible read failure. | One of 13 fixtures needed a model repair; unfamiliar prompt shapes remain risk. |
 | API and integration | Each product generates `API.md` and `openapi.json`; the linked `/api-docs` route renders the product-specific API document. | The boundary is backend-capable but no external service is available in offline judging. |
 | Maintainability | Product decisions remain data; materialization, journeys, docs, tests, and runtime are deterministic and separately testable. Root `npm run check` passes. | Rollup retains its non-fatal chunk-size advisory. |
 | Efficiency | Native telemetry is preserved per run; only qualified runs are compared with the confirmed formula. | Model sampling still causes run-to-run variance; the matrix is evidence, not a guaranteed future token count. |
@@ -123,6 +158,7 @@ Validate and score the recorded result:
 ```bash
 npm run validate:result -- output/review-skeleton/result.json
 npm run score
+npm run browser:acceptance -- --app-dir output/review-skeleton
 ```
 
 The generated-app `result.json` records `npm run dev` as `start_command`,
@@ -155,8 +191,9 @@ the generated product:
 ## Reproduction and artifact scope
 
 Run the fixture command once per file under `docs/fixtures/`. The generated
-`output/`, root `result.json`, and `artifacts/runs/<timestamp>/` directories are
-runner-owned and ignored rather than committed. They contain the raw evidence;
-this committed page is the reviewer index. Because model calls are stochastic,
+`output/`, root `result.json`, root `trace.jsonl`, root `summary.md`, and
+`artifacts/runs/<timestamp>/` are runner-owned and ignored rather than
+committed. They contain the raw evidence; this committed page is the reviewer
+index. Because model calls are stochastic,
 exact token counts may vary, but every rerun must meet the same qualification
 gates before it is compared.

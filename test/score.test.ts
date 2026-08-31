@@ -74,6 +74,28 @@ describe("static checks", () => {
     expect(failing(checks)).toContain("derived-declared");
     expect(failing(checks)).not.toContain("entities-declared");
   });
+
+  it("does not award surfaced limitations for configuration alone", async () => {
+    const root = await scaffold({
+      "src/App.tsx": "export function App() { return null; }",
+      "parameters.json": JSON.stringify({
+        entities: [],
+        features: { limitations: ["This is only declared, never rendered."] },
+      }),
+    });
+
+    expect(failing(await staticChecks(root))).toContain("limitations-surfaced");
+  });
+
+  it("does not award an unmounted limitations component", async () => {
+    const root = await scaffold({
+      "src/App.tsx": "export function App() { return null; }",
+      "src/ui/Limitations.tsx": "export function Limitations() { return <div data-limitations />; }",
+      "parameters.json": JSON.stringify({ entities: [], features: { limitations: ["Hidden"] } }),
+    });
+
+    expect(failing(await staticChecks(root))).toContain("limitations-surfaced");
+  });
 });
 
 describe("efficiency", () => {
@@ -95,6 +117,14 @@ describe("efficiency", () => {
 
   it("reports tokens spent per delivered journey", () => {
     expect(efficiencyFrom(result).tokens_per_journey).toBe(320);
+  });
+
+  it("calculates the official weighted efficiency score", () => {
+    expect(efficiencyFrom(result).official_score).toBe(730);
+  });
+
+  it("renders cache-read weighting to the official single decimal", () => {
+    expect(efficiencyFrom({ ...result, cache_read_tokens: 3 } as RunResult).official_score).toBe(700.3);
   });
 
   it("reports no per-journey figure when nothing was delivered", () => {

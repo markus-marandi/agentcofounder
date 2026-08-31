@@ -17,6 +17,7 @@
     "check": "npm run typecheck && npm run test && npm run lint:skills && npm run validate:parameters && npm run app:test && npm run app:build",
     "validate:parameters": "node --import tsx src/validate-parameters.ts",
     "score": "node --import tsx src/score.ts",
+    "browser:acceptance": "node --import tsx tools/browser-acceptance.mjs",
     "lint:skills": "node --import tsx src/lint-skills.ts"
   },
   "dependencies": {

@@ -130,4 +130,18 @@ describe("collectUsageFromJsonLines", () => {
       call_log: [],
     });
   });
+
+  it("does not count Pi's zero-token abort marker as a model call", () => {
+    const content = JSON.stringify({
+      type: "message_end",
+      message: {
+        role: "assistant",
+        provider: "openai-codex",
+        model: "frontier-model",
+        usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { total: 0 } },
+      },
+    });
+
+    expect(collectUsageFromJsonLines(content)).toMatchObject({ model_calls: 0, total_tokens: 0, call_log: [] });
+  });
 });

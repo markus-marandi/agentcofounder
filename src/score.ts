@@ -1,10 +1,12 @@
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { officialEfficiencyScore } from "./efficiency.js";
 import type { RunResult } from "./types.js";
 
 /**
- * Development instrument, not the official score.
+ * Local score instrument. The efficiency number uses the official formula;
+ * the static checks are repository-side regression checks, not judge points.
  *
  * Two halves. The static half inspects generated source for the structural
  * properties the rubric rewards and runs without credentials, so CI can gate on
@@ -32,6 +34,8 @@ export interface Efficiency {
   total_tokens: number;
   reasoning_tokens: number;
   cost_total: number;
+  /** Official score: input + output*3 + cache-read*0.1. Lower is better. */
+  official_score: number;
   /** Total tokens spent per delivered journey — the number to drive down. */
   tokens_per_journey: number | null;
   journeys: number;
@@ -222,8 +226,11 @@ export async function staticChecks(appDirectory: string): Promise<Check[]> {
     check(
       "limitations-surfaced",
       "reach",
-      Array.isArray(features.limitations) && features.limitations.length > 0,
-      "Limitations are declared so the interface can show them.",
+      Array.isArray(features.limitations) &&
+        features.limitations.length > 0 &&
+        production.some((file) => /data-limitations/u.test(file.text)) &&
+        production.some((file) => /App\.tsx$/u.test(file.path) && /<Limitations\b/u.test(file.text)),
+      "Configured limitations are rendered in the product, not merely declared in parameters.json.",
     ),
     check(
       "accessible-queries",
@@ -245,6 +252,7 @@ export function efficiencyFrom(result: RunResult): Efficiency {
     total_tokens: result.total_tokens,
     reasoning_tokens: result.reasoning_tokens,
     cost_total: result.cost_total,
+    official_score: officialEfficiencyScore(result),
     journeys,
     tokens_per_journey: journeys > 0 ? Math.round(result.total_tokens / journeys) : null,
   };
@@ -289,6 +297,7 @@ function render(scorecard: Scorecard): string {
       "",
       `Run status: ${scorecard.status ?? "unknown"}`,
       `Model calls: ${efficiency.model_calls}`,
+      `Official efficiency score: ${efficiency.official_score} (input + output×3 + cache read×0.1)`,
       `Tokens: ${efficiency.total_tokens} total (${efficiency.input_tokens} in, ${efficiency.output_tokens} out, ${efficiency.cache_read_tokens} cache read, ${efficiency.cache_write_tokens} cache write)`,
       `Cost: ${efficiency.cost_total}`,
       `Journeys delivered: ${efficiency.journeys}${efficiency.tokens_per_journey === null ? "" : ` (${efficiency.tokens_per_journey} tokens each)`}`,

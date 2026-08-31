@@ -43,6 +43,16 @@ export class RemoteWriteError extends Error {
   }
 }
 
+export class RemoteReadError extends Error {
+  readonly status: number | null;
+
+  constructor(message: string, status: number | null = null, cause?: unknown) {
+    super(message, { cause });
+    this.name = "RemoteReadError";
+    this.status = status;
+  }
+}
+
 export function createHttpAdapter(baseUrl: string, options: HttpAdapterOptions = {}): StorageAdapter {
   const call = options.fetch ?? globalThis.fetch;
   const root = baseUrl.replace(/\/+$/u, "");
@@ -66,18 +76,21 @@ export function createHttpAdapter(baseUrl: string, options: HttpAdapterOptions =
   };
 
   return {
-    /**
-     * A read never throws, exactly as with the local adapters: an unreachable
-     * service, a 500, or a malformed body is an empty collection, and the
-     * interface shows its empty state instead of a crash.
-     */
+    /** Read failures reject so the repository can show an honest warning. */
     async read(collection: string): Promise<StoredRecord[]> {
       try {
         const response = await request(url(collection), { method: "GET" });
-        if (!response.ok) return [];
-        return coerceRecords(await response.json());
-      } catch {
-        return [];
+        if (!response.ok) {
+          throw new RemoteReadError(`The store rejected the read (HTTP ${response.status}).`, response.status);
+        }
+        const body: unknown = await response.json();
+        if (!Array.isArray(body)) {
+          throw new RemoteReadError("The store returned a non-array collection.", response.status);
+        }
+        return coerceRecords(body);
+      } catch (error) {
+        if (error instanceof RemoteReadError) throw error;
+        throw new RemoteReadError("The store could not be read.", null, error);
       }
     },
 

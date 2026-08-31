@@ -32,7 +32,7 @@ flowchart TD
 
     loop -- yes --> report["report.partial.json"]
     report --> runner["Runner verifies independently:<br/>vitest · build · :3000 probe"]
-    runner --> result["result.json<br/>audited telemetry"]
+    runner --> result["result.json · trace.jsonl · summary.md<br/>audited telemetry"]
 ```
 
 One route, one floor. The harness builds a `web-app`: a full collection
@@ -149,21 +149,25 @@ artifacts, then runs the tests, production build, and report. On failure it turn
 that same tool result into concise repair guidance, so the still-valid compiled
 stage can rewrite only `candidate.json`. The loop is bounded by three attempts
 and a wall-clock budget. It never starts a development server: the runner owns
-port 3000.
+port 3000. Once every deterministic gate passes, the extension aborts the active
+agent operation instead of paying for another context load just to answer
+`done`. A timed-out production build is retried once deterministically before a
+model repair is requested.
 
 Without it, a failure is discovered after the run is over, when it can only be
 recorded.
 
 ## Scoring
 
-`npm run score` writes `artifacts/score.json`.
+`npm run score` writes `artifacts/score.json` and calculates the official
+`input + output*3 + cache_read*0.1` efficiency score.
 
 - **Structural checks** run without credentials and gate CI: repository boundary
   present, no component touching storage directly, error boundary mounted,
   validation wired, `API.md` written, responsive breakpoints, limitations
   surfaced, tests querying by accessible name.
-- **Efficiency** needs a completed run: total tokens, output tokens, model calls,
-  cost, and tokens spent per delivered journey.
+- **Efficiency** needs a completed run: the official score, native token
+  categories, model calls, cost, and tokens spent per delivered journey.
 
 Efficiency cannot be measured on a pull request — it needs a real model call.
 The full run is a manual job across the [fixtures](docs/fixtures/).
@@ -185,6 +189,17 @@ npm run challenge
 ```bash
 npm run score
 ```
+
+Run a real installed-Chrome acceptance pass at wide and narrow viewports,
+including the linked `/api-docs` page:
+
+```bash
+npm run browser:acceptance
+```
+
+Each successful challenge run writes byte-identical raw Pi event streams as
+`trace.jsonl` and the same deterministic `summary.md` beside the root and app
+`result.json`, as well as under `artifacts/runs/<timestamp>/`.
 
 Run a fixture instead of the default idea:
 

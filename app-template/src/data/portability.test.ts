@@ -38,19 +38,18 @@ describe("portability", () => {
     // A second app, a different adapter — the case a migration actually is.
     const elsewhere = createMemoryAdapter();
     const books = createRepository("book", elsewhere);
-    const applied = importCollections(readExport(raw), { book: books });
-    await books.settled();
+    const applied = await importCollections(readExport(raw), { book: books });
 
     expect(applied).toEqual({ book: 2 });
     expect(books.list().map((record) => record.title)).toEqual(["Dune", "Emma"]);
   });
 
-  it("ignores a collection the receiving app does not have", () => {
+  it("ignores a collection the receiving app does not have", async () => {
     const { repositories } = seeded();
     const raw = JSON.stringify(exportCollections(repositories));
     const books = createRepository("book", createMemoryAdapter());
 
-    expect(importCollections(readExport(raw), { book: books })).toEqual({ book: 2 });
+    await expect(importCollections(readExport(raw), { book: books })).resolves.toEqual({ book: 2 });
   });
 
   it("drops a malformed record rather than importing it", () => {

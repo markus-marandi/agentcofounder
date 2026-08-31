@@ -20,7 +20,7 @@ import type { StoredRecord } from "../kernel/types.js";
 export type MaybePromise<T> = T | Promise<T>;
 
 export interface StorageAdapter {
-  /** Every record for a collection. Never throws: unreadable data is an empty collection. */
+  /** Every record for a collection. May reject when the store cannot be read. */
   read(collection: string): MaybePromise<StoredRecord[]>;
   /** Persists the collection. Rejects (throws, or returns a rejected promise) when the write fails. */
   write(collection: string, records: StoredRecord[]): MaybePromise<void>;
@@ -34,11 +34,11 @@ export interface Repository<T extends StoredRecord = StoredRecord> {
   create(input: Omit<T, "id" | "createdAt">): T;
   update(id: string, changes: Partial<Omit<T, "id" | "createdAt">>): T | undefined;
   remove(id: string): boolean;
-  replaceAll(records: T[]): void;
+  replaceAll(records: T[]): Promise<void>;
   /** Fires whenever the visible collection changes, including from another tab. */
   subscribe(listener: () => void): () => void;
-  /** Fires when a write that was already shown was rejected by the store and rolled back. */
-  onError(listener: (error: StorageUnavailableError) => void): () => void;
+  /** Reports a storage failure, then `null` once a later operation proves recovery. */
+  onError(listener: (error: StorageUnavailableError | null) => void): () => void;
   /** Resolves once the first read and every queued write have settled. For tests and for export. */
   settled(): Promise<void>;
   /** Releases the adapter subscription. */
@@ -46,10 +46,17 @@ export interface Repository<T extends StoredRecord = StoredRecord> {
 }
 
 export class StorageUnavailableError extends Error {
-  constructor(cause: unknown) {
-    super("Changes could not be saved. This browser is blocking or is out of storage.");
+  readonly operation: "read" | "write";
+
+  constructor(cause: unknown, operation: "read" | "write" = "write") {
+    super(
+      operation === "read"
+        ? "Saved data could not be loaded. Check this browser's storage or your connection before making changes."
+        : "Changes could not be saved. This browser is blocking or is out of storage.",
+    );
     this.name = "StorageUnavailableError";
     this.cause = cause;
+    this.operation = operation;
   }
 }
 
@@ -70,9 +77,12 @@ export function createRepository<T extends StoredRecord = StoredRecord>(
   adapter: StorageAdapter,
 ): Repository<T> {
   const listeners = new Set<() => void>();
-  const errorListeners = new Set<(error: StorageUnavailableError) => void>();
+  const errorListeners = new Set<(error: StorageUnavailableError | null) => void>();
   let cache: T[] = [];
+  let committed: T[] = [];
   let loaded = false;
+  let lastError: StorageUnavailableError | null = null;
+  let pendingWrites = 0;
   /**
    * Counts local changes. A read that was already in flight when the user
    * changed something is stale by the time it answers, and adopting it would
@@ -95,20 +105,38 @@ export function createRepository<T extends StoredRecord = StoredRecord>(
     for (const listener of [...listeners]) listener();
   };
 
-  const report = (error: unknown): void => {
-    const failure = error instanceof StorageUnavailableError ? error : new StorageUnavailableError(error);
+  const report = (error: unknown, operation: "read" | "write"): StorageUnavailableError => {
+    const failure =
+      error instanceof StorageUnavailableError ? error : new StorageUnavailableError(error, operation);
+    lastError = failure;
     for (const listener of [...errorListeners]) listener(failure);
+    return failure;
+  };
+
+  const clearError = (): void => {
+    if (!lastError) return;
+    lastError = null;
+    for (const listener of [...errorListeners]) listener(null);
   };
 
   const adopt = (records: StoredRecord[]): void => {
     cache = records as T[];
+    committed = cache;
     loaded = true;
+    clearError();
     announce();
   };
 
   const refresh = (): MaybePromise<void> => {
     const at = revision;
-    const read = adapter.read(collection);
+    let read: MaybePromise<StoredRecord[]>;
+    try {
+      read = adapter.read(collection);
+    } catch (error) {
+      if (revision === at && !loaded) adopt([]);
+      report(error, "read");
+      return undefined;
+    }
     if (!isPromise(read)) {
       adopt(read);
       return undefined;
@@ -119,9 +147,10 @@ export function createRepository<T extends StoredRecord = StoredRecord>(
         else loaded = true;
       },
       (error) => {
-        // A failed read is an empty collection, never a blank screen.
-        if (revision === at) adopt([]);
-        report(error);
+        // An initial failed read starts empty. A later transient failure must
+        // preserve the last confirmed snapshot rather than erase good data.
+        if (revision === at && !loaded) adopt([]);
+        report(error, "read");
       },
     );
   };
@@ -134,25 +163,34 @@ export function createRepository<T extends StoredRecord = StoredRecord>(
    * previous records come back and the rejection is reported — the interface
    * never keeps showing a change that was not stored.
    */
-  const persist = (records: T[]): void => {
-    const previous = cache;
+  const persist = (records: T[]): Promise<void> => {
     revision += 1;
     cache = records;
     loaded = true;
+    pendingWrites += 1;
     announce();
 
-    queue = queue.then(async () => {
+    const operation = queue.then(async () => {
       try {
         await adapter.write(collection, records);
+        committed = records;
+        clearError();
       } catch (error) {
-        if (cache === records) {
+        throw report(error, "write");
+      } finally {
+        pendingWrites -= 1;
+        if (pendingWrites === 0 && cache !== committed) {
           revision += 1;
-          cache = previous;
+          cache = committed;
           announce();
         }
-        report(error);
       }
     });
+    // Keep the serialization chain usable after a rejection. Callers that need
+    // confirmation (notably import) receive `operation`; ordinary optimistic
+    // writes are reported through onError without creating an unhandled promise.
+    queue = operation.catch(() => undefined);
+    return operation;
   };
 
   if (adapter.subscribe) {
@@ -188,7 +226,7 @@ export function createRepository<T extends StoredRecord = StoredRecord>(
       return true;
     },
     replaceAll(records) {
-      persist([...records]);
+      return persist([...records]);
     },
     subscribe(listener) {
       listeners.add(listener);
@@ -196,6 +234,7 @@ export function createRepository<T extends StoredRecord = StoredRecord>(
     },
     onError(listener) {
       errorListeners.add(listener);
+      if (lastError) listener(lastError);
       return () => errorListeners.delete(listener);
     },
     async settled() {

@@ -84,16 +84,18 @@ export function readExport(raw: string): DataExport {
  * Replaces each named collection wholesale. Returns how many records landed
  * where, so a caller can say what happened rather than "done".
  */
-export function importCollections(
+export async function importCollections(
   data: DataExport,
   repositories: Record<string, Repository>,
-): Record<string, number> {
+): Promise<Record<string, number>> {
   const applied: Record<string, number> = {};
+  const writes: Promise<void>[] = [];
   for (const [name, records] of Object.entries(data.collections)) {
     const repository = repositories[name];
     if (!repository) continue;
-    repository.replaceAll(records);
+    writes.push(repository.replaceAll(records));
     applied[name] = records.length;
   }
+  await Promise.all(writes);
   return applied;
 }

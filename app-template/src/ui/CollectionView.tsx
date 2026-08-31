@@ -14,7 +14,8 @@ import {
   type FieldValue,
 } from "../data/operations.js";
 import { searchRecords } from "../data/searchIndex.js";
-import { exportCollections, importCollections, readExport } from "../data/portability.js";
+import { exportCollections, importCollections, readExport, type DataExport } from "../data/portability.js";
+import { StorageUnavailableError, type Repository } from "../data/repository.js";
 import { Alert } from "./Alert.js";
 import { EmptyState } from "./EmptyState.js";
 import { Field } from "./Field.js";
@@ -27,6 +28,8 @@ interface Props {
   entity: EntitySpec;
   searchEnabled?: boolean;
   canEdit?: boolean;
+  /** Test/integration seam; production uses the configured repository. */
+  repositoryOverride?: Repository;
 }
 
 /** One pending row action: which record, which action, and what has been typed into it. */
@@ -37,13 +40,29 @@ interface PendingAction {
   error?: string;
 }
 
-/** Delete, or a confirm-gated action with no inline prompt — the two cases the confirm modal covers. */
-type ConfirmTarget = { kind: "delete"; record: StoredRecord } | { kind: "action"; action: ActionSpec; record: StoredRecord };
+type ConfirmTarget =
+  | { kind: "delete"; record: StoredRecord }
+  | { kind: "action"; action: ActionSpec; record: StoredRecord }
+  | { kind: "import"; data: DataExport; count: number };
+
+interface TransferNote {
+  tone: "ok" | "danger";
+  text: string;
+}
 
 function describeConfirm(
   entity: EntitySpec,
   target: ConfirmTarget,
 ): { title: string; description?: string; confirmText: string; confirmAriaLabel: string; tone: ConfirmTone } {
+  if (target.kind === "import") {
+    return {
+      title: `Replace all ${entity.labelPlural.toLowerCase()}?`,
+      description: `This import contains ${target.count} ${entity.labelPlural.toLowerCase()} and replaces every record currently shown. This cannot be undone.`,
+      confirmText: "Replace data",
+      confirmAriaLabel: `Confirm replacing all ${entity.labelPlural.toLowerCase()}`,
+      tone: "danger",
+    };
+  }
   const title = titleOf(entity, target.record);
   if (target.kind === "delete") {
     return {
@@ -88,8 +107,11 @@ function displayValue(value: unknown): string {
  * derived totals. Derived values are computed over the filtered set so the
  * numbers always describe what is on screen.
  */
-export function CollectionView({ entity, searchEnabled = false, canEdit = true }: Props) {
-  const { records, storageError, dismissStorageError, run, repository } = useRepository(entity.name);
+export function CollectionView({ entity, searchEnabled = false, canEdit = true, repositoryOverride }: Props) {
+  const { records, storageError, dismissStorageError, run, repository } = useRepository(
+    entity.name,
+    repositoryOverride,
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<ConfirmTarget | null>(null);
   // The shell owns the search box when there is one, so the app never shows two.
@@ -100,7 +122,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   const ownsSearch = searchEnabled && shellSearch === null;
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<PendingAction | null>(null);
-  const [transferNote, setTransferNote] = useState<string | null>(null);
+  const [transferNote, setTransferNote] = useState<TransferNote | null>(null);
 
   const editing = editingId ? records.find((record) => record.id === editingId) : undefined;
   const filterSpecs = entity.filters ?? [];
@@ -195,16 +217,55 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
     link.download = `${entity.name}-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    setTransferNote(`Exported ${records.length} ${entity.labelPlural.toLowerCase()}.`);
+    setTransferNote({ tone: "ok", text: `Exported ${records.length} ${entity.labelPlural.toLowerCase()}.` });
   };
 
   const importRecords = async (file: File): Promise<void> => {
     try {
-      const applied = importCollections(readExport(await file.text()), { [entity.name]: repository });
-      const count = applied[entity.name] ?? 0;
-      setTransferNote(`Imported ${count} ${entity.labelPlural.toLowerCase()}, replacing what was here.`);
+      const data = readExport(await file.text());
+      if (!Object.hasOwn(data.collections, entity.name)) {
+        setTransferNote({
+          tone: "danger",
+          text: `That export does not contain the ${entity.labelPlural.toLowerCase()} collection. Nothing was replaced.`,
+        });
+        return;
+      }
+      setConfirming({ kind: "import", data, count: data.collections[entity.name]?.length ?? 0 });
     } catch (error) {
-      setTransferNote(error instanceof Error ? error.message : "That file could not be read.");
+      setTransferNote({
+        tone: "danger",
+        text: error instanceof Error ? error.message : "That file could not be read.",
+      });
+    }
+  };
+
+  const confirmSelection = async (): Promise<void> => {
+    if (!confirming) return;
+    const target = confirming;
+    setConfirming(null);
+
+    if (target.kind === "import") {
+      try {
+        const applied = await importCollections(target.data, { [entity.name]: repository });
+        const count = applied[entity.name] ?? 0;
+        setTransferNote({
+          tone: "ok",
+          text: `Imported ${count} ${entity.labelPlural.toLowerCase()}, replacing what was here.`,
+        });
+      } catch (error) {
+        // Repository failures already reach the single, user-safe storage
+        // banner. Do not duplicate it or expose an adapter's raw error text.
+        if (error instanceof StorageUnavailableError) setTransferNote(null);
+        else setTransferNote({ tone: "danger", text: "The imported data could not be saved." });
+      }
+      return;
+    }
+
+    if (target.kind === "delete") {
+      run(() => repository.remove(target.record.id));
+      if (editingId === target.record.id) setEditingId(null);
+    } else {
+      applyAction(target.action, target.record);
     }
   };
 
@@ -352,9 +413,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
         </div>
 
         {transferNote ? (
-          <p className="m-0 text-sm text-ink-soft" role="status">
-            {transferNote}
-          </p>
+          <Alert tone={transferNote.tone} title={transferNote.text} />
         ) : null}
 
         {records.length === 0 ? (
@@ -513,16 +572,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
         open={confirming !== null}
         {...(confirming ? describeConfirm(entity, confirming) : { title: "", confirmText: "", confirmAriaLabel: "" })}
         onCancel={() => setConfirming(null)}
-        onConfirm={() => {
-          if (!confirming) return;
-          if (confirming.kind === "delete") {
-            run(() => repository.remove(confirming.record.id));
-            if (editingId === confirming.record.id) setEditingId(null);
-          } else {
-            applyAction(confirming.action, confirming.record);
-          }
-          setConfirming(null);
-        }}
+        onConfirm={() => void confirmSelection()}
       />
     </div>
   );

@@ -10,12 +10,19 @@ export function createLocalStorageAdapter(namespace: string, storage?: Storage):
   return {
     read(collection) {
       const store = resolve();
-      if (!store) return [];
+      if (!store) throw new Error("localStorage is unavailable");
+      let raw: string | null;
       try {
-        const raw = store.getItem(keyFor(collection));
-        if (raw === null) return [];
+        raw = store.getItem(keyFor(collection));
+      } catch (error) {
+        throw new Error("localStorage could not be read", { cause: error });
+      }
+      if (raw === null) return [];
+      try {
         return coerceRecords(JSON.parse(raw));
       } catch {
+        // A corrupt value is bad data rather than an unavailable store. Recover
+        // to the empty state; actual access failures are surfaced above.
         return [];
       }
     },

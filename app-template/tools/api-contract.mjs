@@ -178,7 +178,7 @@ export function contractMarkdown(parameters) {
     out.push("");
     out.push("| Method | Path | Body | Success | Failure |");
     out.push("|---|---|---|---|---|");
-    out.push(`| GET | \`/api/${collection}\` | — | \`200\` with a JSON array of records | any non-2xx is read as an empty collection, never an error screen |`);
+    out.push(`| GET | \`/api/${collection}\` | — | \`200\` with a JSON array of records | non-2xx or a malformed collection preserves confirmed data and shows a read error |`);
     out.push(`| PUT | \`/api/${collection}\` | the full JSON array | \`2xx\` | any other status rolls the change back and tells the user |`);
     out.push("");
     out.push(`**Record shape** — \`${entity.label}\`:`);
@@ -221,7 +221,7 @@ export function contractMarkdown(parameters) {
   out.push("- **A store may answer late.** `StorageAdapter` returns `T | Promise<T>`; the repository keeps a synchronous cache so views never learn whether the store is local or remote.");
   out.push("- **A change is shown, then confirmed.** Writes apply optimistically and roll back if the store rejects them, and the rejection reaches the user through `repository.onError`.");
   out.push("- **Writes keep their order.** They are queued, so a store answering out of order cannot let an older collection overwrite a newer one.");
-  out.push("- **A read never throws.** An unreachable service, a 500, or a malformed body is an empty collection.");
+  out.push("- **Read failures preserve confirmed data.** An unreachable service, a non-2xx response, or a malformed collection reaches the user as a clean error; an initial failure starts empty without crashing the view.");
   out.push("- **`id` and `createdAt` belong to the store.** No caller can overwrite them.");
   out.push("- **Not merged.** The repository is local-first and does not reconcile concurrent remote edits: a read that lands after a local change is dropped rather than allowed to undo it. A store needing merge semantics does the merging inside its adapter — the same seam, still nothing above it.");
   out.push("");

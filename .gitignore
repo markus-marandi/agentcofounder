@@ -5,6 +5,8 @@ node_modules/
 !.env.example
 *.log
 /result.json
+/trace.jsonl
+/summary.md
 
 artifacts/*
 !artifacts/.gitkeep

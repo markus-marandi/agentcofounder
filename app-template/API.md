@@ -56,7 +56,7 @@ Implement three methods to add a backend:
 type MaybePromise<T> = T | Promise<T>;
 
 interface StorageAdapter {
-  // Never throws: unreadable data, an unreachable service, or a 500 is an empty collection.
+  // May reject when storage or a service cannot be read; the repository preserves confirmed data and tells the user.
   read(collection: string): MaybePromise<StoredRecord[]>;
   // Rejects when the write fails; the repository rolls back and tells the user.
   write(collection: string, records: StoredRecord[]): MaybePromise<void>;

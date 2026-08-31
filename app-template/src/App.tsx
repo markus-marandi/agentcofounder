@@ -10,6 +10,7 @@ import { CollectionView } from "./ui/CollectionView.js";
 import { DashboardGrid } from "./ui/DashboardGrid.js";
 import { ErrorBoundary } from "./ui/ErrorBoundary.js";
 import { LandingPage } from "./ui/LandingPage.js";
+import { Limitations } from "./ui/Limitations.js";
 import { PrototypeFlow } from "./ui/PrototypeFlow.js";
 
 /**
@@ -58,6 +59,7 @@ export function App() {
       onNavigate={setCurrent}
       aside={parameters.features.auth ? <AuthBar /> : undefined}
     >
+      <Limitations items={parameters.features.limitations} />
       <ErrorBoundary label={entry.label}>
         <View entry={entry} />
       </ErrorBoundary>

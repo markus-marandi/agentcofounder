@@ -28,6 +28,17 @@ function isUsage(value: unknown): value is PiUsage {
   );
 }
 
+function hasMeteredUsage(usage: PiUsage): boolean {
+  return (
+    usage.input > 0 ||
+    usage.output > 0 ||
+    usage.cacheRead > 0 ||
+    usage.cacheWrite > 0 ||
+    usage.totalTokens > 0 ||
+    (finiteNonNegative(usage.cost?.total) && usage.cost.total > 0)
+  );
+}
+
 function usageCall(usage: PiUsage, model: string, index: number): CallLogEntry {
   const call: CallLogEntry = {
     index,
@@ -52,7 +63,7 @@ function callFromEvent(event: unknown, index: number): CallLogEntry | undefined 
     const result = record.result;
     if (typeof result !== "object" || result === null) return undefined;
     const usage = (result as Record<string, unknown>).usage;
-    return isUsage(usage) ? usageCall(usage, "pi-compaction", index) : undefined;
+    return isUsage(usage) && hasMeteredUsage(usage) ? usageCall(usage, "pi-compaction", index) : undefined;
   }
 
   if (record.type !== "message_end") return undefined;
@@ -60,7 +71,7 @@ function callFromEvent(event: unknown, index: number): CallLogEntry | undefined 
   const message = record.message;
   if (typeof message !== "object" || message === null) return undefined;
   const completed = message as Record<string, unknown>;
-  if (!isUsage(completed.usage)) return undefined;
+  if (!isUsage(completed.usage) || !hasMeteredUsage(completed.usage)) return undefined;
 
   if (completed.role === "assistant") {
     const provider = typeof completed.provider === "string" ? `${completed.provider}/` : "";

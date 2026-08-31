@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { reclaimAppOwnedPort } from "../../src/port-owner.js";
+import { terminateProcessTree, usesDetachedProcessGroup } from "../../src/process-tree.js";
 import { portHasListener } from "../../src/verify-app.js";
 
 /**
@@ -10,8 +11,8 @@ import { portHasListener } from "../../src/verify-app.js";
  *
  * The outer runner already verifies the finished app, but by then the run is
  * over and a failure can only be recorded, not fixed. This extension verifies
- * `candidate.json` inside the write tool result, before the normal follow-up
- * model call. A failure therefore reaches the still-valid compiled stage and
+ * `candidate.json` inside the write tool result. A failure reaches the
+ * still-valid compiled stage and
  * can be repaired without a new challenge run or a second discovery stage.
  *
  * It deliberately does not start a development server: the runner owns port
@@ -34,6 +35,7 @@ const TIME_BUDGET_MS = Math.max(
 interface CommandOutcome {
   ok: boolean;
   output: string;
+  timedOut: boolean;
 }
 
 interface CommandInvocation {
@@ -69,25 +71,32 @@ function runCommand(command: string, args: string[], cwd: string): Promise<Comma
   return new Promise((resolve) => {
     let child: ReturnType<typeof spawn>;
     try {
-      child = spawn(command, args, { cwd, env: process.env, shell: false, stdio: ["ignore", "pipe", "pipe"] });
+      child = spawn(command, args, {
+        cwd,
+        detached: usesDetachedProcessGroup(),
+        env: process.env,
+        shell: false,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
     } catch (error) {
-      resolve({ ok: false, output: String(error) });
+      resolve({ ok: false, output: String(error), timedOut: false });
       return;
     }
 
     let output = "";
     let settled = false;
+    let timedOut = false;
     const finish = (ok: boolean): void => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      resolve({ ok, output });
+      resolve({ ok, output, timedOut });
     };
 
     const timer = setTimeout(() => {
-      child.kill("SIGKILL");
+      timedOut = true;
       output += `\n[verify-loop] ${command} exceeded ${COMMAND_TIMEOUT_MS}ms and was stopped.`;
-      finish(false);
+      void terminateProcessTree(child).finally(() => finish(false));
     }, COMMAND_TIMEOUT_MS);
 
     const collect = (chunk: Buffer): void => {
@@ -97,9 +106,11 @@ function runCommand(command: string, args: string[], cwd: string): Promise<Comma
     child.stderr?.on("data", collect);
     child.once("error", (error) => {
       output += String(error);
-      finish(false);
+      if (!timedOut) finish(false);
     });
-    child.once("close", (code) => finish(code === 0));
+    child.once("close", (code) => {
+      if (!timedOut) finish(code === 0);
+    });
   });
 }
 
@@ -153,7 +164,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
   let attempts = 0;
   let checking = false;
 
-  pi.on("tool_result", async (event) => {
+  pi.on("tool_result", async (event, context) => {
     const written = String((event.input as Record<string, unknown>).path ?? "");
     const relative = path.relative(appRoot, path.resolve(appRoot, written));
     if (event.toolName !== "write" || relative !== "candidate.json" || event.isError) return undefined;
@@ -167,12 +178,13 @@ export default function verifyLoop(pi: ExtensionAPI) {
       };
     }
     if (attempts >= MAX_ATTEMPTS || Date.now() - startedAt > TIME_BUDGET_MS) {
+      context.abort();
       return {
         content: [
           ...event.content,
           {
             type: "text" as const,
-            text: "Candidate verification budget is exhausted. Reply only `done`; the outer runner will record this run as failed.",
+            text: "Candidate verification budget is exhausted. The agent run was stopped; the outer runner will record this run as failed.",
           },
         ],
         isError: true,
@@ -211,14 +223,24 @@ export default function verifyLoop(pi: ExtensionAPI) {
             ],
             appRoot,
           )
-        : { ok: false, output: "Skipped because deterministic generation failed." };
-      const build = test.ok
+        : { ok: false, output: "Skipped because deterministic generation failed.", timedOut: false };
+      let build = test.ok
         ? await runCommand(
             commands.npm.command,
             [...commands.npm.argsPrefix, "run", "build"],
             appRoot,
           )
-        : { ok: false, output: "Skipped because the test suite failed." };
+        : { ok: false, output: "Skipped because the test suite failed.", timedOut: false };
+      // A transient process-launch stall should not buy a model repair turn.
+      // Retry only timeouts, once; deterministic failures still go straight
+      // back to the agent with the original diagnostics.
+      if (build.timedOut) {
+        build = await runCommand(
+          commands.npm.command,
+          [...commands.npm.argsPrefix, "run", "build"],
+          appRoot,
+        );
+      }
 
       const problems: string[] = [];
       if (!materialize.ok) {
@@ -258,12 +280,16 @@ export default function verifyLoop(pi: ExtensionAPI) {
       await rm(reportPath, { force: true });
 
       if (problems.length === 0) {
+        // The tool result is already deterministic proof of completion. Abort
+        // the active operation so Pi does not reload the full context merely
+        // to generate an acknowledgment such as `done`.
+        context.abort();
         return {
           content: [
             ...event.content,
             {
               type: "text" as const,
-              text: "Deterministic materialization, journeys, API contracts, tests, build, and report all passed. Reply only `done`.",
+              text: "Deterministic materialization, journeys, API contracts, tests, build, and report all passed. The agent run was stopped without another model call.",
             },
           ],
           isError: false,
@@ -271,6 +297,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
       }
 
       const remaining = MAX_ATTEMPTS - attempts;
+      if (remaining === 0) context.abort();
       return {
         content: [
           ...event.content,
@@ -283,7 +310,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
               "",
               remaining > 0
                 ? "Rewrite candidate.json with the cause fixed. Do not delete or skip a failing test."
-                : "This was the final verification attempt. Reply only `done`; the outer runner will record any remaining failure.",
+                : "This was the final verification attempt. The agent run was stopped; the outer runner will record the failure.",
             ].join("\n"),
           },
         ],

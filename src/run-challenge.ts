@@ -16,6 +16,7 @@ import {
   writeResult,
 } from "./result.js";
 import { collectUsageFromJsonLines } from "./usage.js";
+import { writeSubmissionArtifacts } from "./submission-artifacts.js";
 import type { RunResult } from "./types.js";
 import { validateResultObject } from "./validate-result.js";
 import { portHasListener, unavailableAppVerification, verifyGeneratedApp } from "./verify-app.js";
@@ -380,6 +381,13 @@ async function main(): Promise<void> {
     resultPaths = await writeResult(outputDirectory, result, [rootResultPath]);
   }
   const missingResultPaths = missingRequiredResultPaths(resultPaths, requiredResultPaths);
+  const submissionPaths = await writeSubmissionArtifacts({
+    eventFile,
+    artifactDirectory,
+    outputDirectory,
+    repositoryRoot: REPOSITORY_ROOT,
+    result,
+  });
   const validationErrors = await validateResultObject(result);
   if (validationErrors.length > 0) {
     for (const error of validationErrors) console.error(`- ${error}`);
@@ -388,6 +396,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`Result written to ${resultPaths.join(" and ")}`);
+  console.log(`Submission trace and summary written to ${submissionPaths.join(", ")}`);
   console.log(`Audit artifacts written to ${artifactDirectory}`);
   for (const missingResultPath of missingResultPaths) {
     console.error(`Required result destination was not written: ${missingResultPath}`);
