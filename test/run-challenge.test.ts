@@ -3,13 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
+import { compileSingleStageContext } from "../src/icm-context.js";
 import {
   PI_DOCUMENTATION_HEADING,
   stripPiDocumentationBlock,
 } from "../solution/extensions/protected-paths.js";
 import {
   buildPiArguments,
-  normalizePromptText,
+  canVerifyGeneratedCandidate,
   parseArguments,
   runPi,
   runRequiresFailureExit,
@@ -47,7 +48,7 @@ describe("Pi launch", () => {
       );
       expect(args).toContain("--offline");
       expect(args).toContain("--no-context-files");
-      expect(args[args.indexOf("--tools") + 1]).toBe("read,edit,write");
+      expect(args[args.indexOf("--tools") + 1]).toBe("write");
       expect(args).not.toContain("--skill");
       expect(args).not.toContain("--print");
       expect(args).not.toContain("--approve");
@@ -64,6 +65,13 @@ describe("Pi launch", () => {
     }
   });
 
+  it("does not verify the seed app when candidate materialization failed", () => {
+    expect(canVerifyGeneratedCandidate(0, 2, 1)).toBe(false);
+    expect(canVerifyGeneratedCandidate(0, 2, 0)).toBe(true);
+    expect(canVerifyGeneratedCandidate(1, 2, 0)).toBe(false);
+    expect(canVerifyGeneratedCandidate(0, 0, 0)).toBe(false);
+  });
+
   it("normalizes Windows line endings before sending model context", () => {
     const args = buildPiArguments(
       "Build\r\na tool",
@@ -77,36 +85,20 @@ describe("Pi launch", () => {
     expect(args.at(-1)).not.toContain("\r");
   });
 
-  it("appends structurally consistent public journey guidance to Pi's built-in system prompt", async () => {
-    const [systemPrompt, publicJourneys, appContext] = await Promise.all([
-      readFile(path.resolve("solution/system-prompt.md"), "utf8"),
-      readFile(path.resolve("contract-public/journeys.md"), "utf8"),
-      readFile(path.resolve("app-template/AGENTS.md"), "utf8"),
+  it("appends one compiled ICM stage and its minified structural seed", async () => {
+    const [stage, seed] = await Promise.all([
+      readFile(path.resolve("solution/icm-configure-stage.md"), "utf8"),
+      readFile(path.resolve("app-template/parameters.json"), "utf8"),
     ]);
-    const args = buildPiArguments("Build a tool", systemPrompt, publicJourneys, appContext, "/tmp/run");
+    const compiledContext = compileSingleStageContext(stage, seed);
+    const args = buildPiArguments("Build a tool", compiledContext, "", "", "/tmp/run");
     const suppliedSystemPrompt = args[args.indexOf("--append-system-prompt") + 1] ?? "";
-    const normalizedPublicJourneys = normalizePromptText(publicJourneys);
-    const behaviorSection = /## Behaviors to implement and test when implied\s+([\s\S]*?)\n## /u.exec(
-      normalizedPublicJourneys,
-    )?.[1];
-    const requirementSection = /## Run and reporting requirements\s+([\s\S]*)$/u.exec(
-      normalizedPublicJourneys,
-    )?.[1];
-    const behaviorItems = [...(behaviorSection ?? "").matchAll(/^\d+\.\s+(.+)$/gmu)].map((match) => match[1]);
-    const requirementItems = [...(requirementSection ?? "").matchAll(/^-\s+(.+)$/gmu)].map(
-      (match) => match[1],
-    );
 
-    expect(suppliedSystemPrompt).toContain(normalizedPublicJourneys.trim());
-    expect(behaviorItems.length).toBeGreaterThan(0);
-    expect(requirementItems.length).toBeGreaterThan(0);
-    for (const contractItem of [...behaviorItems, ...requirementItems]) {
-      expect(suppliedSystemPrompt).toContain(contractItem);
-    }
-    expect(suppliedSystemPrompt).toContain("omit it instead of inventing an equivalent feature");
-    expect(suppliedSystemPrompt).toContain("Never omit an implied journey merely to simplify");
-    expect(suppliedSystemPrompt.match(/^# Generated application contract$/gmu)).toHaveLength(1);
-    expect(suppliedSystemPrompt).not.toMatch(/^## Generated application contract$/mu);
+    expect(suppliedSystemPrompt).toBe(compiledContext.trim());
+    expect(suppliedSystemPrompt).toContain("write only\n`candidate.json`");
+    expect(suppliedSystemPrompt).toContain("Do not drop an implied journey");
+    expect(suppliedSystemPrompt).toContain('"route":"web-app"');
+    expect(suppliedSystemPrompt).not.toContain("\r");
   });
 
   it("removes only Pi's documentation block from the composed system prompt", () => {

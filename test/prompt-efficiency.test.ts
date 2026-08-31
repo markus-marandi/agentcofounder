@@ -1,48 +1,45 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildPiArguments, normalizePromptText } from "../src/run-challenge.js";
+import { compileSingleStageContext } from "../src/icm-context.js";
+import { buildPiArguments } from "../src/run-challenge.js";
 
 const MODEL_CONTEXT_FILES = [
-  "solution/system-prompt.md",
-  "contract-public/journeys.md",
-  "app-template/AGENTS.md",
+  "solution/icm-configure-stage.md",
+  "app-template/parameters.json",
 ] as const;
 
-async function modelContext(): Promise<[string, string, string]> {
-  const context = await Promise.all([
+async function modelContext(): Promise<string> {
+  const [stage, seed] = await Promise.all([
     readFile(path.resolve(MODEL_CONTEXT_FILES[0]), "utf8"),
     readFile(path.resolve(MODEL_CONTEXT_FILES[1]), "utf8"),
-    readFile(path.resolve(MODEL_CONTEXT_FILES[2]), "utf8"),
   ]);
-  return context.map(normalizePromptText) as [string, string, string];
+  return compileSingleStageContext(stage, seed);
 }
 
 describe("model context efficiency", () => {
   it("keeps the repository-authored initial prompt within its character budget", async () => {
     const context = await modelContext();
-    expect(context.reduce((total, text) => total + text.length, 0)).toBeLessThanOrEqual(7_000);
+    expect(context.length).toBeLessThanOrEqual(7_000);
   });
 
-  it("does not ask the model to reload context already present in its prompt", async () => {
-    const [systemPrompt, publicJourneys, appContext] = await modelContext();
-    const args = buildPiArguments("Build a lending library", systemPrompt, publicJourneys, appContext, "/tmp/run");
+  it("provides one compiled write-only stage with no model-directed discovery", async () => {
+    const context = await modelContext();
+    const args = buildPiArguments("Build a lending library", context, "", "", "/tmp/run");
 
-    expect(systemPrompt).toMatch(/already includes `AGENTS\.md`[\s\S]+do not read it again/iu);
-    expect(systemPrompt).toContain("do not read `parameters.schema.json`");
-    expect(systemPrompt).toMatch(/create `idea_spec\.json`/iu);
-    expect(systemPrompt).toContain("with only `target_user` and `assumptions`");
-    expect(systemPrompt).toContain("Do not edit `API.md`");
-    expect(systemPrompt).toContain("answer only `done`");
-    expect(systemPrompt).not.toMatch(/load the .+ skill/iu);
+    expect(context).toContain("single compiled stage");
+    expect(context).toContain("write only\n`candidate.json`");
+    expect(context).toContain('"route":"web-app"');
+    expect(context).not.toContain("parameters.schema.json");
     expect(args).not.toContain("--skill");
-    expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["read", "edit", "write"]);
+    expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["write"]);
   });
 
   it("leaves deterministic execution with the verifier", async () => {
     const verifier = await readFile(path.resolve("solution/extensions/verify-loop.ts"), "utf8");
     for (const requiredStep of [
       "generate-journeys.mjs",
+      "materialize-candidate.mjs",
       "write-api.mjs",
       "vitest",
       '"run", "build"',

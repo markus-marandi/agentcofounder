@@ -161,6 +161,8 @@ export default function verifyLoop(pi: ExtensionAPI) {
       const node = process.execPath;
       const commands = verificationInvocations(appRoot);
 
+      const materialize = await runCommand(node, [path.join("tools", "materialize-candidate.mjs")], appRoot);
+
       // The journey suite is a function of `parameters.json`, so regenerate it
       // before judging the app: a configuration edited after the last
       // generation would otherwise be verified against a stale suite.
@@ -189,6 +191,9 @@ export default function verifyLoop(pi: ExtensionAPI) {
       );
 
       const problems: string[] = [];
+      if (!materialize.ok) {
+        problems.push(`Candidate materialization failed:\n\n${condense(materialize.output)}`);
+      }
       if (!journeys.ok) {
         problems.push(
           `\`npm run journeys\` failed, so the app has no journey suite:\n\n${condense(journeys.output)}`,
@@ -205,7 +210,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
         );
       }
 
-      if (journeys.ok && api.ok && test.ok && build.ok) {
+      if (materialize.ok && journeys.ok && api.ok && test.ok && build.ok) {
         // The report is derived, not authored, so write it here rather than
         // asking the agent for a file it would only be retyping.
         const report = await runCommand(node, [path.join("tools", "write-report.mjs")], appRoot);

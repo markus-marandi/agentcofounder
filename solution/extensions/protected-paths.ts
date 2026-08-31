@@ -39,16 +39,18 @@ export default function protectedPaths(pi: ExtensionAPI) {
     const outsideApp = relative.startsWith("..") || path.isAbsolute(relative);
     const segments = relative.split(path.sep);
     const basename = path.basename(absolute).toLowerCase();
+    const modelOwnedPath = relative === "candidate.json";
     const protectedPath =
       outsideApp ||
       segments.includes(".git") ||
       segments.includes("node_modules") ||
+      !modelOwnedPath ||
       basename === "result.json" ||
       basename === ".env" ||
       basename.startsWith(".env.");
     if (!protectedPath) return undefined;
 
     if (context.hasUI) context.ui.notify(`Blocked write to protected path: ${candidate}`, "warning");
-    return { block: true, reason: "Path is outside the app workspace or is runner-owned" };
+    return { block: true, reason: "The compiled stage may write only candidate.json" };
   });
 }

@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
+import { compileSingleStageContext, compiledContextManifest } from "./icm-context.js";
 import { prepareOutput } from "./prepare-output.js";
 import { auditAppPortAfterPi } from "./port-owner.js";
 import { signalProcessTree, terminateProcessTree, usesDetachedProcessGroup } from "./process-tree.js";
@@ -242,6 +243,10 @@ export function buildPiArguments(
   const normalizedSystemPrompt = normalizePromptText(systemPrompt);
   const normalizedPublicJourneys = normalizePromptText(publicJourneys);
   const normalizedAppContext = normalizePromptText(appContext);
+  const compiledContext = [normalizedSystemPrompt, normalizedPublicJourneys, normalizedAppContext]
+    .map((part) => part.trim())
+    .filter((part) => part !== "")
+    .join("\n\n");
   const args = [
     "--mode",
     "json",
@@ -252,9 +257,9 @@ export function buildPiArguments(
     "--no-themes",
     "--no-context-files",
     "--tools",
-    "read,edit,write",
+    "write",
     "--append-system-prompt",
-    `${normalizedSystemPrompt.trim()}\n\n${normalizedPublicJourneys.trim()}\n\n${normalizedAppContext.trim()}`,
+    compiledContext,
     "--session-dir",
     path.join(artifactDirectory, "sessions"),
   ];
@@ -266,6 +271,14 @@ export function buildPiArguments(
   args.push("--thinking", process.env.CHALLENGE_THINKING ?? "off");
   args.push(`## Product idea\n\n${normalizedIdea.trim()}\n`);
   return args;
+}
+
+export function canVerifyGeneratedCandidate(
+  piExitCode: number,
+  modelCalls: number,
+  materializationExitCode: number,
+): boolean {
+  return piExitCode === 0 && modelCalls > 0 && materializationExitCode === 0;
 }
 
 export function normalizePromptText(text: string): string {
@@ -297,22 +310,30 @@ async function main(): Promise<void> {
   }
   if (args.prepareOnly) return;
 
-  const [systemPrompt, publicJourneys, appContext] = await Promise.all([
-    readFile(path.join(REPOSITORY_ROOT, "solution", "system-prompt.md"), "utf8"),
-    readFile(path.join(REPOSITORY_ROOT, "contract-public", "journeys.md"), "utf8"),
-    readFile(path.join(outputDirectory, "AGENTS.md"), "utf8"),
+  const [stageContract, seedParameters] = await Promise.all([
+    readFile(path.join(REPOSITORY_ROOT, "solution", "icm-configure-stage.md"), "utf8"),
+    readFile(path.join(outputDirectory, "parameters.json"), "utf8"),
   ]);
+  const compiledContext = compileSingleStageContext(stageContract, seedParameters);
 
   const runId = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
   const artifactDirectory = path.join(REPOSITORY_ROOT, "artifacts", "runs", runId);
   await mkdir(path.join(artifactDirectory, "sessions"), { recursive: true });
-  await writeFile(path.join(artifactDirectory, "idea.txt"), idea, "utf8");
+  await Promise.all([
+    writeFile(path.join(artifactDirectory, "idea.txt"), idea, "utf8"),
+    writeFile(path.join(artifactDirectory, "context-packet.md"), compiledContext, "utf8"),
+    writeFile(
+      path.join(artifactDirectory, "context-manifest.json"),
+      `${JSON.stringify(compiledContextManifest(stageContract, seedParameters, compiledContext), null, 2)}\n`,
+      "utf8",
+    ),
+  ]);
 
   const eventFile = path.join(artifactDirectory, "events.jsonl");
   const stderrFile = path.join(artifactDirectory, "pi.stderr.log");
   const appPortHadListenerBeforePi = await portHasListener(APP_PORT);
   const pi = await runPi(
-    buildPiArguments(idea, systemPrompt, publicJourneys, appContext, artifactDirectory),
+    buildPiArguments(idea, compiledContext, "", "", artifactDirectory),
     outputDirectory,
     eventFile,
     stderrFile,
@@ -326,8 +347,20 @@ async function main(): Promise<void> {
   }
 
   const usage = collectUsageFromJsonLines(await readFile(eventFile, "utf8"));
+  const materializationExitCode =
+    pi.exitCode === 0 && usage.model_calls > 0
+      ? await runInherited(
+          process.execPath,
+          [path.join("tools", "materialize-candidate.mjs")],
+          outputDirectory,
+        )
+      : 1;
   const partial = await readPartialResult(outputDirectory);
-  const canVerifyApp = pi.exitCode === 0 && usage.model_calls > 0;
+  const canVerifyApp = canVerifyGeneratedCandidate(
+    pi.exitCode,
+    usage.model_calls,
+    materializationExitCode,
+  );
   const startCommand = rootStartCommand(REPOSITORY_ROOT, outputDirectory);
   let verification = unavailableAppVerification(
     canVerifyApp ? "app verification had not completed" : "Pi did not complete with audited model usage",
