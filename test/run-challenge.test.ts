@@ -48,7 +48,7 @@ describe("Pi launch", () => {
       );
       expect(args).toContain("--offline");
       expect(args).toContain("--no-context-files");
-      expect(args[args.indexOf("--tools") + 1]).toBe("write");
+      expect(args[args.indexOf("--tools") + 1]).toBe("submit_candidate");
       expect(args).not.toContain("--skill");
       expect(args).not.toContain("--print");
       expect(args).not.toContain("--approve");
@@ -95,9 +95,10 @@ describe("Pi launch", () => {
     const suppliedSystemPrompt = args[args.indexOf("--append-system-prompt") + 1] ?? "";
 
     expect(suppliedSystemPrompt).toBe(compiledContext.trim());
-    expect(suppliedSystemPrompt).toContain("write only\n`candidate.json`");
+    expect(suppliedSystemPrompt).toContain("structured candidate with `submit_candidate`");
     expect(suppliedSystemPrompt).toContain("Do not drop an implied journey");
-    expect(suppliedSystemPrompt).toContain('"route":"web-app"');
+    expect(suppliedSystemPrompt).not.toContain('"route":"web-app"');
+    expect(suppliedSystemPrompt).not.toContain('"adapter":"localStorage"');
     expect(suppliedSystemPrompt).not.toContain("\r");
   });
 

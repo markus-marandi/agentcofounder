@@ -51,6 +51,6 @@ export default function protectedPaths(pi: ExtensionAPI) {
     if (!protectedPath) return undefined;
 
     if (context.hasUI) context.ui.notify(`Blocked write to protected path: ${candidate}`, "warning");
-    return { block: true, reason: "The compiled stage may write only candidate.json" };
+    return { block: true, reason: "Direct file writes are disabled; use submit_candidate" };
   });
 }

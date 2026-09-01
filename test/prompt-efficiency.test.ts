@@ -23,17 +23,19 @@ describe("model context efficiency", () => {
     expect(context.length).toBeLessThanOrEqual(7_000);
   });
 
-  it("provides one compiled write-only stage with no model-directed discovery", async () => {
+  it("provides one compiled structured-submission stage with no model-directed discovery", async () => {
     const context = await modelContext();
     const args = buildPiArguments("Build a lending library", context, "", "", "/tmp/run");
 
     expect(context).toContain("single compiled stage");
-    expect(context).toContain("write only\n`candidate.json`");
-    expect(context).toContain('"route":"web-app"');
+    expect(context).toContain("structured candidate with `submit_candidate`");
+    expect(context).not.toContain('"route":"web-app"');
+    expect(context).not.toContain('"adapter":"localStorage"');
+    expect(context).not.toContain('"components"');
     expect(context).toContain("Condition modes are `equals`, `truthy`, `falsy`, `contains`, or `beforeToday`");
     expect(context).not.toContain("parameters.schema.json");
     expect(args).not.toContain("--skill");
-    expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["write"]);
+    expect(args[args.indexOf("--tools") + 1]?.split(",")).toEqual(["submit_candidate"]);
   });
 
   it("leaves deterministic execution with the verifier", async () => {

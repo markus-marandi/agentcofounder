@@ -5,14 +5,15 @@ import path from "node:path";
 import { reclaimAppOwnedPort } from "../../src/port-owner.js";
 import { terminateProcessTree, usesDetachedProcessGroup } from "../../src/process-tree.js";
 import { portHasListener } from "../../src/verify-app.js";
+import { SUBMIT_CANDIDATE_TOOL_NAME } from "./submit-candidate.js";
 
 /**
  * Closes the loop on "the model said it was done".
  *
  * The outer runner already verifies the finished app, but by then the run is
  * over and a failure can only be recorded, not fixed. This extension verifies
- * `candidate.json` inside the write tool result. A failure reaches the
- * still-valid compiled stage and
+ * `candidate.json` inside the structured submission tool result. A failure
+ * reaches the still-valid compiled stage and
  * can be repaired without a new challenge run or a second discovery stage.
  *
  * It deliberately does not start a development server: the runner owns port
@@ -165,9 +166,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
   let checking = false;
 
   pi.on("tool_result", async (event, context) => {
-    const written = String((event.input as Record<string, unknown>).path ?? "");
-    const relative = path.relative(appRoot, path.resolve(appRoot, written));
-    if (event.toolName !== "write" || relative !== "candidate.json" || event.isError) return undefined;
+    if (event.toolName !== SUBMIT_CANDIDATE_TOOL_NAME || event.isError) return undefined;
     if (checking) {
       return {
         content: [
@@ -309,7 +308,7 @@ export default function verifyLoop(pi: ExtensionAPI) {
               problems.join("\n\n"),
               "",
               remaining > 0
-                ? "Rewrite candidate.json with the cause fixed. Do not delete or skip a failing test."
+                ? "Submit a corrected complete candidate with the cause fixed. Do not delete or skip a failing test."
                 : "This was the final verification attempt. The agent run was stopped; the outer runner will record the failure.",
             ].join("\n"),
           },

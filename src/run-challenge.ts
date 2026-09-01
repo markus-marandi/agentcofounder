@@ -37,7 +37,7 @@ const SOURCE_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = path.resolve(SOURCE_DIRECTORY, "..");
 const APP_PORT = 3000;
 
-const EXTENSIONS = ["protected-paths.ts", "verify-loop.ts"];
+const EXTENSIONS = ["protected-paths.ts", "submit-candidate.ts", "verify-loop.ts"];
 
 export function runRequiresFailureExit(
   piExitCode: number,
@@ -258,7 +258,7 @@ export function buildPiArguments(
     "--no-themes",
     "--no-context-files",
     "--tools",
-    "write",
+    "submit_candidate",
     "--append-system-prompt",
     compiledContext,
     "--session-dir",

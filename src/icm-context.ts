@@ -17,10 +17,22 @@ function jsonObject(text: string): Record<string, unknown> {
   return parsed as Record<string, unknown>;
 }
 
+function decisionSeed(value: Record<string, unknown>): Record<string, unknown> {
+  const parameters = structuredClone(value);
+  delete parameters.route;
+  delete parameters.theme;
+  delete parameters.components;
+  const features = parameters.features as Record<string, unknown> | undefined;
+  if (features) parameters.features = { limitations: features.limitations };
+  const persistence = parameters.persistence as Record<string, unknown> | undefined;
+  if (persistence) parameters.persistence = { namespace: persistence.namespace };
+  return parameters;
+}
+
 export function compileSingleStageContext(stageContract: string, seedText: string): string {
   const stage = normalizePromptText(stageContract).trim();
   if (!stage) throw new Error("The configure-stage contract is empty");
-  const seed = JSON.stringify(jsonObject(normalizePromptText(seedText)));
+  const seed = JSON.stringify(decisionSeed(jsonObject(normalizePromptText(seedText))));
   return `${stage}\n\n## Valid structural seed\n\n${seed}\n`;
 }
 
@@ -42,7 +54,7 @@ export function compiledContextManifest(
     ],
     compiled_sha256: sha256(compiledContext),
     compiled_characters: compiledContext.length,
-    model_tools: ["write"],
+    model_tools: ["submit_candidate"],
     output: "candidate.json",
   };
 }

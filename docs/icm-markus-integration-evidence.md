@@ -15,9 +15,13 @@ generated `API.md`/`openapi.json`, or the real `/api-docs` screen.
   `981def68a5c4cafb7ddea445d29b46c1de3f908e`
 
 The branch uses the proven single-stage ICM handoff: Pi receives a compiled
-stage plus a minified valid seed, has only the `write` tool, and owns one
-`candidate.json`. Deterministic code materializes the candidate, generates the
-product tests and API artifacts, and independently qualifies the result.
+stage plus a minified valid seed and has only the structured
+`submit_candidate` tool. The harness serializes one `candidate.json` instead of
+asking the model to encode JSON inside a string. It also restores the seed-owned
+route, theme, search/auth flags, local-storage adapter, and component audit flags
+instead of asking the model to repeat them. Deterministic code materializes the
+candidate, generates the product tests and API artifacts, and independently
+qualifies the result.
 
 ## Changes beyond Markus main
 
@@ -37,6 +41,7 @@ product tests and API artifacts, and independently qualifies the result.
 | Surface unavailable reads | Local and HTTP access failures reach the existing visible error banner instead of impersonating a genuinely empty collection. Corrupt local JSON still recovers safely. |
 | Add real browser acceptance | A dependency-free CDP harness launches installed Chrome at 1440x900 and 390x844, checks the responsive shell/drawer and limitations, and verifies the rendered `/api-docs` contract. |
 | Stop after deterministic success | `ctx.abort()` removes the final acknowledgment inference. Zero-token abort markers stay in `trace.jsonl` but are not counted as metered model calls. A timed-out build is retried once before spending a repair turn. |
+| Restore seed-owned constants after submission | The model now submits only product-specific decisions. Fixed route/theme, search/auth, storage-adapter, and component values come from the validated seed, while optional dashboard, landing, and prototype decisions remain model-owned. |
 
 The strengthened browser gate was also run against a fresh generated Game Shelf
 product on 2026-08-31, not only the seed. `output/browser-current` passed 152/152
@@ -103,6 +108,24 @@ more on that one fixture (6,368 / 9,698), but it retains the newer product/API
 surface and qualifies 135 tests and 18 journeys. This is a measured quality and
 coverage trade, not an assertion that the smallest token number is automatically
 best.
+
+### Structured known-values experiment
+
+Three matched `docs/fixtures/skeleton.txt` runs compared the complete structured
+schema with deterministic restoration of seed-owned constants. Provider, model,
+thinking level, prompt, and timeout settings were identical. All six products
+qualified; the known-values variant passed on its first candidate in every run.
+
+| Variant | Scores | Mean score | One-call qualification | Qualification |
+| --- | --- | ---: | ---: | ---: |
+| Complete structured schema | 10,746.6 / 12,936.6 / 6,041 | 9,908.1 | 1/3 | 3/3 |
+| Structured + known values | 5,100 / 4,650 / 4,485 | 4,745.0 | 3/3 | 3/3 |
+
+The matched mean improved by 52.1%. Each known-values run passed its generated
+journeys, production build, startup probe, and result validation. The raw
+runner-owned artifacts remain ignored; this section is the committed reviewer
+index. This is a small stochastic sample, so it supports the implementation and
+further fixture runs rather than guaranteeing an exact future score.
 
 ### Deterministic-termination experiment
 

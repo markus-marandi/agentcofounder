@@ -1,20 +1,26 @@
 # Configure product — single compiled stage
 
 The product idea and the structural seed below are the complete model context.
-Do not inspect the repository. Make the product decisions once and write only
-`candidate.json`. Mechanical generation and verification happen after this
+Do not inspect the repository. Make the product decisions once and submit one
+structured candidate with `submit_candidate`. The harness serializes it; do not
+encode JSON as text. Mechanical generation and verification happen after this
 stage.
 
 ## Output contract
 
-Write one JSON object with exactly:
+Call `submit_candidate` once with exactly:
 
 - `idea_spec.target_user`: a concrete non-empty string;
 - `idea_spec.assumptions`: an array of concise non-empty strings, one decision
   per genuine ambiguity (use `[]` when none are needed);
 - `parameters`: a complete replacement for the seed configuration.
 
-After the write, answer only `done`. Do not create or modify another file.
+The harness restores the fixed `route`, `theme`, search/auth flags,
+local-storage adapter, and component audit flags. Omit those known values and
+submit only the variable shape demonstrated by the seed.
+
+Do not create or modify a file and do not produce a follow-up response after
+submission.
 
 ## Product decisions
 

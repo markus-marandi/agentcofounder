@@ -10,7 +10,8 @@ describe("single-stage compiled ICM context", () => {
 
     expect(compiled).not.toContain("\r");
     expect(compiled).toContain("# Configure\n\nWrite one candidate.");
-    expect(compiled).toContain('{"route":"web-app","entities":[]}');
+    expect(compiled).toContain('{"entities":[]}');
+    expect(compiled).not.toContain('"route"');
     expect(compiled).toContain("## Valid structural seed");
     expect(compiled.length).toBeLessThan(stage.length + seed.length + 80);
   });

@@ -147,7 +147,9 @@ and nothing above it changes.
 `candidate.json`, materializes the two kernel inputs, generates journeys and API
 artifacts, then runs the tests, production build, and report. On failure it turns
 that same tool result into concise repair guidance, so the still-valid compiled
-stage can rewrite only `candidate.json`. The loop is bounded by three attempts
+stage can call only the structured `submit_candidate` tool. The harness
+restores seed-owned route, theme, feature, persistence-adapter, and component
+values before serializing `candidate.json`; the loop is bounded by three attempts
 and a wall-clock budget. It never starts a development server: the runner owns
 port 3000. Once every deterministic gate passes, the extension aborts the active
 agent operation instead of paying for another context load just to answer
