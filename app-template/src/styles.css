@@ -2,7 +2,7 @@
 @import "./themes/presets.css";
 
 /*
- * Tailwind utilities read theme colour through these tokens, which forward
+ * Utilities read theme colour through these tokens, which forward
  * straight to the runtime-swappable custom properties in themes/presets.css.
  * A theme or accent change (set via [data-theme] / [data-density] on <html>)
  * never touches a component or this file.
@@ -32,10 +32,10 @@
   --radius: 8px;
   --measure: 68ch;
   --shadow: 0 1px 2px rgb(16 24 32 / 6%), 0 8px 24px rgb(16 24 32 / 6%);
-  /* Tailwind's actual default font-sans stack — tailwindcss.com/docs/font-family */
+  /* Standard system sans stack */
   --font: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: var(--font);
-  /* red-600 / red-50 / emerald-700 / amber-800 / amber-50 — tailwindcss.com/docs/colors */
+  /* Status hues: red for danger, green for ok, amber for warning */
   --danger: #e7000b;
   --danger-soft: #fef2f2;
   --ok: #007a55;
@@ -99,7 +99,7 @@
  * The classes below are used only by the retired landing-page/prototype
  * routes (LandingPage.tsx, PrototypeFlow.tsx — unreachable now, but still
  * present and compiled). Everything reachable from the web-app route uses
- * Tailwind utilities directly instead.
+ * utility classes directly instead.
  *
  * Every layout rule here is mobile-first; the breakpoint below widens it.
  */

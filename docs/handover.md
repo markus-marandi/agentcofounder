@@ -54,14 +54,14 @@ actually reflects another tab's write. 84 → 87 tests, all passing.
 ## Robustness (20 pts)
 
 Rule: every error message in the app renders through the shared `Alert`
-component (`app-template/src/ui/Alert.tsx`, vendored Tailwind Plus
-feedback/alerts, danger/warning/ok/neutral tones) — never hand-rolled markup.
+component (`app-template/src/ui/Alert.tsx`, danger/warning/ok/neutral tones)
+— never hand-rolled markup.
 
 Finding: `Alert` existed but was imported nowhere. Six sites duplicated the
 same danger-styled banner by hand (`App.tsx`, `RecordForm.tsx`,
 `ErrorBoundary.tsx`, `CollectionView.tsx`, `LandingPage.tsx`,
-`PrototypeFlow.tsx`); the last two were still on the pre-Tailwind
-`.notice-error` CSS class, a leftover from before the Tailwind migration
+`PrototypeFlow.tsx`); the last two were still on the old `.notice-error`
+CSS class, a leftover from before the utility-class migration
 (`ce883eb`) that never got cleaned up in those two files.
 
 Fix applied: all six sites now render `<Alert tone="danger" title="..." />`,
@@ -76,8 +76,8 @@ browser check of the validation-error banner (empty required field →
 correct icon, tone, and copy).
 
 Scope note: `LandingPage.tsx`/`PrototypeFlow.tsx` still carry the rest of
-their pre-Tailwind markup (`.hero`, `.section`, `.card`, `.notice-ok`, etc.)
-beyond the error banner — untouched here. Per
+their legacy semantic-class markup (`.hero`, `.section`, `.card`, `.notice-ok`,
+etc.) beyond the error banner — untouched here. Per
 `solution/skills/product-analyzer/SKILL.md`, the analyzer always models an
 idea as a real collection and never picks `kind: "landing"`/`"screen"`, so
 these two views are reachable in the kernel but not currently selected by

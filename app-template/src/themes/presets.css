@@ -4,13 +4,12 @@
  * This used to hold a palette per `theme.preset`, so the same app shipped
  * lime one run and amber the next depending on what the analyzer picked —
  * a colour lottery on top of an interface that is supposed to look the same
- * every time. The look is now fixed: Tailwind's neutral gray ramp for all
- * chrome, and indigo — the accent the Tailwind Plus dashboards this app is
- * styled after use — for the one accent. `theme.preset` is still validated
- * so existing configurations stay valid, but it no longer changes a colour.
+ * every time. The look is now fixed: a neutral gray ramp for all chrome,
+ * and a single indigo accent. `theme.preset` is still validated so existing
+ * configurations stay valid, but it no longer changes a colour.
  *
- * Values are Tailwind's own (tailwindcss.com/docs/colors): gray 50/200/400/
- * 700/800/900 and indigo 400/600.
+ * Hex values are stated literally so the palette is auditable at a glance:
+ * gray 50/200/400/700/800/900 and indigo 400/600.
  */
 
 :root {

@@ -3,16 +3,16 @@ import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 export type ConfirmTone = "danger" | "primary";
 
-const toneStyles: Record<ConfirmTone, { ring: string; icon: string; button: string }> = {
+const tones: Record<ConfirmTone, { disc: string; icon: string; confirm: string }> = {
   danger: {
-    ring: "bg-danger-soft",
+    disc: "bg-danger-soft",
     icon: "text-danger",
-    button: "rounded-md border border-danger px-3 py-2 text-sm font-semibold text-danger hover:bg-danger-soft",
+    confirm: "rounded-md border border-danger/60 bg-danger-soft px-3 py-2 text-sm font-semibold text-danger hover:border-danger",
   },
   primary: {
-    ring: "bg-accent-soft",
+    disc: "bg-accent-soft",
     icon: "text-accent",
-    button: "rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-ink hover:brightness-110",
+    confirm: "rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-ink hover:brightness-110",
   },
 };
 
@@ -30,10 +30,10 @@ export interface ConfirmDialogProps {
 }
 
 /**
- * Vendored from Tailwind Plus overlays/modal-dialogs, "Centered with single
- * action" — one place every irreversible or confirm-gated action in the app
- * asks "are you sure", instead of each call site rolling its own inline
- * yes/no swap.
+ * The one place every irreversible or confirm-gated action asks "are you
+ * sure", instead of each call site rolling its own inline yes/no swap.
+ * Headless UI owns focus trapping, dismissal, and the transitions; this
+ * component owns the wording and the two buttons.
  */
 export function ConfirmDialog({
   open,
@@ -46,41 +46,36 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const styles = toneStyles[tone];
+  const t = tones[tone];
   return (
     <Dialog open={open} onClose={onCancel} className="relative z-50">
-      <DialogBackdrop
-        transition
-        className="fixed inset-0 bg-ink/50 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-leave:duration-200"
-      />
-      <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+      <DialogBackdrop transition className="fixed inset-0 bg-ink/50 duration-200 data-closed:opacity-0" />
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-end justify-center p-4 sm:items-center">
           <DialogPanel
             transition
-            className="relative transform overflow-hidden rounded-lg bg-surface px-4 pt-5 pb-4 text-left shadow-xl outline outline-line transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-sm sm:p-6 data-closed:sm:translate-y-0 data-closed:sm:scale-95"
+            className="w-full rounded-xl border border-line bg-surface p-5 shadow-xl duration-200 data-closed:translate-y-2 data-closed:opacity-0 sm:max-w-md sm:p-6"
           >
-            <div className="sm:flex sm:items-start">
-              <div
-                className={`mx-auto flex size-12 shrink-0 items-center justify-center rounded-full sm:mx-0 sm:size-10 ${styles.ring}`}
-              >
-                <ExclamationTriangleIcon aria-hidden="true" className={`size-6 ${styles.icon}`} />
+            <div className="sm:flex sm:gap-4">
+              <div className={`mx-auto flex size-10 shrink-0 items-center justify-center rounded-full sm:mx-0 ${t.disc}`}>
+                <ExclamationTriangleIcon aria-hidden="true" className={`size-5 ${t.icon}`} />
               </div>
-              <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+              <div className="mt-3 text-center sm:mt-0 sm:text-left">
                 <DialogTitle as="h3" className="text-base font-semibold text-ink">
                   {title}
                 </DialogTitle>
-                {description ? <p className="mt-2 text-sm text-ink-soft">{description}</p> : null}
+                {description ? <p className="mt-1.5 text-sm text-ink-soft">{description}</p> : null}
               </div>
             </div>
-            <div className="mt-5 flex flex-col-reverse gap-3 sm:mt-4 sm:flex-row sm:justify-end">
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                className="rounded-md border border-transparent px-3 py-2 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"
+                className="rounded-md px-3 py-2 text-sm font-medium text-ink-soft hover:bg-surface-sunk hover:text-ink"
                 onClick={onCancel}
               >
                 {cancelText}
               </button>
-              <button type="button" className={styles.button} aria-label={confirmAriaLabel ?? confirmText} onClick={onConfirm}>
+              <button type="button" className={t.confirm} aria-label={confirmAriaLabel ?? confirmText} onClick={onConfirm}>
                 {confirmText}
               </button>
             </div>

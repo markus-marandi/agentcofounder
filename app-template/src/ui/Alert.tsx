@@ -3,39 +3,35 @@ import { CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from 
 
 export type AlertTone = "warning" | "danger" | "ok" | "neutral";
 
-const toneStyles: Record<AlertTone, { container: string; icon: string; title: string; body: string; Icon: typeof ExclamationTriangleIcon }> = {
-  warning: { container: "bg-warning-soft", icon: "text-warning", title: "text-warning", body: "text-warning", Icon: ExclamationTriangleIcon },
-  danger: { container: "bg-danger-soft", icon: "text-danger", title: "text-danger", body: "text-danger", Icon: ExclamationTriangleIcon },
-  ok: { container: "bg-ok/10", icon: "text-ok", title: "text-ok", body: "text-ok", Icon: CheckCircleIcon },
-  neutral: { container: "bg-accent-soft", icon: "text-accent", title: "text-accent", body: "text-ink-soft", Icon: InformationCircleIcon },
+type ToneSpec = {
+  surface: string;
+  ink: string;
+  body: string;
+  Icon: typeof ExclamationTriangleIcon;
+  /** Interrupt the reader (`alert`) or report quietly (`status`). */
+  interrupt: boolean;
 };
 
-const toneRole: Record<AlertTone, "alert" | "status"> = {
-  warning: "alert",
-  danger: "alert",
-  ok: "status",
-  neutral: "status",
+const tones: Record<AlertTone, ToneSpec> = {
+  warning: { surface: "bg-warning-soft", ink: "text-warning", body: "text-warning", Icon: ExclamationTriangleIcon, interrupt: true },
+  danger: { surface: "bg-danger-soft", ink: "text-danger", body: "text-danger", Icon: ExclamationTriangleIcon, interrupt: true },
+  ok: { surface: "bg-ok/10", ink: "text-ok", body: "text-ok", Icon: CheckCircleIcon, interrupt: false },
+  neutral: { surface: "bg-accent-soft", ink: "text-accent", body: "text-ink-soft", Icon: InformationCircleIcon, interrupt: false },
 };
 
 /**
- * Vendored from Tailwind Plus feedback/alerts, "With description".
- *
- * The single error/status banner every view uses — nothing renders its own
- * ad hoc alert markup. `role` follows tone so callers never have to remember
- * it: danger/warning interrupt (`alert`), ok/neutral just report (`status`).
+ * The one status banner every view shares — a tone, a title, and optional
+ * detail. The ARIA role follows the tone so callers never pick it: warning
+ * and danger interrupt, the rest report.
  */
 export function Alert({ tone, title, children }: { tone: AlertTone; title: string; children?: ReactNode }) {
-  const styles = toneStyles[tone];
+  const t = tones[tone];
   return (
-    <div className={`rounded-md p-4 ${styles.container}`} role={toneRole[tone]}>
-      <div className="flex">
-        <div className="shrink-0">
-          <styles.Icon aria-hidden="true" className={`size-5 ${styles.icon}`} />
-        </div>
-        <div className="ml-3">
-          <h3 className={`text-sm font-medium ${styles.title}`}>{title}</h3>
-          {children ? <div className={`mt-2 text-sm ${styles.body}`}>{children}</div> : null}
-        </div>
+    <div role={t.interrupt ? "alert" : "status"} className={`flex gap-3 rounded-md p-4 ${t.surface}`}>
+      <t.Icon aria-hidden="true" className={`size-5 shrink-0 ${t.ink}`} />
+      <div className="min-w-0">
+        <h3 className={`text-sm font-medium ${t.ink}`}>{title}</h3>
+        {children ? <div className={`mt-1.5 text-sm ${t.body}`}>{children}</div> : null}
       </div>
     </div>
   );

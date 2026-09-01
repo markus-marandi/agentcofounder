@@ -2,24 +2,20 @@ import type { ReactNode } from "react";
 
 export type BadgeTone = "neutral" | "accent" | "ok" | "danger";
 
-const toneClasses: Record<BadgeTone, string> = {
-  neutral: "bg-surface-sunk text-ink-soft ring-line",
-  accent: "bg-accent-soft text-accent ring-accent/30",
-  ok: "bg-ok/10 text-ok ring-ok/25",
-  danger: "bg-danger-soft text-danger ring-danger/20",
+/**
+ * A badge's colour is never decoration: each tone maps to one meaning that is
+ * the same everywhere in the app (plain, pointing at the accent, good, bad).
+ */
+const tones: Record<BadgeTone, string> = {
+  neutral: "border-line bg-transparent text-ink-soft",
+  accent: "border-accent/40 bg-accent-soft text-accent",
+  ok: "border-ok/40 bg-transparent text-ok",
+  danger: "border-danger/40 bg-danger-soft text-danger",
 };
 
-/**
- * Vendored from Tailwind Plus elements/badges ("With border"). The source
- * example has 8 literal colours with no semantic meaning; collapsed here
- * onto this app's 4 semantic tones so a badge's colour always means the
- * same thing everywhere it's used.
- */
 export function Badge({ tone = "neutral", children }: { tone?: BadgeTone; children: ReactNode }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${toneClasses[tone]}`}
-    >
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>
       {children}
     </span>
   );

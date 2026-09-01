@@ -2,26 +2,24 @@ import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 
 /**
- * Vendored from Tailwind Plus elements/dropdowns, "Simple", trigger swapped
- * for an icon-only "more actions" button — the common row-menu shape.
+ * Row menu: an icon-only trigger that opens the actions applying to one
+ * record. Headless UI provides focus management, dismissal, and keyboard
+ * support; the panel look is this app's own.
  */
 export function Dropdown({ label, options }: { label: string; options: Array<{ label: string; onClick: () => void }> }) {
   return (
-    <Menu as="div" className="relative">
-      <MenuButton className="-m-2 flex items-center rounded-full p-2 text-ink-soft hover:text-ink">
+    <Menu as="div" className="relative inline-block text-left">
+      <MenuButton className="flex size-8 items-center justify-center rounded-full text-ink-soft hover:bg-surface-sunk hover:text-ink">
         <span className="sr-only">{label}</span>
         <EllipsisVerticalIcon aria-hidden="true" className="size-5" />
       </MenuButton>
-      <MenuItems
-        transition
-        className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-surface py-1 shadow-lg outline outline-line transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-      >
+      <MenuItems className="absolute right-0 z-10 mt-1.5 w-44 rounded-md border border-line bg-surface py-1 text-sm shadow-md focus:outline-none">
         {options.map((option) => (
           <MenuItem key={option.label}>
             <button
               type="button"
               onClick={option.onClick}
-              className="block w-full px-4 py-2 text-left text-sm text-ink data-focus:bg-surface-sunk data-focus:outline-hidden"
+              className="block w-full px-3 py-1.5 text-left text-ink data-focus:bg-surface-sunk"
             >
               {option.label}
             </button>

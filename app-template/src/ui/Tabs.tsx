@@ -1,10 +1,7 @@
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-
 /**
- * Vendored from Tailwind Plus navigation/tabs, "Tabs with underline" — a
- * labelled single-select with an underline style on wide screens and a
- * native `<select>` fallback on narrow ones, so it stays usable without
- * horizontal scrolling.
+ * A labelled single choice. Wide screens render buttons whose active one is
+ * underlined; a narrow screen swaps to a native `<select>`, which scrolls
+ * its own list instead of clipping the options it cannot fit.
  */
 export function Tabs({
   label,
@@ -19,40 +16,37 @@ export function Tabs({
 }) {
   return (
     <div>
-      <div className="grid grid-cols-1 sm:hidden">
+      <div className="sm:hidden">
         <select
           value={value}
           onChange={(event) => onChange(event.target.value)}
           aria-label={label}
-          className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-surface py-2 pr-8 pl-3 text-base text-ink outline outline-line focus:outline-2 focus:-outline-offset-2 focus:outline-accent"
+          className="w-full rounded-md border border-line bg-surface px-3 py-2 text-base text-ink focus:border-accent focus:outline-none"
         >
           {options.map((option) => (
             <option key={option}>{option}</option>
           ))}
         </select>
-        <ChevronDownIcon
-          aria-hidden="true"
-          className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end fill-ink-soft"
-        />
       </div>
       <div className="hidden sm:block">
-        <div className="border-b border-line">
-          <nav aria-label={label} className="-mb-px flex space-x-8">
-            {options.map((option) => (
+        <nav aria-label={label} className="flex gap-6 border-b border-line">
+          {options.map((option) => {
+            const active = option === value;
+            return (
               <button
                 key={option}
                 type="button"
                 onClick={() => onChange(option)}
-                aria-current={value === option ? "page" : undefined}
-                className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
-                  value === option ? "border-accent text-accent" : "border-transparent text-ink-soft hover:border-line hover:text-ink"
+                aria-current={active ? "page" : undefined}
+                className={`-mb-px border-b-2 px-0.5 pt-1 pb-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                  active ? "border-accent text-accent" : "border-transparent text-ink-soft hover:text-ink"
                 }`}
               >
                 {option}
               </button>
-            ))}
-          </nav>
-        </div>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );

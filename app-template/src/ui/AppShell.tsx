@@ -53,7 +53,7 @@ function NavList({
   onNavigate: (id: string) => void;
 }) {
   return (
-    <ul role="list" className="-mx-2 flex flex-col gap-y-1">
+    <ul role="list" className="flex flex-col gap-y-0.5">
       {parameters.navigation.map((entry: NavigationSpec) => {
         const active = entry.id === current;
         const Icon = navIcons[entry.kind];
@@ -63,13 +63,13 @@ function NavList({
               type="button"
               aria-current={active ? "page" : undefined}
               onClick={() => onNavigate(entry.id)}
-              className={`group flex w-full items-center gap-x-3 rounded-md p-2 text-left text-sm font-semibold ${
+              className={`flex w-full items-center gap-x-3 rounded-md px-2 py-1.5 text-left text-sm font-medium ${
                 active ? "bg-surface-sunk text-ink" : "text-ink-soft hover:bg-surface-sunk hover:text-ink"
               }`}
             >
               <Icon
                 aria-hidden="true"
-                className={`size-6 shrink-0 ${active ? "text-accent" : "text-ink-soft group-hover:text-ink"}`}
+                className={`size-5 shrink-0 ${active ? "text-accent" : "text-ink-soft"}`}
               />
               {entry.label}
             </button>
@@ -91,24 +91,24 @@ const docsUrl = "/api-docs";
 /** Everything inside the rail, shared by the fixed sidebar and the mobile drawer. */
 function SidebarBody({ current, onNavigate }: { current: string; onNavigate: (id: string) => void }) {
   return (
-    <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-line bg-surface px-6 pb-4">
-      <div className="flex h-16 shrink-0 items-center">
+    <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-line bg-surface px-4 pb-4">
+      <div className="flex h-14 shrink-0 items-center">
         <Logo />
       </div>
       <nav className="flex flex-1 flex-col" aria-label="Sections">
         <NavList current={current} onNavigate={onNavigate} />
 
-        <div className="mt-auto -mx-6 border-t border-line px-6 pt-4">
+        <div className="mt-auto border-t border-line pt-3">
           <a
             href={docsUrl}
             target="_blank"
             rel="noreferrer"
-            className="group -mx-2 flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold text-ink-soft hover:bg-surface-sunk hover:text-ink"
+            className="-mx-2 flex items-center gap-x-3 rounded-md px-2 py-1.5 text-sm font-medium text-ink-soft hover:bg-surface-sunk hover:text-ink"
           >
-            <CodeBracketIcon aria-hidden="true" className="size-6 shrink-0 text-ink-soft group-hover:text-ink" />
+            <CodeBracketIcon aria-hidden="true" className="size-5 shrink-0 text-ink-soft" />
             <span className="min-w-0">
               <span className="block">API docs</span>
-              <span className="block truncate text-xs font-normal text-ink-soft">How to connect</span>
+              <span className="block text-xs font-normal text-ink-soft">How to connect</span>
             </span>
           </a>
         </div>
@@ -119,15 +119,15 @@ function SidebarBody({ current, onNavigate }: { current: string; onNavigate: (id
 
 /**
  * The shell is the same every time: a rail on the left, a sticky header with
- * one search field, day/night. It used to be picked from how many menu entries
- * a configuration declared — one entry meant no rail and no header nav at all,
- * so an app with a single view shipped as a bare form on a white page. The
- * chrome is not a per-product decision any more; only what is *in* it is.
+ * one search field, day/night. It used to be picked from how many menu
+ * entries a configuration declared — one entry meant no rail and no header
+ * nav at all, so an app with a single view shipped as a bare form on a white
+ * page. The chrome is not a per-product decision any more; only what is *in*
+ * it is.
  *
- * Vendored from Tailwind Plus application-shells/sidebar ("Sidebar with
- * header"), on this app's theme tokens. The search field is real: it is the
- * app's only one, and it publishes its query to the view through
- * `shellSearch` — nothing in this header is decoration.
+ * The search field is real: it is the app's only one, and it publishes its
+ * query to the view through `shellSearch` — nothing in this header is
+ * decoration.
  */
 export function AppShell({
   current,
@@ -179,16 +179,16 @@ export function AppShell({
       <Dialog open={drawerOpen} onClose={setDrawerOpen} className="relative z-50 lg:hidden">
         <DialogBackdrop
           transition
-          className="fixed inset-0 bg-ink/50 transition-opacity duration-300 ease-linear data-closed:opacity-0"
+          className="fixed inset-0 bg-ink/50 duration-300 data-closed:opacity-0"
         />
         <div className="fixed inset-0 flex">
           <DialogPanel
             transition
-            className="relative mr-16 flex w-full max-w-xs flex-1 transition duration-300 ease-in-out data-closed:-translate-x-full"
+            className="relative mr-14 flex w-full max-w-[17rem] flex-1 duration-300 ease-in-out data-closed:-translate-x-full"
           >
             <TransitionChild>
-              <div className="absolute top-0 left-full flex w-16 justify-center pt-5 duration-300 ease-in-out data-closed:opacity-0">
-                <button type="button" onClick={() => setDrawerOpen(false)} className="-m-2.5 p-2.5">
+              <div className="absolute top-0 left-full flex w-14 justify-center pt-4 duration-300 ease-in-out data-closed:opacity-0">
+                <button type="button" onClick={() => setDrawerOpen(false)} className="p-2">
                   <span className="sr-only">Close menu</span>
                   <XMarkIcon aria-hidden="true" className="size-6 text-surface" />
                 </button>
@@ -199,13 +199,13 @@ export function AppShell({
         </div>
       </Dialog>
 
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
         <SidebarBody current={current} onNavigate={onNavigate} />
       </div>
 
-      <div className="lg:pl-72">
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-line bg-surface px-4 sm:gap-x-6 sm:px-6 lg:px-8">
-          <button type="button" onClick={() => setDrawerOpen(true)} className="-m-2.5 p-2.5 text-ink lg:hidden">
+      <div className="lg:pl-64">
+        <div className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-x-4 border-b border-line bg-surface px-4 sm:gap-x-6 sm:px-6 lg:px-8">
+          <button type="button" onClick={() => setDrawerOpen(true)} className="p-2 text-ink lg:hidden">
             <span className="sr-only">Open menu</span>
             <Bars3Icon aria-hidden="true" className="size-5" />
           </button>
@@ -217,7 +217,7 @@ export function AppShell({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search"
               aria-label="Search"
-              className="col-start-1 row-start-1 block size-full bg-transparent pl-8 text-base text-ink outline-none placeholder:text-ink-soft sm:text-sm"
+              className="col-start-1 row-start-1 block size-full bg-transparent pl-9 text-base text-ink outline-none placeholder:text-ink-soft sm:text-sm"
             />
             <MagnifyingGlassIcon
               aria-hidden="true"
@@ -228,7 +228,7 @@ export function AppShell({
           <div className="flex items-center gap-x-3">
             <button
               type="button"
-              className="-m-1.5 rounded-full p-1.5 text-ink-soft hover:bg-surface-sunk hover:text-ink"
+              className="rounded-full p-1.5 text-ink-soft hover:bg-surface-sunk hover:text-ink"
               onClick={toggleMode}
               aria-label={effectiveMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
@@ -243,10 +243,10 @@ export function AppShell({
         </div>
 
         <main id="main">
-          <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+          <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
             <div className="min-w-0">
               <h1 className="text-base font-semibold text-ink">{entry.label}</h1>
-              <p className="mt-1 truncate text-sm text-ink-soft">{product.tagline}</p>
+              <p className="mt-0.5 truncate text-sm text-ink-soft">{product.tagline}</p>
             </div>
           </header>
 

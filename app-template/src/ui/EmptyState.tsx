@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { DocumentPlusIcon } from "@heroicons/react/24/outline";
 
-/** Vendored from Tailwind Plus lists/empty-states, "Simple". */
+/**
+ * What a view says when there is nothing to show: one sentence of
+ * explanation and, when the caller has one, the first move to make.
+ */
 export function EmptyState({
   title,
   description,
@@ -12,11 +15,13 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="text-center rounded-lg border border-dashed border-line bg-surface px-6 py-16">
-      <DocumentPlusIcon aria-hidden="true" className="mx-auto size-10 text-ink-soft" />
-      <h3 className="mt-2 text-sm font-semibold text-ink m-0">{title}</h3>
+    <div className="rounded-lg border border-dashed border-line px-6 py-14 text-center">
+      <div className="mx-auto flex size-11 items-center justify-center rounded-full bg-surface-sunk">
+        <DocumentPlusIcon aria-hidden="true" className="size-5 text-ink-soft" />
+      </div>
+      <h3 className="m-0 mt-4 text-sm font-semibold text-ink">{title}</h3>
       {description ? <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">{description}</p> : null}
-      {action ? <div className="mt-6">{action}</div> : null}
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }

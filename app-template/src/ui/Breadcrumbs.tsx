@@ -1,42 +1,37 @@
-import { HomeIcon } from "@heroicons/react/20/solid";
+import { ChevronRightIcon, HomeIcon } from "@heroicons/react/20/solid";
 
-/** Vendored from Tailwind Plus navigation/breadcrumbs, "Contained". */
+/**
+ * The trail from the top of the app to where the reader is: a home link,
+ * then each parent, then the current page, which is a link only if there is
+ * still somewhere further down to go.
+ */
 export function Breadcrumbs({ items }: { items: Array<{ label: string; href?: string }> }) {
   return (
-    <nav aria-label="Breadcrumb" className="flex">
-      <ol role="list" className="flex space-x-4 rounded-md bg-surface px-6 shadow-xs">
-        <li className="flex">
-          <div className="flex items-center">
-            <a href="#" className="text-ink-soft hover:text-ink">
-              <HomeIcon aria-hidden="true" className="size-5 shrink-0" />
-              <span className="sr-only">Home</span>
-            </a>
-          </div>
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center gap-2 text-sm">
+        <li>
+          <a href="#" className="flex text-ink-soft hover:text-ink">
+            <HomeIcon aria-hidden="true" className="size-4" />
+            <span className="sr-only">Home</span>
+          </a>
         </li>
-        {items.map((item) => (
-          <li key={item.label} className="flex">
-            <div className="flex items-center">
-              <svg
-                fill="currentColor"
-                viewBox="0 0 24 44"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-                className="h-full w-6 shrink-0 text-line"
-              >
-                <path d="M.293 0l22 22-22 22h1.414l22-22-22-22H.293z" />
-              </svg>
-              {item.href ? (
-                <a href={item.href} className="ml-4 text-sm font-medium text-ink-soft hover:text-ink">
+        {items.map((item, index) => {
+          const last = index === items.length - 1;
+          return (
+            <li key={item.label} className="flex items-center gap-2">
+              <ChevronRightIcon aria-hidden="true" className="size-4 shrink-0 text-line" />
+              {item.href && !last ? (
+                <a href={item.href} className="font-medium text-ink-soft hover:text-ink">
                   {item.label}
                 </a>
               ) : (
-                <span aria-current="page" className="ml-4 text-sm font-medium text-ink">
+                <span aria-current="page" className="font-medium text-ink">
                   {item.label}
                 </span>
               )}
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );

@@ -124,7 +124,7 @@ In `app-template/src`, shipped tested and building green with zero model edits.
 | `ui/PrototypeFlow.tsx` | Multi-screen walkthrough that carries state and stores a record |
 | `auth/mockAuth.ts` | Demonstration roles behind the interface a real provider would satisfy |
 | `mock/generators.ts` | Seeded sample data — identical on every run, so it can be asserted |
-| `styles.css`, `themes/` | Tailwind CSS, styled on Tailwind Plus's Application UI patterns; ten colour presets bridged into Tailwind's theme tokens |
+| `styles.css`, `themes/` | Tailwind CSS utilities over theme tokens; the fixed palette bridged into Tailwind's theme tokens |
 
 No charting library, no backend SDK — those would be a real install and
 output-token cost, paid on every run. Tailwind is different: the kernel

@@ -15,13 +15,8 @@ interface Props {
 /**
  * One accessible control per declared field type. Labels are real `<label>`
  * elements bound by id so automation and screen readers can find controls by
- * name instead of by position.
- *
- * Styling is vendored from Tailwind Plus (forms/input-groups "Input with
- * label", forms/textareas "Simple", forms/select-menus "Simple native" —
- * the chevron overlay, and forms/toggles "Simple toggle" for `boolean`) —
- * see THIRD_PARTY_NOTICES.md. A restyle only: field types and behavior are
- * unchanged, still driven entirely by `FieldSpec`.
+ * name instead of by position. The look: bordered fields on the surface,
+ * the accent on focus, `danger` on an invalid value — all from theme tokens.
  */
 export function Field({ field, value, error, suggestions, onChange }: Props) {
   const id = useId();
@@ -39,23 +34,23 @@ export function Field({ field, value, error, suggestions, onChange }: Props) {
   } as const;
 
   const inputClasses =
-    "block w-full rounded-md bg-surface px-3 py-1.5 text-ink placeholder:text-ink-soft outline outline-line " +
-    "focus:outline-2 focus:outline-accent aria-invalid:outline-danger sm:text-sm";
+    "block w-full rounded-md border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-soft " +
+    "focus:border-accent focus:outline-none aria-invalid:border-danger";
 
   if (field.type === "boolean") {
     return (
       <div className="flex items-center gap-3">
-        <span className="group relative inline-flex h-6 w-11 shrink-0 rounded-full bg-line p-0.5 has-checked:bg-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent">
-          <span
-            aria-hidden="true"
-            className="size-5 rounded-full bg-surface shadow-xs transition-transform duration-200 ease-in-out group-has-checked:translate-x-5"
-          />
+        <span className="relative inline-flex h-6 w-10 shrink-0 items-center rounded-full bg-line transition-colors has-checked:bg-accent">
           <input
             {...shared}
             type="checkbox"
             checked={Boolean(value)}
             onChange={(event) => onChange(event.target.checked)}
-            className="absolute inset-0 appearance-none focus:outline-none"
+            className="peer absolute inset-0 cursor-pointer appearance-none focus:outline-none"
+          />
+          <span
+            aria-hidden="true"
+            className="ml-0.5 size-5 rounded-full bg-surface shadow transition-transform peer-checked:translate-x-4 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
           />
         </span>
         <label htmlFor={id} className="text-sm font-medium text-ink">
@@ -88,7 +83,7 @@ export function Field({ field, value, error, suggestions, onChange }: Props) {
             {...shared}
             value={String(value ?? "")}
             onChange={(event) => onChange(event.target.value)}
-            className={`${inputClasses} min-h-24`}
+            className={`${inputClasses} min-h-20`}
           />
         ) : field.type === "select" ? (
           <div className="relative">
@@ -107,7 +102,7 @@ export function Field({ field, value, error, suggestions, onChange }: Props) {
             </select>
             <ChevronDownIcon
               aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-ink-soft"
+              className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
             />
           </div>
         ) : field.type === "combobox" ? (

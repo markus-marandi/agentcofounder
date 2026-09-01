@@ -2,17 +2,18 @@ import type { ButtonHTMLAttributes } from "react";
 
 export type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl";
 
-const sizeClasses: Record<ButtonSize, string> = {
-  xs: "rounded-sm px-2 py-1 text-xs",
-  sm: "rounded-sm px-2 py-1 text-sm",
+/** Size is the only variant a caller picks; the accent carries the emphasis. */
+const sizes: Record<ButtonSize, string> = {
+  xs: "rounded-md px-2 py-0.5 text-xs",
+  sm: "rounded-md px-2 py-1 text-xs",
   md: "rounded-md px-2.5 py-1.5 text-sm",
   lg: "rounded-md px-3 py-2 text-sm",
-  xl: "rounded-md px-3.5 py-2.5 text-sm",
+  xl: "rounded-md px-4 py-2.5 text-base",
 };
 
 /**
- * Vendored from Tailwind Plus elements/buttons ("Primary buttons"), 5 sizes
- * collapsed onto this app's `--accent` token instead of a literal `indigo`.
+ * The single solid button of the design: accent fill, brightness feedback on
+ * hover, and a visible focus ring that comes from the base stylesheet.
  */
 export function Button({
   size = "md",
@@ -22,7 +23,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`font-semibold text-accent-ink bg-accent shadow-xs hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-55 disabled:cursor-not-allowed ${sizeClasses[size]} ${className}`.trim()}
+      className={`inline-flex items-center justify-center bg-accent font-semibold text-accent-ink hover:brightness-110 active:brightness-95 disabled:pointer-events-none disabled:opacity-50 ${sizes[size]} ${className}`.trim()}
     />
   );
 }

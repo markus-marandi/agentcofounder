@@ -16,33 +16,11 @@ Colour palettes in `app-template/src/themes/presets.css` are derived from the
 skill itself is not vendored; only its palette values are reused, restated as
 CSS custom properties.
 
-## Tailwind Plus
+## npm packages
 
-Source: https://tailwindcss.com/plus/ui-blocks/application-ui
-Licence: Tailwind Plus (commercial) — used under the project owner's own
-Tailwind Plus account licence, not open source. Markup is adapted, not
-redistributed verbatim: theme tokens replace literal `indigo`/`gray` classes,
-`dark:` variants are removed, and every external asset URL (Unsplash photos,
-`tailwindcss.com` logo assets) is replaced with an offline-safe alternative.
-
-| Path | Block | Note |
-|---|---|---|
-| `app-template/src/ui/Alert.tsx` | Feedback → Alerts "With description" | Shared primitive |
-| `app-template/src/ui/Breadcrumbs.tsx` | Navigation → Breadcrumbs "Contained" | Shared primitive |
-| `app-template/src/ui/Dropdown.tsx` | Elements → Dropdowns "Simple" | Shared primitive |
-| `app-template/src/ui/Tabs.tsx` | Navigation → Tabs "Tabs with underline" | Shared primitive |
-| `app-template/src/ui/Card.tsx` | Layout → Cards "Basic card" | Shared primitive |
-| `app-template/src/ui/Badge.tsx` | Elements → Badges "With border" | Shared primitive |
-| `app-template/src/ui/Button.tsx` | Elements → Buttons "Primary buttons" | Shared primitive |
-| `app-template/src/ui/ButtonGroup.tsx` | Elements → Button Groups "Basic" | Shared primitive |
-| `app-template/src/ui/Field.tsx` | Forms → Input Groups "Input with label", Textareas "Simple", Select Menus "Simple native" (chevron overlay), Toggles "Simple toggle" | Restyle only — the field types and behavior predate this pass |
-| `app-template/src/ui/AppShell.tsx` | Application Shells → Sidebar "Sidebar with header" (static rail, mobile drawer, sticky search header) | Layout adapted; the nav, the search, and the header text come from `parameters.json` |
-| `app-template/src/ui/EmptyState.tsx` | Lists → Empty States "Simple" | Shared primitive |
-| `app-template/src/ui/Modal.tsx` | Overlays → Modal Dialogs "Centered with single action" | Shared primitive |
-
-Two MIT-licensed npm packages were added to `app-template/package.json` to
-support these primitives' interactive/iconography needs: `@headlessui/react`
-and `@heroicons/react`. Both are normal dependencies, not vendored code.
+Interactive primitives and iconography use the MIT-licensed `@headlessui/react`
+and `@heroicons/react` npm packages — normal dependencies of
+`app-template/package.json`, not vendored code.
 
 ## Agent Skills specification
 

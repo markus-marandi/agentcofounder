@@ -4,9 +4,9 @@ import { Card } from "./Card.js";
 
 /**
  * How many columns the row settles into on a wide screen. Written out as whole
- * class strings rather than composed from `specs.length`, because Tailwind
- * scans this file as text: a class it cannot see spelled out is a class it
- * does not generate.
+ * class strings rather than composed from `specs.length`, because the class
+ * scanner reads this file as plain text: a class it cannot see spelled out is
+ * a class it does not generate.
  */
 const columns: Record<number, string> = {
   1: "lg:grid-cols-1",

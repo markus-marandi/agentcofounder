@@ -3,7 +3,7 @@
 Status: supersedes the previous version of this document in full. The prior
 plan (comprehensive IAM/RBAC, a pluggable search-provider boundary, a
 config-driven settings/users module, auto-generated API docs, and a vendored
-Tailwind Plus showcase dashboard) was written as if this were a generic
+showcase dashboard) was written as if this were a generic
 "comprehensive web app" product. It is not. Re-read against
 [`docs/starter.md`](docs/starter.md), [`contract-public/journeys.md`](contract-public/journeys.md),
 [`contract-public/result.schema.json`](contract-public/result.schema.json), and
@@ -68,9 +68,9 @@ there:
   (`solution/skills/web-app/SKILL.md`, step 9). A generator is nice-to-have
   engineering, not a scored requirement, and it's more code the kernel has to
   carry on every invocation.
-- **The Tailwind Plus showcase block** (`app-template/src/ui/blocks/`,
+- **The vendored showcase block** (`app-template/src/ui/blocks/`,
   1352-line `HomeScreenSidebar.tsx`, the `kind: "showcase"` nav type, and the
-  45-subcategory vendoring backlog in `docs/tailwind-plus-catalog/`). Already
+  45-subcategory vendoring backlog). Already
   removed from the tree in this pass. Three independent problems with it:
   1. It rendered static illustrative sample data (deploy pipelines, team
      rosters, a fake calendar) with zero wiring to `entities`/repository —
@@ -87,17 +87,17 @@ there:
      dead weight; there was nothing here worth preserving for later since it
      was never on the path to a judged score.
 
-## What Tailwind Plus adoption is actually for, and stays
+## What the utility-class restyle is actually for, and stays
 
-The decision to move to Tailwind CSS + Tailwind Plus's Application UI
-patterns was correct — Usability & UX is the single largest rubric category
+The decision to adopt Tailwind CSS for the product-facing components was
+correct — Usability & UX is the single largest rubric category
 (30/100), and it's scored on the app the harness *actually generates for the
 idea*, which is always built from the 10 real product-facing components
 audited in [`app-template/COMPONENTS.md`](app-template/COMPONENTS.md):
 `collectionView`, `dashboardGrid`, `landingPage`, `prototypeFlow`, `authBar`,
 `chart`, `recordForm`, `field`, `emptyState`, `statRow`. Restyling *those* —
 already substantially done (`Card`/`Badge`/`Button`/`ButtonGroup` primitives
-extracted, `Field.tsx` restyled off the forms catalog) — is the correct,
+extracted, `Field.tsx` restyled) — is the correct,
 in-scope use of that budget. The mistake was spending the same budget vendoring
 a page that those ten components don't use and that no scored run reaches.
 
