@@ -1,5 +1,6 @@
 import type { PlotSpec, StoredRecord } from "../kernel/types.js";
 import { isIllustrative, pointsForPlot } from "../mock/generators.js";
+import { Badge } from "./Badge.js";
 import { Card } from "./Card.js";
 import { Chart } from "./Chart.js";
 import { ErrorBoundary } from "./ErrorBoundary.js";
@@ -11,8 +12,9 @@ function Plot({ plot, records, main }: { plot: PlotSpec; records: StoredRecord[]
       className={`p-6${main ? " sm:col-span-2 lg:col-span-4" : ""}`}
       aria-labelledby={`plot-${plot.id}`}
     >
-      <h3 className="text-sm font-semibold text-ink m-0 mb-2" id={`plot-${plot.id}`}>
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-ink m-0 mb-2" id={`plot-${plot.id}`}>
         {plot.title}
+        {main ? <Badge tone="accent">Headline</Badge> : null}
       </h3>
       <ErrorBoundary label={plot.title}>
         <Chart kind={plot.kind} points={pointsForPlot(plot, records)} title={plot.title} unit={plot.unit} />

@@ -5,6 +5,7 @@ import type { NavigationSpec } from "./kernel/types.js";
 import { AppShell } from "./ui/AppShell.js";
 import { Alert } from "./ui/Alert.js";
 import { AuthBar } from "./ui/AuthBar.js";
+import { Breadcrumbs } from "./ui/Breadcrumbs.js";
 import { Card } from "./ui/Card.js";
 import { CollectionView } from "./ui/CollectionView.js";
 import { DashboardGrid } from "./ui/DashboardGrid.js";
@@ -31,11 +32,17 @@ function View({ entry }: { entry: NavigationSpec }) {
       if (!dashboard) {
         return <Alert tone="danger" title="No dashboard is configured in parameters.json." />;
       }
-      return <DashboardGrid main={dashboard.main} sub={dashboard.sub} records={dashboardRecords} />;
+      return (
+        <div className="flex flex-col gap-4">
+          <Breadcrumbs items={[{ label: entry.label }]} />
+          <DashboardGrid main={dashboard.main} sub={dashboard.sub} records={dashboardRecords} />
+        </div>
+      );
     }
     case "content":
       return (
         <Card as="section" className="p-6 flex flex-col gap-4">
+          <Breadcrumbs items={[{ label: entry.label }]} />
           <h2 className="text-base font-semibold text-ink m-0">{entry.label}</h2>
           <p className="text-ink-soft m-0">
             {entry.body ?? parameters.product.description ?? parameters.product.tagline}

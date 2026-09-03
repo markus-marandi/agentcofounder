@@ -9,7 +9,11 @@
  * configurations stay valid, but it no longer changes a colour.
  *
  * Hex values are stated literally so the palette is auditable at a glance:
- * gray 50/200/400/700/800/900 and indigo 400/600.
+ * gray 50/200/400/700/800/950 and indigo 400/600. Dark mode's base surface
+ * is gray-950, not gray-900 — the Tailwind Plus application-shell reference
+ * this look is built from keeps the page near-black and lifts only the
+ * active/hover state (gray-800) off it, rather than sitting the whole page
+ * one step up.
  */
 
 :root {
@@ -38,7 +42,7 @@
   html:not([data-mode="light"]) {
     --ink: #ffffff;
     --ink-soft: #99a1af;
-    --surface: #101828;
+    --surface: #030712;
     --surface-sunk: #1e2939;
     --line: #364153;
     --accent: #7c86ff;
@@ -55,7 +59,7 @@
 :root[data-mode="dark"] {
   --ink: #ffffff;
   --ink-soft: #99a1af;
-  --surface: #101828;
+  --surface: #030712;
   --surface-sunk: #1e2939;
   --line: #364153;
   --accent: #7c86ff;

@@ -12,16 +12,46 @@ The kernel already implements this route. Most of the work is configuration.
 1. Confirm `parameters.json` has `route: "web-app"` and every entity the idea
    needs, each with real fields, at least one filter, and at least one derived
    value.
-2. Set `navigation`. The collection is the first entry. Add one entry per
-   distinct area the idea describes — a second entity, or a summary view
-   (`kind: "dashboard"`, which also needs a `dashboard` block) — and then fill
-   the menu out to at least four entries with `kind: "content"` sections named
-   for what this product's owner would look for. A `content` entry renders the
-   real content view, not a stub, so the menu is never a lie; a one-item rail
-   just reads as an unfinished app. Give every content entry its own `body` —
-   a sentence or two about that section, in this product's words. Without one
-   they all print the product description and the menu leads to four copies of
-   the same page.
+2. Set `navigation`. The collection is the first entry. Add a second entry
+   with `kind: "dashboard"` as standard practice, not an option — it is the
+   single biggest lever on the 30-point Usability & UX score, and every
+   source kind below reads the live store, never an invented number. Then
+   fill the menu out to at least four entries with `kind: "content"` sections
+   named for what this product's owner would look for. A `content` entry
+   renders the real content view, not a stub, so the menu is never a lie; a
+   one-item rail just reads as an unfinished app. Give every content entry
+   its own `body` — a sentence or two about that section, in this product's
+   words. Without one they all print the product description and the menu
+   leads to four copies of the same page.
+
+   The `dashboard` block needs one `main` plot and exactly four `sub` plots.
+   Spend one `entityCount`/`entityGroup`/`entitySum` source per real
+   dimension the entity has (its category field, a numeric field); once
+   those run out, fill the rest with `timeseries`/`categorical` — the kernel
+   labels those "Sample figures" on its own, so the grid is never short of
+   five plots without ever passing off a made-up number as real. Worked
+   example, for the book-lending idea (`entities[0].name` is `"book"`):
+
+   ```jsonc
+   "dashboard": {
+     "main": {
+       "id": "by-kind",
+       "title": "Books by kind",
+       "kind": "donut",
+       "source": { "kind": "entityGroup", "entity": "book", "field": "kind" }
+     },
+     "sub": [
+       { "id": "total", "title": "Books on the shelf", "kind": "stat",
+         "source": { "kind": "entityCount", "entity": "book" } },
+       { "id": "by-kind-bar", "title": "By kind", "kind": "bar",
+         "source": { "kind": "entityGroup", "entity": "book", "field": "kind" } },
+       { "id": "trend", "title": "Added over time", "kind": "sparkline",
+         "source": { "kind": "timeseries", "points": 14, "trend": "up" } },
+       { "id": "mix", "title": "Typical mix", "kind": "donut",
+         "source": { "kind": "categorical", "categories": ["Novel", "Cookbook", "Reference"] } }
+     ]
+   }
+   ```
 3. `features.search` is on in the shell whatever the configuration says — the
    header always carries the search field — so leave `search: true`.
 4. Set `features.auth` to `true` only when the idea distinguishes between kinds

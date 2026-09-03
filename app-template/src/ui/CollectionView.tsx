@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import type { ActionSpec, EntitySpec, StoredRecord } from "../kernel/types.js";
 import { titleOf } from "../kernel/config.js";
 import { useRepository } from "../kernel/useRepository.js";
@@ -16,6 +16,8 @@ import {
 import { searchRecords } from "../data/searchIndex.js";
 import { exportCollections, importCollections, readExport } from "../data/portability.js";
 import { Alert } from "./Alert.js";
+import { Button } from "./Button.js";
+import { Dropdown } from "./Dropdown.js";
 import { EmptyState } from "./EmptyState.js";
 import { Field } from "./Field.js";
 import { ConfirmDialog, type ConfirmTone } from "./Modal.js";
@@ -101,6 +103,7 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [transferNote, setTransferNote] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const editing = editingId ? records.find((record) => record.id === editingId) : undefined;
   const filterSpecs = entity.filters ?? [];
@@ -326,28 +329,26 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
           </h2>
 
           {canEdit ? (
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                className="text-sm font-semibold text-ink-soft hover:text-ink"
-                onClick={exportRecords}
-              >
-                Export JSON
-              </button>
-              <label className="cursor-pointer text-sm font-semibold text-ink-soft hover:text-ink">
-                Import JSON
-                <input
-                  type="file"
-                  accept="application/json,.json"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = "";
-                    if (file) void importRecords(file);
-                  }}
-                />
-              </label>
-            </div>
+            <>
+              <Dropdown
+                label="More actions"
+                options={[
+                  { label: "Export JSON", onClick: exportRecords },
+                  { label: "Import JSON", onClick: () => importInputRef.current?.click() },
+                ]}
+              />
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) void importRecords(file);
+                }}
+              />
+            </>
           ) : null}
         </div>
 
@@ -420,19 +421,25 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
                         {canEdit ? (
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap items-center justify-end gap-3">
-                              {offered.map((action) =>
-                                open?.id === action.id && action.prompt ? null : (
+                              {offered.map((action) => {
+                                if (open?.id === action.id && action.prompt) return null;
+                                const label = `${action.label}: ${titleOf(entity, record)}`;
+                                return action.style === "primary" ? (
+                                  <Button key={action.id} type="button" onClick={() => startAction(action, record)} aria-label={label}>
+                                    {action.label}
+                                  </Button>
+                                ) : (
                                   <button
                                     key={action.id}
                                     type="button"
                                     className={actionClasses(action.style)}
                                     onClick={() => startAction(action, record)}
-                                    aria-label={`${action.label}: ${titleOf(entity, record)}`}
+                                    aria-label={label}
                                   >
                                     {action.label}
                                   </button>
-                                ),
-                              )}
+                                );
+                              })}
 
                               <button
                                 type="button"
@@ -481,13 +488,22 @@ export function CollectionView({ entity, searchEnabled = false, canEdit = true }
                                 />
                               </div>
                               <div className="flex items-center gap-3">
-                                <button
-                                  type="submit"
-                                  className={actionClasses(open.style ?? "primary")}
-                                  aria-label={`Confirm ${open.label.toLowerCase()}: ${titleOf(entity, record)}`}
-                                >
-                                  {open.label}
-                                </button>
+                                {(open.style ?? "primary") === "primary" ? (
+                                  <Button
+                                    type="submit"
+                                    aria-label={`Confirm ${open.label.toLowerCase()}: ${titleOf(entity, record)}`}
+                                  >
+                                    {open.label}
+                                  </Button>
+                                ) : (
+                                  <button
+                                    type="submit"
+                                    className={actionClasses(open.style ?? "primary")}
+                                    aria-label={`Confirm ${open.label.toLowerCase()}: ${titleOf(entity, record)}`}
+                                  >
+                                    {open.label}
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   className="rounded-md border border-transparent px-3 py-1.5 text-sm font-semibold text-ink-soft hover:bg-surface-sunk"

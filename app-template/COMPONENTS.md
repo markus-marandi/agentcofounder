@@ -13,8 +13,8 @@ dependency of one that is on.
 
 | Component | File | Activated by | Depends on |
 |---|---|---|---|
-| `collectionView` | `CollectionView.tsx` | a `navigation` entry with `kind: "collection"` (the default route); row actions come from `entities[].actions` | `StatRow`, `RecordForm`, `EmptyState`, `Field` |
-| `dashboardGrid` | `DashboardGrid.tsx` | a `navigation` entry with `kind: "dashboard"` + a top-level `dashboard` block | `Chart` |
+| `collectionView` | `CollectionView.tsx` | a `navigation` entry with `kind: "collection"` (the default route); row actions come from `entities[].actions` | `StatRow`, `RecordForm`, `EmptyState`, `Field`, `Button`, `Dropdown`, `Modal` |
+| `dashboardGrid` | `DashboardGrid.tsx` | a `navigation` entry with `kind: "dashboard"` + a top-level `dashboard` block — `solution/skills/web-app/SKILL.md` now has the model add this by default | `Chart`, `Card`, `Badge` |
 | `landingPage` | `LandingPage.tsx` | a `navigation` entry with `kind: "landing"` | `Field` |
 | `prototypeFlow` | `PrototypeFlow.tsx` | a `navigation` entry with `kind: "screen"` + a top-level `prototype` block | `Field` |
 | `authBar` | `AuthBar.tsx` | `features.auth: true` | — |
@@ -36,6 +36,28 @@ Not product content — always compiled in, never independently toggled:
 | `tools/api-contract.mjs` | Derives the HTTP contract, the JSON Schema per entity, and the Postgres table sketch from `parameters.json`. `npm run contract` writes `openapi.json`; the docs page appends the rest |
 | `tools/docs-page.mjs` | Renders `API.md` as a page. Served at `/api-docs` by the `api-docs` plugin in `vite.config.ts`, and on port 3001 by `tools/serve-docs.mjs` (`npm run docs`). The sidebar's bottom link points at the first |
 | `ErrorBoundary.tsx` | Wraps every routed view and every dashboard plot so one bad record can't blank the page |
+| `Breadcrumbs.tsx` | Rendered above every `content` and `dashboard` view (`App.tsx`'s `View`) for wayfinding beyond the shell's own page title |
+
+## Shared primitives
+
+Not independently toggled — used wherever the component above them needs the
+pattern, same file every time:
+
+| Component | Used by |
+|---|---|
+| `Badge.tsx` | `CollectionView`'s row cells for a `select`/`combobox`/`boolean` field would be the obvious next use, but the auto-generated journey suite (`tools/generate-journeys.mjs`) asserts those cells' exact text with `getByText`, which throws on a second nested text-matching element — so `Badge` stays out of the row cells and lives on `DashboardGrid`'s headline plot instead, where nothing generated depends on the DOM shape |
+| `Button.tsx` | `CollectionView`'s `style: "primary"` row actions and inline-prompt confirm button, replacing what used to be a second, hand-duplicated copy of the same class string |
+| `Dropdown.tsx` | `CollectionView`'s Export/Import JSON, collapsed into one overflow menu instead of two loose text buttons |
+| `Card.tsx` | `DashboardGrid`'s plot frames |
+
+`Tabs.tsx` and `ButtonGroup.tsx` are built and unused. Both are natural fits
+for the equals-mode filter control, but `generate-journeys.mjs` hard-codes
+that control as a native `<select id="filter-<field>">` addressed by
+`selectOptions` — the "kernel's published contract" its own header comment
+names. Swapping it for either component would need the generator changed
+too, on the one file every judged run's passing test suite depends on; left
+alone until that's worth doing deliberately, not as a side effect of a
+styling pass.
 
 ## `components` tracking block
 

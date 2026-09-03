@@ -79,9 +79,12 @@ and the kernel refuses to start on an invalid file.
 }
 ```
 
-Navigation count decides the chrome: one entry means no navigation at all, two
-to four a bar, five or more a sidebar that wraps on narrow screens. The agent
-never picks a layout by hand.
+The chrome is fixed, not picked by navigation count: every generated app gets
+the same sidebar rail (a drawer on narrow screens), sticky search header, and
+day/night toggle, whether `navigation` has one entry or eight. Only what the
+rail *contains* is a per-product decision. The web-app skill now adds a
+`dashboard` entry as standard practice — see [`app-template/COMPONENTS.md`](app-template/COMPONENTS.md)
+for the full audit of what's on the rail and why.
 
 ### Verbs, not domains
 
